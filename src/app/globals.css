@@ -1,0 +1,45 @@
+/* frontend/src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --uach-canvas: #F4F7F7;
+    --uach-surface: #FFFFFF;
+    --uach-ink: #264143;
+    --uach-teal: #117873;
+    --uach-petrol: #083B46;
+  }
+
+  body {
+    background-color: var(--uach-canvas);
+    color: var(--uach-ink);
+    min-height: 100vh;
+    margin: 0;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(17, 120, 115, 0.16);
+    color: #083B46;
+  }
+}
+
+/* Scrollbar sutil integrado en la paleta UACH */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(38, 65, 67, 0.16);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 120, 115, 0.4);
+}
