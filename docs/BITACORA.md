@@ -11,6 +11,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 ## 2026-11-19
 
 ### Qué se hizo
+- **Bitácora** (`docs/BITACORA.md`) creada y `AVANCE.md` actualizado con el estado del entorno y las decisiones de alcance (commit `f952f4e`).
 - **Revisión general** (sin cambios de código): el frontend y el backend compilan, el lint pasa y los tests también. Se probaron todas las rutas con cada rol usando el backend simulado y no hubo errores.
 - **Dashboard del alumno rediseñado** (commit `3846aca`): próxima entrega, semana, cursos y avisos, por ahora con **datos de ejemplo**. Barra lateral colapsable, menú de notificaciones y animaciones que respetan «movimiento reducido».
 - **Backend simulado** (`npm run dev:demo`): levanta un backend falso y el frontend juntos para recorrer la plataforma **sin base de datos**.
@@ -21,7 +22,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   2. El usuario entra con ella y solo puede usar `/cambiar-contrasena`; el resto de la API responde 403 hasta que la cambie.
   3. Se cambia con `POST /auth/change-password`. Cualquier usuario puede usar esa página desde su menú.
 - **Migración inicial de Prisma** (commit `8de7a74`): `backend/prisma/migrations/20261119000000_init`, generada desde el esquema.
-- **Módulo de cursos** (entregables 1 y 2 de la fase 1, **sin commit todavía**):
+- **Módulo de cursos** (entregables 1 y 2 de la fase 1, commit `f952f4e`):
   - **Backend:** listar, crear (docente), unirse con código (alumno), detalle, personas, generar un código nuevo y quitar alumnos. Además, `GET /academic/subjects` para el formulario de creación.
   - **Validación de pertenencia:** `CourseAccessService` comprueba que el usuario sea el docente, un alumno inscrito o un admin. Si no, responde 404 para no revelar qué cursos existen.
   - **Frontend:** `/cursos`, `/cursos/[id]` (encabezado, código de invitación y pestañas) y `/cursos/[id]/personas`.
@@ -55,7 +56,6 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - El catálogo del seed (facultades, carreras y materias) es **de ejemplo**. Hay que reemplazarlo por el oficial.
 
 ### Pendiente
-- Hacer commit del módulo de cursos.
 - **Tareas y entregas** (entregables 4 y 5): el docente crea tareas con fecha de entrega y el alumno entrega con archivos adjuntos.
 - Pantalla `/administracion/usuarios` con el botón para restablecer contraseñas (el endpoint ya existe).
 - Conectar el dashboard a datos reales (hoy usa `sample-data.ts`).
