@@ -48,6 +48,7 @@ const ROUTE_RULES: { prefix: string; roles: UserRole[] }[] = [
   { prefix: "/dashboard", roles: ALL_ROLES },
   { prefix: "/cursos", roles: ALL_ROLES },
   { prefix: "/entregas", roles: ["STUDENT", "TEACHER"] },
+  { prefix: "/calendario", roles: ["STUDENT", "TEACHER"] },
   { prefix: "/grupos-estudio", roles: ALL_ROLES },
   { prefix: "/repositorio", roles: ALL_ROLES },
   { prefix: "/notificaciones", roles: ALL_ROLES },

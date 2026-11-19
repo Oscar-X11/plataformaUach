@@ -85,9 +85,18 @@ export class FilesService {
 
     switch (area) {
       case 'avatars':
-      case 'repository':
         // Cualquier usuario autenticado de la plataforma.
         return;
+
+      case 'repository': {
+        // Aprobado: cualquiera. Pendiente o rechazado: solo su autor.
+        const resource = await this.prisma.resource.findUnique({
+          where: { fileUrl: relativePath },
+          select: { status: true, authorId: true },
+        });
+        if (resource && (resource.status === 'APPROVED' || resource.authorId === user.sub)) return;
+        throw new ForbiddenException('No tienes acceso a este archivo');
+      }
 
       case 'submissions': {
         const file = await this.prisma.submissionFile.findUnique({
@@ -112,10 +121,23 @@ export class FilesService {
         throw new ForbiddenException('No tienes acceso a este archivo');
       }
 
-      case 'classroom-drive':
-        // Pendiente (fase 1): validar pertenencia al curso cuando exista el modelo Attachment.
-        if (user.role === 'TEACHER' || user.role === 'STUDENT') return;
+      case 'classroom-drive': {
+        // Material del curso: solo su docente y los alumnos inscritos.
+        const material = await this.prisma.courseMaterial.findUnique({
+          where: { fileUrl: relativePath },
+          select: {
+            course: {
+              select: {
+                teacherId: true,
+                enrollments: { where: { studentId: user.sub }, select: { id: true } },
+              },
+            },
+          },
+        });
+        const course = material?.course;
+        if (course && (course.teacherId === user.sub || course.enrollments.length > 0)) return;
         throw new ForbiddenException('No tienes acceso a este archivo');
+      }
     }
   }
 }

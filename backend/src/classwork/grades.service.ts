@@ -5,7 +5,7 @@ import { PrismaService } from '../database/prisma.service';
 import { average, decimalToNumber, submissionState } from './submission-state';
 
 /** Evita que Excel interprete una celda como fórmula (inyección CSV). */
-function csvCell(value: string | number | null) {
+export function csvCell(value: string | number | null) {
   if (value === null) return '';
   let text = String(value);
   if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;

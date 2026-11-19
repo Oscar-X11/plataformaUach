@@ -1,6 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
 import { Public } from '../common/decorators/public.decorator';
-import { Roles } from '../common/decorators/roles.decorator';
 import { PrismaService } from '../database/prisma.service';
 
 @Controller('academic')
@@ -25,8 +24,7 @@ export class AcademicController {
     });
   }
 
-  /** Materias con su carrera, para elegir al crear un curso. */
-  @Roles('TEACHER', 'ADMIN')
+  /** Materias con su carrera (crear cursos, filtrar repositorio y grupos). */
   @Get('subjects')
   subjects() {
     return this.prisma.subject.findMany({

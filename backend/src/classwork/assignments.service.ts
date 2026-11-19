@@ -167,6 +167,42 @@ export class AssignmentsService {
     await Promise.all(files.map((file) => this.storage.remove(file.fileUrl)));
   }
 
+  /**
+   * Tareas con fecha dentro del rango, de los cursos del usuario.
+   * Alumno: con el estado de su entrega. Docente: cuántos entregaron.
+   */
+  async calendar(user: TokenPayload, from: Date, to: Date) {
+    const courseFilter: Prisma.CourseWhereInput =
+      user.role === 'ADMIN'
+        ? {}
+        : user.role === 'TEACHER'
+          ? { teacherId: user.sub }
+          : { enrollments: { some: { studentId: user.sub } } };
+    const rows = await this.prisma.assignment.findMany({
+      where: { dueAt: { gte: from, lt: to }, course: courseFilter },
+      orderBy: { dueAt: 'asc' },
+      take: 500,
+      select: {
+        id: true,
+        title: true,
+        dueAt: true,
+        points: true,
+        course: { select: { id: true, name: true, _count: { select: { enrollments: true } } } },
+        submissions:
+          user.role === 'STUDENT'
+            ? { where: { studentId: user.sub }, select: { status: true, submittedAt: true } }
+            : { where: { status: { not: 'ASSIGNED' } }, select: { status: true, submittedAt: true } },
+      },
+    });
+    return rows.map(({ course, submissions, ...assignment }) => ({
+      ...assignment,
+      course: { id: course.id, name: course.name },
+      state: user.role === 'STUDENT' ? submissionState(assignment.dueAt, submissions[0]) : null,
+      submitted: user.role === 'STUDENT' ? null : submissions.length,
+      students: user.role === 'STUDENT' ? null : course._count.enrollments,
+    }));
+  }
+
   /** Alumno: su entrega. Docente/admin: cuántos entregaron y cuántas devolvió. */
   private async decorate(assignments: AssignmentRow[], role: CourseRole, user: TokenPayload) {
     const ids = assignments.map((assignment) => assignment.id);

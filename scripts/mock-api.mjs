@@ -9,7 +9,8 @@
  *   GET /auth/me, POST /auth/change-password, POST /users/:id/reset-password,
  *   GET /academic/faculties, GET /academic/subjects y los endpoints de /courses.
  * - Tareas, entregas, tablón, notificaciones, perfil, usuarios y dashboard
- *   viven en ./mock-classwork.mjs.
+ *   viven en ./mock-classwork.mjs; calendario, material, repositorio, grupos
+ *   y reportes en ./mock-institutional.mjs.
  * - Se inicia sesión con matrícula (alumnos) o número de empleado (personal).
  * - Todo vive en memoria: al reiniciar se pierden las cuentas registradas.
  * - Los tokens NO están firmados; el backend real los rechaza. Solo para desarrollo.
@@ -17,6 +18,7 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { createClasswork } from "./mock-classwork.mjs";
+import { createInstitutional } from "./mock-institutional.mjs";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const COOKIE = "uach_session";
@@ -352,7 +354,6 @@ const routes = {
   "GET /academic/subjects": (req, res) => {
     const entry = entryFromToken(readToken(req) ?? "");
     if (!entry) return unauthorized(res);
-    if (entry.user.role === "STUDENT") return forbidden(res);
     const careers = FACULTIES.flatMap((faculty) => faculty.careers);
     send(
       res,
@@ -381,7 +382,9 @@ async function resetPassword(req, res, userId) {
   send(res, 200, { user: { id, username, fullName }, temporaryPassword });
 }
 
-const classwork = createClasswork({ users, courses, findUser, courseRole, send, readJson, forbidden, SUBJECTS });
+const mockContext = { users, courses, findUser, courseRole, send, readJson, forbidden, SUBJECTS, FACULTIES };
+const classwork = createClasswork(mockContext);
+const institutional = createInstitutional(mockContext, classwork.state);
 
 /** Rutas con sesión: primero trabajo de clase y compañía, luego /courses. */
 async function authenticatedRoutes(req, res, path) {
@@ -391,7 +394,8 @@ async function authenticatedRoutes(req, res, path) {
   if (entry.user.mustChangePassword) {
     return forbidden(res, "Debes cambiar tu contraseña temporal antes de continuar");
   }
-  if (await classwork(req, res, path, entry.user)) return;
+  if (await classwork.handle(req, res, path, entry.user)) return;
+  if (await institutional(req, res, path, entry.user)) return;
   if (path.startsWith("/courses") && (await courseRoutes(req, res, path))) return;
   send(res, 404, { statusCode: 404, message: "Ruta no disponible en el backend simulado" });
 }

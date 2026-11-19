@@ -181,3 +181,12 @@ export function formatBytes(bytes: number) {
 export const SUBMISSION_ACCEPT =
   ".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.pptx,.doc,.xls,.ppt,.zip,.txt,.csv";
 export const MAX_SUBMISSION_FILE_MB = 20;
+
+/** Materia del catálogo (GET /academic/subjects). */
+export interface SubjectOptionLite {
+  id: string;
+  name: string;
+  code: string;
+  semester: number;
+  career: { id: string; name: string; code: string };
+}

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UploadedFiles,
@@ -114,6 +116,24 @@ export class ClassworkController {
   }
 
   // Vistas generales
+  /** ?from=ISO&to=ISO (máximo 62 días). */
+  @Get('calendar')
+  calendar(
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Req() { user }: AuthenticatedRequest,
+  ) {
+    const start = new Date(from);
+    const end = new Date(to);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+      throw new BadRequestException('Rango de fechas inválido');
+    }
+    if (end.getTime() - start.getTime() > 62 * 86_400_000) {
+      throw new BadRequestException('El rango máximo es de 62 días');
+    }
+    return this.assignments.calendar(user, start, end);
+  }
+
   @Get('classwork/overview')
   overview(@Req() { user }: AuthenticatedRequest) {
     return this.submissions.overview(user);

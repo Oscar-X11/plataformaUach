@@ -8,6 +8,51 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 
 ---
 
+## 2026-11-20
+
+### Qué se hizo
+- **Fase 2** (valor institucional), probada con el backend simulado (commit al final del día):
+  - **Calendario** (`/calendario`):
+    - Vista de mes con las entregas de todos los cursos.
+    - En escritorio se ve como cuadrícula y en móvil como agenda.
+    - El alumno ve el estado de cada tarea y el docente cuántos entregaron.
+  - **Recursos del curso** (`/cursos/[id]/recursos`):
+    - El docente organiza el material por temas o unidades.
+    - Puede subir archivos de hasta 50 MB o compartir enlaces; solo se aceptan enlaces http(s).
+    - Los alumnos reciben un aviso y solo los miembros del curso pueden descargar.
+  - **Repositorio institucional** (`/repositorio`):
+    - Apuntes, guías, exámenes resueltos y libros por materia, con búsqueda y filtros.
+    - Lo que suben los alumnos queda **en revisión** hasta que un administrador lo aprueba; para rechazarlo hay que escribir el motivo.
+    - Lo que suben docentes y administradores se publica directo.
+    - Lo pendiente solo lo pueden descargar su autor y el admin.
+  - **Grupos de estudio** (`/grupos-estudio`):
+    - Crear un grupo con cupo, materia y lugar o hora de reunión; unirse y salir.
+    - El cupo se respeta aunque dos personas se unan al mismo tiempo.
+    - Solo los integrantes ven quiénes participan.
+  - **Reportes** (`/administracion/reportes`):
+    - Por curso: alumnos, tareas, % de entrega sobre las tareas vencidas y promedio.
+    - Filtro por periodo y exportación a CSV.
+- **Esquema:** modelos `CourseTopic`, `CourseMaterial` y `StudyGroupMember`. El modelo `Resource` ahora tiene estado de moderación y datos del archivo. Hay dos notificaciones nuevas: material nuevo y recurso revisado. Migración nueva: `20261120090000_fase2_institucional`.
+- **Backend simulado** ampliado: `scripts/mock-institutional.mjs`.
+- Tests del backend: 58 en total (12 nuevos).
+- **README actualizado** con el estado por fases, todas las ventanas del frontend, la estructura de módulos, el backend simulado y sus cuentas, y los siguientes pasos. Commit de toda la fase 2.
+
+### Decisiones
+- **Moderación del repositorio:** lo de alumnos se revisa; lo de docentes y admins se publica directo. Rechazar exige explicar el motivo al autor.
+- **Grupos de estudio abiertos** a toda la comunidad (no ligados a un curso). Quien lo crea no puede salirse: si ya no se reunirán, lo borra.
+
+### Importante
+- Siguen sin base de datos. Al crearla, aplicar las **tres** migraciones con `npm run prisma:deploy`.
+- Los archivos nuevos se guardan en `storage/classroom-drive/<curso>/` (material) y `storage/repository/<materia>/` (repositorio).
+
+### Pendiente
+- Probar todo con la base de datos real.
+- Administración: catálogos (facultades, carreras, materias), periodos y reasignar docentes.
+- Invalidar sesiones al desactivar cuentas o restablecer contraseñas.
+- Decidir cómo evitar registros con matrículas ajenas.
+
+---
+
 ## 2026-11-19
 
 ### Qué se hizo

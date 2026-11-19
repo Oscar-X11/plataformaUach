@@ -2,6 +2,7 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  CalendarDays,
   ClipboardCheck,
   LayoutDashboard,
   Library,
@@ -43,6 +44,7 @@ export function navigationForRole(role: UserRole): NavSection[] {
             { label: "Inicio", href: "/dashboard", icon: LayoutDashboard },
             { label: "Mis cursos", href: "/cursos", icon: BookOpen },
             { label: "Mis entregas", href: "/entregas", icon: ClipboardCheck },
+            { label: "Calendario", href: "/calendario", icon: CalendarDays },
           ],
         },
         {
@@ -62,6 +64,7 @@ export function navigationForRole(role: UserRole): NavSection[] {
             { label: "Inicio", href: "/dashboard", icon: LayoutDashboard },
             { label: "Mis clases", href: "/cursos", icon: BookOpen },
             { label: "Entregas", href: "/entregas", icon: ClipboardCheck },
+            { label: "Calendario", href: "/calendario", icon: CalendarDays },
           ],
         },
         {
@@ -90,6 +93,7 @@ export function navigationForRole(role: UserRole): NavSection[] {
           items: [
             { label: "Cursos", href: "/cursos", icon: BookOpen },
             { label: "Repositorio", href: "/repositorio", icon: Library },
+            { label: "Grupos de estudio", href: "/grupos-estudio", icon: UsersRound },
           ],
         },
         ACCOUNT,

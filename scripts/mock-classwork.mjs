@@ -16,7 +16,7 @@ const MIME = {
 
 // ───────────── Utilidades ─────────────
 
-function submissionState(dueAt, submission, now = new Date()) {
+export function submissionState(dueAt, submission, now = new Date()) {
   const status = submission?.status ?? "ASSIGNED";
   if (status === "RETURNED") return "returned";
   if (status === "SUBMITTED") {
@@ -25,7 +25,7 @@ function submissionState(dueAt, submission, now = new Date()) {
   return dueAt && new Date(dueAt) < now ? "missing" : "pending";
 }
 
-function average(items) {
+export function average(items) {
   const graded = items.filter((item) => item.grade !== null);
   const possible = graded.reduce((sum, item) => sum + item.points, 0);
   if (!possible) return null;
@@ -38,14 +38,14 @@ const tempPassword = () => {
   return `${group()}-${group()}-${group()}`;
 };
 
-async function readRaw(req) {
+export async function readRaw(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
   return Buffer.concat(chunks);
 }
 
 /** Parser multipart mínimo (suficiente para el navegador). */
-function parseMultipart(buffer, contentType) {
+export function parseMultipart(buffer, contentType) {
   const boundary = /boundary=(?:"([^"]+)"|([^;]+))/.exec(contentType ?? "");
   if (!boundary) return [];
   const delimiter = Buffer.from(`--${boundary[1] ?? boundary[2]}`);
@@ -67,7 +67,7 @@ function parseMultipart(buffer, contentType) {
   return parts;
 }
 
-const extOf = (name) => (name.includes(".") ? name.split(".").pop().toLowerCase() : "");
+export const extOf = (name) => (name.includes(".") ? name.split(".").pop().toLowerCase() : "");
 const preview = (text) => (text.length > 60 ? `${text.slice(0, 59)}…` : text);
 
 // ───────────── Registro de rutas ─────────────
@@ -700,7 +700,7 @@ export function createClasswork(ctx) {
   }
 
   /** Atiende la petición si alguna ruta coincide. Devuelve true si la atendió. */
-  return async function handle(req, res, path, user) {
+  async function handle(req, res, path, user) {
     for (const [method, pattern, handler] of routes) {
       if (req.method !== method) continue;
       const match = pattern.exec(path);
@@ -710,5 +710,8 @@ export function createClasswork(ctx) {
       }
     }
     return false;
-  };
+  }
+
+  // El estado se comparte con mock-institutional.mjs (calendario, reportes, archivos).
+  return { handle, state: { assignments, submissions, files, notify } };
 }

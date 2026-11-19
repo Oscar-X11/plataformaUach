@@ -1,6 +1,6 @@
 # Avance del proyecto — Plataforma UACH
 
-> Última actualización: 2026-11-19
+> Última actualización: 2026-11-20
 >
 > Leyenda: ✅ Hecho · 🔄 En proceso · ⬜ Pendiente · ❓ Por decidir
 >
@@ -14,10 +14,10 @@
 | --- | --- | --- |
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
 | Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa con backend simulado — falta probar con base de datos real |
-| Fase 2 | Valor institucional (calendario, repositorio, administración) | ⬜ Pendiente |
+| Fase 2 | Valor institucional (calendario, repositorio, administración) | 🔄 Casi completa con backend simulado — faltan catálogos y periodos |
 | Fase 3 | Funciones tipo Moodle (cuestionarios, asistencia, foros…) | ⬜ Pendiente |
 
-**Siguiente paso:** crear la base de datos y probar la fase 1 completa con el backend real; después, Fase 2.
+**Siguiente paso:** cerrar la Fase 2 (catálogos y periodos) y, cuando exista la base de datos, probar todo con el backend real.
 
 ### Estado del entorno
 
@@ -25,7 +25,7 @@
 | --- | --- |
 | Base de datos MySQL | ⬜ No existe todavía. La migración ya está lista para aplicarse. |
 | Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer toda la plataforma sin base de datos. |
-| Pruebas del backend | ✅ 46 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón y usuarios). |
+| Pruebas del backend | ✅ 58 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón, usuarios, material, repositorio, grupos y reportes). |
 | Despliegue (Docker / servidor) | ⬜ Sin probar con datos reales. |
 
 ---
@@ -56,8 +56,8 @@
 - ✅ Backend simulado (`scripts/mock-api.mjs`) y `npm run dev:demo` para desarrollar sin base de datos.
 
 ### Backend (NestJS + Prisma)
-- ✅ Modelo de datos en `schema.prisma`: Faculty, Career, Subject, User, Course, Enrollment, Post, Comment, Assignment, Submission, SubmissionFile, Notification, Resource, StudyGroup.
-- ✅ Migraciones versionadas: `20261119000000_init` y `20261119120000_fase1_classroom`.
+- ✅ Modelo de datos en `schema.prisma`: Faculty, Career, Subject, User, Course, Enrollment, Post, Comment, Assignment, Submission, SubmissionFile, Notification, Resource, CourseTopic, CourseMaterial, StudyGroup, StudyGroupMember.
+- ✅ Migraciones versionadas: `20261119000000_init`, `20261119120000_fase1_classroom` y `20261120090000_fase2_institucional`.
 - ✅ Seed con catálogos académicos de ejemplo y el administrador inicial (`SEED_ADMIN_USERNAME`).
 - ✅ Registro (solo alumnos, con matrícula), login, logout y `GET /auth/me`.
 - ✅ Cambio de contraseña (`POST /auth/change-password`) y restablecimiento por un administrador (`POST /users/:id/reset-password`).
@@ -77,7 +77,7 @@
 
 ---
 
-## Fase 1 — MVP tipo Classroom 🔄
+## Fase 1 — MVP tipo Classroom ✅
 
 ### Preparación ✅
 - ✅ Migración inicial de Prisma versionada. Se aplicará con `npm run prisma:deploy` cuando exista la base de datos.
@@ -102,13 +102,14 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 
 ---
 
-## Fase 2 — Valor institucional ⬜
+## Fase 2 — Valor institucional 🔄
 
-- ⬜ Calendario de entregas.
-- ⬜ Temas/unidades y material del curso (`/cursos/[cursoId]/recursos`).
-- ⬜ Repositorio institucional con búsqueda y moderación (`/repositorio`).
-- ⬜ Grupos de estudio con miembros (`/grupos-estudio`).
-- 🔄 Administración: ✅ usuarios (alta de personal, restablecer contraseñas, activar/desactivar), ✅ listado de cursos, ✅ panel con métricas; ⬜ catálogos, periodos, reasignar docentes y reportes.
+- ✅ Calendario de entregas (`/calendario`): mes en cuadrícula y agenda en móvil.
+- ✅ Temas/unidades y material del curso (`/cursos/[cursoId]/recursos`): archivos y enlaces, solo para miembros.
+- ✅ Repositorio institucional con búsqueda y moderación (`/repositorio`).
+- ✅ Grupos de estudio con miembros y cupo (`/grupos-estudio`).
+- ✅ Reportes por curso con exportación CSV (`/administracion/reportes`).
+- 🔄 Administración: ✅ usuarios, ✅ listado de cursos, ✅ panel con métricas, ✅ reportes; ⬜ catálogos (facultades, carreras, materias), periodos y reasignar docentes.
 
 ## Fase 3 — Funciones tipo Moodle ⬜
 
@@ -127,4 +128,4 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 - ⬜ Reemplazar `GET /` ("Hello World!") por un endpoint `/health` real.
 - ⬜ Refresh token para sesiones largas.
 - ⬜ Invalidar las sesiones abiertas cuando un administrador desactiva una cuenta o restablece su contraseña.
-- 🔄 Pruebas automatizadas de la fase 1: unitarias de todos los módulos (46); faltan pruebas e2e con base de datos.
+- 🔄 Pruebas automatizadas: unitarias de todos los módulos (58); faltan pruebas e2e con base de datos.

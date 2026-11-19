@@ -34,6 +34,8 @@ enum NotificationType {
   SUBMISSION_RETURNED
   POST_CREATED
   COMMENT_CREATED
+  MATERIAL_CREATED
+  RESOURCE_REVIEWED
 }
 
 enum ResourceType {
@@ -42,6 +44,18 @@ enum ResourceType {
   EXAM
   BOOK
   OTHER
+}
+
+/// Moderación del repositorio: lo que suben los alumnos espera aprobación.
+enum ResourceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MaterialKind {
+  FILE
+  LINK
 }
 
 model Faculty {
@@ -81,50 +95,55 @@ model Subject {
 }
 
 model User {
-  id                 String         @id @default(uuid())
+  id                 String             @id @default(uuid())
   /// Matrícula (alumnos) o número de empleado (docentes y administradores).
   /// La universidad no da correo a los alumnos: este es el identificador de acceso.
-  username           String         @unique @db.VarChar(30)
+  username           String             @unique @db.VarChar(30)
   passwordHash       String
   /// true tras un restablecimiento hecho por un administrador: debe cambiarla al entrar.
-  mustChangePassword Boolean        @default(false)
+  mustChangePassword Boolean            @default(false)
   fullName           String
   /// Ruta relativa dentro de storage/ (avatars/...).
   avatarUrl          String?
   role               UserRole
-  status             AcademicStatus @default(ACTIVE)
+  status             AcademicStatus     @default(ACTIVE)
   facultyId          String?
   careerId           String?
-  faculty            Faculty?       @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  career             Career?        @relation(fields: [careerId], references: [id], onDelete: SetNull)
-  taughtCourses      Course[]       @relation("TeacherCourses")
+  faculty            Faculty?           @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  career             Career?            @relation(fields: [careerId], references: [id], onDelete: SetNull)
+  taughtCourses      Course[]           @relation("TeacherCourses")
   enrollments        Enrollment[]
   posts              Post[]
   comments           Comment[]
   notifications      Notification[]
-  assignments        Assignment[]   @relation("CreatedAssignments")
+  assignments        Assignment[]       @relation("CreatedAssignments")
   submissions        Submission[]
-  resources          Resource[]     @relation("ResourceAuthors")
-  studyGroups        StudyGroup[]   @relation("GroupCreators")
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  resources          Resource[]         @relation("ResourceAuthors")
+  reviewedResources  Resource[]         @relation("ResourceReviewers")
+  studyGroups        StudyGroup[]       @relation("GroupCreators")
+  groupMemberships   StudyGroupMember[]
+  materials          CourseMaterial[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([role, status])
 }
 
 model Course {
-  id          String       @id @default(uuid())
+  id          String           @id @default(uuid())
   name        String
   term        String
-  invitation  String       @unique
+  invitation  String           @unique
   subjectId   String
   teacherId   String
-  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Restrict)
-  teacher     User         @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  subject     Subject          @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  teacher     User             @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
   enrollments Enrollment[]
   posts       Post[]
   assignments Assignment[]
-  createdAt   DateTime     @default(now())
+  topics      CourseTopic[]
+  materials   CourseMaterial[]
+  createdAt   DateTime         @default(now())
 
   @@index([teacherId])
   @@index([subjectId])
@@ -234,29 +253,91 @@ model Notification {
 }
 
 model Resource {
-  id          String       @id @default(uuid())
-  title       String
-  description String?      @db.Text
-  type        ResourceType
-  fileUrl     String
-  sha256      String?      @db.Char(64)
-  subjectId   String
-  authorId    String
-  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Restrict)
-  author      User         @relation("ResourceAuthors", fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime     @default(now())
+  id           String         @id @default(uuid())
+  title        String
+  description  String?        @db.Text
+  type         ResourceType
+  status       ResourceStatus @default(PENDING)
+  fileUrl      String         @unique
+  originalName String
+  mimeType     String
+  size         Int
+  sha256       String?        @db.Char(64)
+  subjectId    String
+  authorId     String
+  /// Motivo del rechazo (lo ve el autor).
+  reviewNote   String?        @db.VarChar(500)
+  reviewedById String?
+  reviewedAt   DateTime?
+  subject      Subject        @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  author       User           @relation("ResourceAuthors", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewedBy   User?          @relation("ResourceReviewers", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime       @default(now())
 
   @@index([subjectId, type])
+  @@index([status, createdAt])
+}
+
+/// Tema o unidad del curso para agrupar el material.
+model CourseTopic {
+  id        String           @id @default(uuid())
+  courseId  String
+  title     String           @db.VarChar(120)
+  position  Int              @default(0)
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials CourseMaterial[]
+  createdAt DateTime         @default(now())
+
+  @@index([courseId, position])
+}
+
+/// Material del curso: un archivo (storage/classroom-drive/...) o un enlace.
+model CourseMaterial {
+  id           String       @id @default(uuid())
+  courseId     String
+  topicId      String?
+  title        String       @db.VarChar(150)
+  description  String?      @db.Text
+  kind         MaterialKind
+  fileUrl      String?      @unique
+  url          String?      @db.VarChar(500)
+  originalName String?
+  mimeType     String?
+  size         Int?
+  sha256       String?      @db.Char(64)
+  authorId     String
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topic        CourseTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+
+  @@index([courseId, topicId])
 }
 
 model StudyGroup {
-  id          String   @id @default(uuid())
+  id          String             @id @default(uuid())
   title       String
-  description String   @db.Text
+  description String             @db.Text
   capacity    Int
+  /// Cuándo y dónde se reúnen, p. ej. "Martes 16:00, biblioteca".
+  meetingInfo String?            @db.VarChar(200)
   subjectId   String?
   creatorId   String
-  subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
-  creator     User     @relation("GroupCreators", fields: [creatorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  subject     Subject?           @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  creator     User               @relation("GroupCreators", fields: [creatorId], references: [id], onDelete: Cascade)
+  members     StudyGroupMember[]
+  createdAt   DateTime           @default(now())
+
+  @@index([subjectId])
+}
+
+model StudyGroupMember {
+  groupId  String
+  userId   String
+  group    StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime   @default(now())
+
+  @@id([groupId, userId])
+  @@index([userId])
 }

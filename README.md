@@ -10,10 +10,18 @@ Monorepo con npm workspaces:
 | `frontend/` | Next.js 14 (App Router), Tailwind CSS |
 | Infraestructura | Docker Compose, Nginx, Redis |
 
-El análisis funcional, las ventanas previstas y la hoja de ruta están en [`docs/ANALISIS_VENTANAS_Y_PROPUESTA.md`](docs/ANALISIS_VENTANAS_Y_PROPUESTA.md).
+El análisis funcional, las ventanas previstas y la hoja de ruta están en [`docs/ANALISIS_VENTANAS_Y_PROPUESTA.md`](docs/ANALISIS_VENTANAS_Y_PROPUESTA.md). El estado detallado por fases está en [`docs/AVANCE.md`](docs/AVANCE.md) y el historial día por día en [`docs/BITACORA.md`](docs/BITACORA.md).
 
+## Estado actual
 
-## Estado actual — Fase 0 completada
+| Fase | Descripción | Estado |
+| --- | --- | --- |
+| Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
+| Fase 1 | MVP tipo Classroom (cursos, tareas, entregas, calificaciones, tablón, notificaciones, perfil) | ✅ Completa con backend simulado |
+| Fase 2 | Valor institucional (calendario, material del curso, repositorio, grupos de estudio, reportes) | 🔄 Casi completa — faltan catálogos y periodos en administración |
+| Fase 3 | Funciones tipo Moodle (cuestionarios, asistencia, foros…) | ⬜ Pendiente |
+
+> Todavía no hay base de datos MySQL: todo se ha probado con el backend simulado (`npm run dev:demo`). Las tres migraciones están listas para aplicarse con `npm run prisma:deploy`.
 
 ### Backend
 
@@ -52,6 +60,19 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | GET/POST | `/users` | Administrador | Buscar usuarios; alta de personal con contraseña temporal |
 | PATCH | `/users/:id/status` | Administrador | Activar, desactivar o marcar como egresado |
 | GET | `/dashboard/student` · `/teacher` · `/admin` | Según el rol | Resumen de la pantalla de inicio |
+| GET | `/calendar?from=ISO&to=ISO` | Autenticado | Entregas de mis cursos en el rango (máx. 62 días) |
+| GET/POST | `/courses/:id/materials` | Miembro / docente | Material del curso; publicar archivo (multipart `file`) o enlace (`url`) |
+| DELETE | `/materials/:id` | Docente del curso | Borrar material |
+| POST · PATCH · DELETE | `/courses/:id/topics` · `/topics/:id` | Docente del curso | Temas o unidades del curso |
+| GET | `/repository` · `/repository/mine` | Autenticado | Buscar recursos aprobados; mis aportes |
+| GET | `/repository/pending` | Administrador | Recursos por revisar |
+| POST | `/repository` | Autenticado | Subir recurso (alumnos: queda en revisión) |
+| PATCH | `/repository/:id/review` | Administrador | Aprobar o rechazar con motivo |
+| DELETE | `/repository/:id` | Autor o admin | Borrar recurso |
+| GET/POST | `/study-groups` | Autenticado | Buscar o crear grupos de estudio |
+| GET · DELETE | `/study-groups/:id` | Autenticado / creador o admin | Detalle (integrantes solo para miembros); borrar |
+| POST | `/study-groups/:id/join` · `/leave` | Autenticado | Unirse (respeta el cupo) o salir |
+| GET | `/reports/courses[?term=]` · `/export` | Administrador | Desempeño por curso; CSV |
 | GET | `/files/<área>/<ruta>` | Autenticado | Descarga de archivos de `storage/` con permisos |
 
 Cuentas y acceso:
@@ -69,8 +90,9 @@ Seguridad:
 - Archivos privados: Nginx ya no expone `storage/`; el backend valida la sesión y los permisos y responde con `X-Accel-Redirect`.
   - `submissions/`: solo el alumno dueño, el docente del curso o un administrador (se busca en `SubmissionFile`).
   - Las subidas se validan por extensión **y** por contenido (firma del archivo), con límite de tamaño, y se guardan con nombre aleatorio y su `sha256`.
-  - `avatars/`, `repository/`: cualquier usuario autenticado.
-  - `classroom-drive/`: alumnos y docentes (la validación por curso llega con el modelo `Attachment` en la fase 1).
+  - `avatars/`: cualquier usuario autenticado.
+  - `classroom-drive/`: material del curso, solo para su docente y los alumnos inscritos.
+  - `repository/`: lo aprobado lo ve cualquiera; lo pendiente o rechazado, solo su autor.
 - Las columnas `fileUrl` guardan la ruta relativa dentro de `storage/`, por ejemplo `submissions/<cursoId>/<archivo>.pdf`.
 
 ### Frontend
@@ -79,8 +101,16 @@ Seguridad:
 - Layouts con barra lateral y barra superior por grupo: `(auth)`, `(cuenta)`, `(dashboard)`, `(admin)`.
 - Navegación según el rol (`src/lib/navigation.ts`).
 - Cliente HTTP (`src/lib/api.ts`) y validación de sesión del lado del servidor (`src/lib/server-session.ts`).
-- Ventanas funcionales: **inicio de sesión** y **registro**. El resto muestran un aviso con la fase en la que se implementan.
 - Páginas de error: `404`, error inesperado y `/acceso-denegado`.
+
+Ventanas funcionales:
+
+| Grupo | Rutas |
+| --- | --- |
+| `(auth)` | `/login`, `/registro`, `/recuperar-contrasena` |
+| `(cuenta)` | `/cambiar-contrasena` |
+| `(dashboard)` | `/dashboard` (alumno y docente), `/cursos`, `/cursos/[cursoId]` (tablón), `/cursos/[cursoId]/tareas`, `/cursos/[cursoId]/tareas/[tareaId]`, `/cursos/[cursoId]/recursos`, `/cursos/[cursoId]/personas`, `/cursos/[cursoId]/calificaciones`, `/entregas`, `/calendario`, `/repositorio`, `/grupos-estudio`, `/grupos-estudio/[grupoId]`, `/notificaciones`, `/perfil` |
+| `(admin)` | `/administracion` (panel), `/administracion/usuarios`, `/administracion/cursos`, `/administracion/reportes` |
 
 | Rol | Página de inicio |
 | --- | --- |
@@ -113,6 +143,20 @@ npm run dev:frontend        # http://localhost:3000
 ```
 
 En desarrollo, Next.js reenvía `/api/*` al backend (`API_INTERNAL_URL`), así que la aplicación se usa desde `http://localhost:3000`.
+
+### Sin base de datos (backend simulado)
+
+```bash
+npm install
+npm run dev:demo            # backend simulado + frontend en http://localhost:3000
+```
+
+| Rol | Usuario | Contraseña |
+| --- | --- | --- |
+| Alumna | `A2023-0148` | `alumno123` |
+| Docente | `D1001` | `docente123` |
+| Administrador | `ADMIN` | `admin123` |
+| Alumno con contraseña temporal | `A2023-0200` | `temp-1234` |
 
 > El catálogo de `backend/prisma/seed.ts` es **de ejemplo**: reemplázalo por las facultades, carreras y materias oficiales.
 
@@ -147,6 +191,8 @@ La plataforma queda en `http://localhost` (puerto `NGINX_PORT`). MySQL y Redis s
 | Comando | Descripción |
 | --- | --- |
 | `npm run dev:backend` / `dev:frontend` | Desarrollo con recarga automática |
+| `npm run dev:demo` | Backend simulado + frontend, sin base de datos |
+| `npm run dev:mock` | Solo el backend simulado |
 | `npm run build:all` | Compila backend y frontend |
 | `npm run prisma:generate` | Genera el cliente de Prisma |
 | `npm run prisma:migrate` | Crea/aplica migraciones en desarrollo |
@@ -163,18 +209,31 @@ Plataforma_UACH/
 ├── backend/
 │   ├── prisma/              # schema.prisma, migrations/ y seed.ts
 │   └── src/
-│       ├── academic/        # Catálogo público de facultades y carreras
-│       ├── auth/            # Registro, login, logout, sesión y tokens
+│       ├── academic/        # Catálogo de facultades, carreras y materias
+│       ├── auth/            # Registro, login, logout, sesión, cambio de contraseña
+│       ├── classwork/       # Tareas, entregas, calificaciones y calendario
 │       ├── common/          # Decoradores, guards y tipos compartidos
 │       ├── config/          # Validación de variables de entorno
+│       ├── courses/         # Cursos, inscripción y CourseAccessService
+│       ├── dashboard/       # Resúmenes de inicio por rol
 │       ├── database/        # PrismaService
-│       └── files/           # Descarga protegida de archivos
+│       ├── files/           # Descarga protegida de archivos
+│       ├── groups/          # Grupos de estudio
+│       ├── materials/       # Temas y material del curso
+│       ├── notifications/   # Notificaciones dentro de la plataforma
+│       ├── profile/         # Perfil y avatar
+│       ├── reports/         # Reportes por curso y CSV
+│       ├── repository/      # Repositorio institucional con moderación
+│       ├── stream/          # Tablón: publicaciones y comentarios
+│       └── users/           # Administración de usuarios
 ├── frontend/src/
 │   ├── app/                 # Rutas: (auth), (cuenta), (dashboard), (admin)
-│   ├── components/          # layout/, providers/, ui/
-│   ├── lib/                 # api, session, server-session, navigation
+│   ├── components/          # Por módulo: courses/, classwork/, stream/, materials/,
+│   │                        # repository/, groups/, dashboard/, admin/, layout/, ui/…
+│   ├── lib/                 # api, session, server-session, navigation, clientes por módulo
 │   └── middleware.ts        # Protección de rutas por rol
-├── docs/                    # Análisis, propuesta funcional y reporte de configuración
+├── scripts/                 # Backend simulado (mock-*.mjs) y dev-demo.mjs
+├── docs/                    # Análisis, avance, bitácora y reporte de configuración
 ├── nginx/nginx.conf
 ├── storage/                 # Archivos de usuarios (fuera de Git)
 └── docker-compose.yml
@@ -182,4 +241,8 @@ Plataforma_UACH/
 
 ## Siguientes pasos
 
-- **Fase 1:** cursos, inscripción por código, tablón, tareas, entregas, calificaciones, notificaciones y perfil.
+- **Cerrar la Fase 2:** catálogos (facultades, carreras y materias), periodos y reasignar docentes en administración.
+- **Base de datos real:** crear MySQL, aplicar las migraciones, cargar el seed y repetir las pruebas con el backend real.
+- **Pendientes técnicos:** invalidar sesiones al desactivar cuentas o restablecer contraseñas, endpoint `/health`, refresh token y pruebas e2e.
+- **Por decidir:** cómo evitar registros con la matrícula de otro alumno.
+- **Fase 3:** cuestionarios, asistencia, foros, rúbricas y videoclases.

@@ -67,14 +67,25 @@ describe('FilesService', () => {
   writeFileSync(join(root, 'submissions', 'tarea.pdf'), 'pdf');
 
   const findUnique = jest.fn();
-  const prisma = { submissionFile: { findUnique } } as unknown as PrismaService;
+  const resourceLookup = jest.fn();
+  const prisma = {
+    submissionFile: { findUnique },
+    resource: { findUnique: resourceLookup },
+  } as unknown as PrismaService;
   const files = new FilesService(prisma, configFor({ STORAGE_PATH: root }));
   const student = { sub: 's1', role: 'STUDENT' as const, mustChangePassword: false };
 
-  it('entrega archivos del repositorio a usuarios autenticados', async () => {
+  it('el repositorio entrega lo aprobado a todos y lo pendiente solo a su autor', async () => {
+    resourceLookup.mockResolvedValue({ status: 'APPROVED', authorId: 'otro' });
     await expect(files.authorize('repository/guia.pdf', student)).resolves.toMatchObject({
       relativePath: 'repository/guia.pdf',
     });
+    resourceLookup.mockResolvedValue({ status: 'PENDING', authorId: 'otro' });
+    await expect(files.authorize('repository/guia.pdf', student)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    resourceLookup.mockResolvedValue({ status: 'PENDING', authorId: 's1' });
+    await expect(files.authorize('repository/guia.pdf', student)).resolves.toBeDefined();
   });
 
   it.each(['../.env', 'repository/../../.env', '..%2f.env', 'otra-area/x', '.git/config', ''])(
