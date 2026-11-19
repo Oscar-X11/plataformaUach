@@ -142,13 +142,12 @@ Plataforma_UACH/
 │   ├── components/          # layout/, providers/, ui/
 │   ├── lib/                 # api, session, server-session, navigation
 │   └── middleware.ts        # Protección de rutas por rol
-├── docs/                    # Análisis y propuesta funcional
+├── docs/                    # Análisis, propuesta funcional y reporte de configuración
 ├── nginx/nginx.conf
 ├── storage/                 # Archivos de usuarios (fuera de Git)
 └── docker-compose.yml
 ```
 
-## Pendientes de organización
+## Siguientes pasos
 
-- Existe un repositorio Git anidado en `frontend/.git` y la raíz no es repositorio. Debe quedar un único repositorio en la raíz.
-- Siguiente paso: **fase 1** (cursos, inscripción por código, tablón, tareas, entregas, calificaciones, notificaciones y perfil).
+- **Fase 1:** cursos, inscripción por código, tablón, tareas, entregas, calificaciones, notificaciones y perfil.
