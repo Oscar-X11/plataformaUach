@@ -7,6 +7,8 @@
     "frontend"
   ],
   "scripts": {
+    "dev:demo": "node scripts/dev-demo.mjs",
+    "dev:mock": "node scripts/mock-api.mjs",
     "dev:backend": "npm --workspace=backend run start:dev",
     "dev:frontend": "npm --workspace=frontend run dev",
     "build:all": "npm --workspace=backend run build && npm --workspace=frontend run build",

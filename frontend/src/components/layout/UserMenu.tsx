@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, LoaderCircle, LogOut, User } from "lucide-react";
+import { EASE_OUT } from "@/lib/motion";
 import { useSession } from "@/components/providers/SessionProvider";
 import { ROLE_LABELS, initials } from "@/lib/session";
 
@@ -32,7 +34,7 @@ export function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-uach-subtle"
+        className="press flex h-10 items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-uach-ink/[0.05] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-uach-teal/40"
       >
         <span className="grid h-8 w-8 place-items-center rounded-full bg-uach-tealDark text-xs font-semibold text-white">
           {initials(user.fullName)}
@@ -40,13 +42,18 @@ export function UserMenu() {
         <span className="hidden max-w-[160px] truncate text-sm font-medium text-uach-ink sm:block">
           {user.fullName}
         </span>
-        <ChevronDown className="h-4 w-4 text-uach-soft" aria-hidden />
+        <ChevronDown className={`h-4 w-4 text-uach-ink/60 transition-transform duration-200 ease-[var(--ease-out)] ${open ? "rotate-180" : ""}`} strokeWidth={1.5} aria-hidden />
       </button>
 
+      <AnimatePresence>
       {open && (
-        <div
+        <motion.div
           role="menu"
-          className="absolute right-0 mt-2 w-64 origin-top-right animate-modal-spring rounded-xl bg-uach-surface p-1.5 shadow-uach-modal"
+          initial={{ opacity: 0, scale: 0.95, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.18, ease: EASE_OUT } }}
+          exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.12, ease: EASE_OUT } }}
+          style={{ transformOrigin: "top right" }}
+          className="absolute right-0 mt-2 w-64 rounded-2xl border border-uach-ink/[0.08] bg-uach-surface p-1.5 shadow-uach-modal"
         >
           <div className="border-b border-uach-ink/10 px-3 pb-3 pt-2">
             <p className="truncate text-sm font-semibold text-uach-ink">{user.fullName}</p>
@@ -79,8 +86,9 @@ export function UserMenu() {
             )}
             Cerrar sesión
           </button>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

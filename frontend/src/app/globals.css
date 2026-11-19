@@ -15,6 +15,8 @@
   body {
     background-color: var(--uach-canvas);
     color: var(--uach-ink);
+    /* La variable de Geist vive en <body> (app/layout.tsx); por eso se aplica aquí. */
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     min-height: 100vh;
     margin: 0;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -42,4 +44,166 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(17, 120, 115, 0.4);
+}
+/* ───────────────────────── Sistema de movimiento ─────────────────────────
+ * Curvas y duraciones compartidas (Emil Kowalski):
+ * - ease-out fuerte para entradas e interacciones; nunca ease-in.
+ * - ease-in-out para elementos que se desplazan en pantalla.
+ * - Solo transform y opacity (salvo clip-path / box-shadow puntuales).
+ */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-enter: 350ms;
+  --dur-count: 600ms;
+}
+
+@layer components {
+  /* Respuesta al presionar: confirma que la interfaz escuchó. */
+  .press {
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+  .press-soft {
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .press-soft:active {
+    transform: scale(0.98);
+  }
+
+  /* Elevación sutil solo con puntero fino (sin hover "pegado" en móvil). */
+  .lift {
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px -12px rgba(8, 59, 70, 0.18);
+      border-color: rgba(17, 120, 115, 0.22);
+    }
+    .lift:active {
+      transform: translateY(0) scale(0.98);
+    }
+  }
+
+  /* Entrada escalonada: cada elemento define --i (índice). */
+  [data-enter] .enter {
+    animation: uach-enter var(--dur-enter) var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+
+  /* Transición entre secciones: fade + 8px, 200ms. */
+  .page-enter {
+    animation: uach-page var(--dur-base) var(--ease-out) both;
+  }
+
+  /* Barra de progreso: se llena con transform desde 0. */
+  .bar-fill {
+    transform-origin: left center;
+    transform: scaleX(var(--p, 0));
+    animation: uach-bar var(--dur-count) var(--ease-out) both;
+  }
+
+  /* Punto de "no leído": un solo pulso al aparecer. */
+  .ping-once::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: inherit;
+    animation: uach-ping 900ms var(--ease-out) 400ms 1 both;
+  }
+
+  /* Skeleton con brillo sutil (transform, no background-position). */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+    background: rgba(38, 65, 67, 0.06);
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+    animation: uach-shimmer 1.4s var(--ease-in-out) infinite;
+  }
+
+  /* Check que se dibuja. */
+  .check-draw path {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: uach-draw 320ms var(--ease-out) 80ms forwards;
+  }
+
+  /* Pulso teal único de celebración. */
+  .celebrate::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 rgba(17, 120, 115, 0.55);
+    animation: uach-celebrate 700ms var(--ease-out) 1 both;
+    pointer-events: none;
+  }
+}
+
+@keyframes uach-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes uach-page {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes uach-bar {
+  from { transform: scaleX(0); }
+}
+@keyframes uach-ping {
+  from { transform: scale(1); opacity: 0.6; }
+  to { transform: scale(2.6); opacity: 0; }
+}
+@keyframes uach-shimmer {
+  to { transform: translateX(100%); }
+}
+@keyframes uach-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes uach-celebrate {
+  to { box-shadow: 0 0 0 12px rgba(17, 120, 115, 0); }
+}
+@keyframes uach-fade {
+  from { opacity: 0; }
+}
+
+/* Movimiento reducido: el desplazamiento se sustituye por fades cortos. */
+@media (prefers-reduced-motion: reduce) {
+  [data-enter] .enter,
+  .page-enter {
+    animation: uach-fade var(--dur-base) linear both;
+    animation-delay: 0ms;
+  }
+  .bar-fill,
+  .ping-once::after,
+  .celebrate::after {
+    animation: none;
+  }
+  .shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+  .press:active,
+  .press-soft:active,
+  .lift:hover,
+  .lift:active {
+    transform: none;
+  }
 }

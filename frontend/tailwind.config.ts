@@ -2,6 +2,8 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // Hover solo en dispositivos con puntero: evita estados "pegados" en móvil.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,6 +11,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        // Geist ya se carga en app/layout.tsx; aquí se aplica a toda la UI.
+        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+      },
       colors: {
         uach: {
           canvas: "#F4F7F7",   // Blanco perla satinado del comunicado
