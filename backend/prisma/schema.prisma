@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+  SECURITY
+}
+
+enum AcademicStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  SUBMITTED
+  LATE
+  GRADED
+}
+
+enum ResourceType {
+  NOTE
+  STUDY_GUIDE
+  EXAM
+  BOOK
+  OTHER
+}
+
+model Faculty {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  code      String     @unique
+  careers   Career[]
+  users     User[]
+  createdAt DateTime   @default(now())
+}
+
+model Career {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  facultyId String
+  faculty   Faculty  @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  subjects  Subject[]
+  users     User[]
+  createdAt DateTime @default(now())
+
+  @@index([facultyId])
+}
+
+model Subject {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  semester  Int
+  careerId  String
+  career    Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  courses   Course[]
+  resources Resource[]
+  studyGroups StudyGroup[]
+
+  @@index([careerId, semester])
+}
+
+model User {
+  id             String          @id @default(uuid())
+  enrollment     String?         @unique
+  email          String          @unique
+  passwordHash   String
+  fullName       String
+  role           UserRole
+  status         AcademicStatus  @default(ACTIVE)
+  facultyId      String?
+  careerId       String?
+  faculty        Faculty?        @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  career         Career?         @relation(fields: [careerId], references: [id], onDelete: SetNull)
+  taughtCourses  Course[]        @relation("TeacherCourses")
+  enrollments    Enrollment[]
+  posts          Post[]
+  assignments    Assignment[]    @relation("CreatedAssignments")
+  submissions    Submission[]
+  resources      Resource[]      @relation("ResourceAuthors")
+  studyGroups    StudyGroup[]    @relation("GroupCreators")
+  accessLogs     AccessLog[]     @relation("UserAccessLogs")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([role, status])
+}
+
+model Course {
+  id          String       @id @default(uuid())
+  name        String
+  term        String
+  invitation  String       @unique
+  subjectId   String
+  teacherId   String
+  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  teacher     User         @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  enrollments Enrollment[]
+  posts       Post[]
+  assignments Assignment[]
+  createdAt   DateTime     @default(now())
+
+  @@index([teacherId])
+  @@index([subjectId])
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  courseId  String
+  studentId String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([courseId, studentId])
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  courseId  String
+  authorId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([courseId, createdAt])
+}
+
+model Assignment {
+  id          String       @id @default(uuid())
+  title       String
+  instructions String      @db.Text
+  dueAt       DateTime
+  courseId    String
+  teacherId   String
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher     User         @relation("CreatedAssignments", fields: [teacherId], references: [id], onDelete: Restrict)
+  submissions Submission[]
+}
+
+model Submission {
+  id           String           @id @default(uuid())
+  assignmentId String
+  studentId    String
+  status       AssignmentStatus @default(ASSIGNED)
+  fileUrl      String?
+  grade        Decimal?         @db.Decimal(5, 2)
+  feedback     String?          @db.Text
+  submittedAt  DateTime?
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+}
+
+model Resource {
+  id          String       @id @default(uuid())
+  title       String
+  description String?      @db.Text
+  type        ResourceType
+  fileUrl     String
+  sha256      String?      @db.Char(64)
+  subjectId   String
+  authorId    String
+  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  author      User         @relation("ResourceAuthors", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+
+  @@index([subjectId, type])
+}
+
+model StudyGroup {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  capacity    Int
+  subjectId   String?
+  creatorId   String
+  subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  creator     User     @relation("GroupCreators", fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model AccessLog {
+  id          String   @id @default(uuid())
+  userId      String
+  allowed     Boolean
+  method      String
+  entrance    String?
+  reason      String?
+  user        User     @relation("UserAccessLogs", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

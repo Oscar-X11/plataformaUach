@@ -1,0 +1,55 @@
+REPORTE DE CONFIGURACION - PLATAFORMA UACH
+==========================================
+
+Fecha: 2026-11-17
+
+Cambios realizados:
+
+1. Variables de entorno
+   - Se completaron .env y .env.example con puertos, conexion MySQL,
+     conexion Redis y variables opcionales de NestJS Observe.
+   - Los valores son de desarrollo local y no contienen secretos reales.
+   - Antes de producción deben cambiarse las contraseñas y gestionarse
+     mediante secretos del entorno de despliegue.
+
+2. Docker Compose
+   - Se añadieron los servicios mysql, redis, backend, frontend y nginx.
+   - MySQL y Redis tienen volúmenes persistentes y healthchecks.
+   - El backend queda disponible internamente en el puerto 4000.
+   - El frontend queda disponible internamente en el puerto 3000.
+   - Nginx expone la plataforma en el puerto 80.
+
+3. Nginx
+   - Se configuró el proxy de /api/ hacia NestJS.
+   - Se configuró el proxy de la aplicación hacia Next.js.
+   - Se habilitó la lectura de /storage/ con límite de carga de 50 MB.
+
+4. Contenedores
+   - Se crearon Dockerfiles multi-stage para backend y frontend.
+   - El backend compila NestJS y ejecuta dist/main.js como usuario no root.
+   - El frontend genera la salida standalone y ejecuta server.js.
+
+5. Prisma
+   - Se creó backend/prisma/schema.prisma con entidades base para facultades,
+     carreras, materias, usuarios, cursos, inscripciones, publicaciones,
+     tareas, entregas, recursos, grupos de estudio y accesos.
+
+6. Next.js
+   - Se activó output: "standalone" en frontend/next.config.mjs.
+
+Validacion:
+
+- La compilacion existente del proyecto se verifico previamente con:
+  npm.cmd run build:all
+- La ejecucion de Docker no pudo probarse porque Docker no esta instalado o
+  no esta disponible en el entorno actual.
+- Prisma 8 rechazo el comando validate porque el prisma.config.ts generado
+  actualmente no declara la seccion orm requerida por esa version. Antes de
+  ejecutar migraciones debe ajustarse esa configuracion a la version de Prisma
+  adoptada por el proyecto.
+
+Limitaciones:
+
+- La API actual aun solo expone el endpoint de ejemplo GET /.
+- Redis, autenticacion, roles, cargas de archivos y los modulos de negocio
+  requieren implementacion posterior en el codigo NestJS.
