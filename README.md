@@ -77,7 +77,7 @@ cp .env.example .env        # y reemplaza todos los valores <...>
 
 # 3. Base de datos: crea la base y el usuario definidos en .env (MYSQL_*), luego:
 npm run prisma:generate
-npm run prisma:migrate      # crea las tablas
+npm run prisma:deploy       # aplica las migraciones (crea las tablas)
 npm run prisma:seed         # catálogo de ejemplo + administrador inicial
 
 # 4. En terminales separadas
@@ -134,7 +134,7 @@ La plataforma queda en `http://localhost` (puerto `NGINX_PORT`). MySQL y Redis s
 ```text
 Plataforma_UACH/
 ├── backend/
-│   ├── prisma/              # schema.prisma y seed.ts
+│   ├── prisma/              # schema.prisma, migrations/ y seed.ts
 │   └── src/
 │       ├── academic/        # Catálogo público de facultades y carreras
 │       ├── auth/            # Registro, login, logout, sesión y tokens

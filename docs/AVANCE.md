@@ -49,7 +49,7 @@
 ## Fase 1 — MVP tipo Classroom 🔄
 
 ### Preparación (antes de empezar)
-- ⬜ Crear y versionar la migración inicial de Prisma (`backend/prisma/migrations` no existe aún).
+- ✅ Migración inicial de Prisma versionada (`backend/prisma/migrations/20261119000000_init`). Se aplicará con `npm run prisma:deploy` cuando exista la base de datos (aún no hay servidor MySQL configurado).
 - ✅ Rol `SECURITY` retirado del alcance (enum, modelo `AccessLog`, rutas y navegación eliminados).
 - ✅ Sin servicio de correo: los alumnos no tienen correo institucional. Acceso con matrícula (alumnos) o número de empleado (personal); el campo `email` se eliminó del modelo `User`.
 - ✅ Contraseña olvidada: la restablece un administrador (`POST /users/:id/reset-password`) con una contraseña temporal que se debe cambiar al entrar (`/cambiar-contrasena`).
