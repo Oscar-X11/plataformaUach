@@ -27,7 +27,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - **Validación de pertenencia:** `CourseAccessService` comprueba que el usuario sea el docente, un alumno inscrito o un admin. Si no, responde 404 para no revelar qué cursos existen.
   - **Frontend:** `/cursos`, `/cursos/[id]` (encabezado, código de invitación y pestañas) y `/cursos/[id]/personas`.
   - Tests del backend: 31 en total (13 nuevos de cursos).
-- **Resto de la fase 1** (entregables 3 a 11, **sin commit todavía**):
+- **Resto de la fase 1** (entregables 3 a 11, commit `fc6ca45`):
   - **Esquema:** modelos `Comment`, `SubmissionFile` y `Notification`; `Assignment.points` (10 por defecto) y fecha de entrega opcional; `User.avatarUrl`. El estado de la entrega queda en `ASSIGNED` → `SUBMITTED` → `RETURNED`; «tarde» y «sin entregar» se calculan con la fecha. Segunda migración: `20261119120000_fase1_classroom`.
   - **Tareas:** crear, editar y borrar (el docente); los alumnos inscritos reciben un aviso.
   - **Entregas:**
@@ -84,7 +84,6 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - El catálogo del seed (facultades, carreras y materias) es **de ejemplo**. Hay que reemplazarlo por el oficial.
 
 ### Pendiente
-- Hacer commit del resto de la fase 1.
 - Probar todo con una base de datos real cuando exista.
 - Invalidar sesiones abiertas al desactivar una cuenta o restablecer su contraseña.
 - Fase 2: repositorio, grupos de estudio, recursos del curso, reportes y calendario.
