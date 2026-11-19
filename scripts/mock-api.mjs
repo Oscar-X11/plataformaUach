@@ -6,7 +6,9 @@
  * - Escucha en el mismo puerto que el backend real (PORT o 4000), así que
  *   el proxy /api de Next.js no necesita cambios.
  * - Implementa: POST /auth/login, POST /auth/register, POST /auth/logout,
- *   GET /auth/me y GET /academic/faculties.
+ *   GET /auth/me, POST /auth/change-password, POST /users/:id/reset-password
+ *   y GET /academic/faculties.
+ * - Se inicia sesión con matrícula (alumnos) o número de empleado (personal).
  * - Todo vive en memoria: al reiniciar se pierden las cuentas registradas.
  * - Los tokens NO están firmados; el backend real los rechaza. Solo para desarrollo.
  */
@@ -32,24 +34,24 @@ const FACULTIES = [
   },
 ];
 
-/** Cuentas de demostración, una por rol. */
+/** Cuentas de demostración: una por rol y un alumno con contraseña temporal. */
 const users = new Map(
   [
-    ["alumno@uach.mx", "alumno123", "Ana Sofía Ruiz Gómez", "STUDENT", "A2023-0148"],
-    ["docente@uach.mx", "docente123", "Laura Gómez Pérez", "TEACHER", null],
-    ["admin@uach.mx", "admin123", "Administrador UACH", "ADMIN", null],
-    ["seguridad@uach.mx", "seguridad123", "Caseta Principal", "SECURITY", null],
-  ].map(([email, password, fullName, role, enrollment]) => [
-    email,
+    ["A2023-0148", "alumno123", "Ana Sofía Ruiz Gómez", "STUDENT", false],
+    ["D1001", "docente123", "Laura Gómez Pérez", "TEACHER", false],
+    ["ADMIN", "admin123", "Administrador UACH", "ADMIN", false],
+    ["A2023-0200", "temp-1234", "Luis Pérez Díaz", "STUDENT", true],
+  ].map(([username, password, fullName, role, mustChangePassword]) => [
+    username,
     {
       password,
       user: {
         id: randomUUID(),
-        email,
+        username,
         fullName,
         role,
         status: "ACTIVE",
-        enrollment,
+        mustChangePassword,
         facultyId: role === "STUDENT" ? "fac-fing" : null,
         careerId: role === "STUDENT" ? "car-isc" : null,
       },
@@ -57,11 +59,20 @@ const users = new Map(
   ]),
 );
 
+const normalizeUsername = (value) => String(value ?? "").trim().toUpperCase();
+
+/** Primer error de la contraseña nueva (mismas reglas que el backend real). */
+function passwordErrors(value) {
+  if (value.length < 8) return ["La contraseña debe tener al menos 8 caracteres"];
+  if (!/(?=.*[A-Za-z])(?=.*\d)/.test(value)) return ["La contraseña debe incluir letras y números"];
+  return [];
+}
+
 const b64 = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
 
 function createSession(user) {
   const exp = Math.floor(Date.now() / 1000) + SESSION_HOURS * 3600;
-  const accessToken = `${b64({ alg: "none", typ: "JWT" })}.${b64({ sub: user.id, role: user.role, exp })}.mock`;
+  const accessToken = `${b64({ alg: "none", typ: "JWT" })}.${b64({ sub: user.id, role: user.role, mustChangePassword: user.mustChangePassword, exp })}.mock`;
   return { user, accessToken, expiresAt: new Date(exp * 1000).toISOString() };
 }
 
@@ -72,15 +83,18 @@ function readToken(req) {
   return match?.[1];
 }
 
-function userFromToken(token) {
+function entryFromToken(token) {
   try {
     const claims = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
     if (claims.exp * 1000 <= Date.now()) return null;
-    return [...users.values()].find((entry) => entry.user.id === claims.sub)?.user ?? null;
+    return [...users.values()].find((entry) => entry.user.id === claims.sub) ?? null;
   } catch {
     return null;
   }
 }
+
+const unauthorized = (res) =>
+  send(res, 401, { statusCode: 401, message: "Sesión inválida o expirada" });
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", ...headers });
@@ -102,10 +116,10 @@ async function readJson(req) {
 
 const routes = {
   "POST /auth/login": async (req, res) => {
-    const { email = "", password = "" } = await readJson(req);
-    const entry = users.get(String(email).trim().toLowerCase());
+    const { username, password = "" } = await readJson(req);
+    const entry = users.get(normalizeUsername(username));
     if (!entry || entry.password !== password) {
-      return send(res, 401, { statusCode: 401, message: "Correo o contraseña incorrectos" });
+      return send(res, 401, { statusCode: 401, message: "Credenciales incorrectas" });
     }
     const session = createSession(entry.user);
     send(res, 200, session, { "Set-Cookie": sessionCookie(session) });
@@ -113,28 +127,31 @@ const routes = {
 
   "POST /auth/register": async (req, res) => {
     const body = await readJson(req);
-    const email = String(body.email ?? "").trim().toLowerCase();
+    const username = normalizeUsername(body.username);
     const password = String(body.password ?? "");
     const fullName = String(body.fullName ?? "").trim();
     const errors = [];
-    if (!/^\S+@\S+\.\S+$/.test(email)) errors.push("Correo electrónico inválido");
+    if (!/^[A-Z0-9-]{3,30}$/.test(username)) {
+      errors.push("La matrícula o número de empleado solo admite letras, números y guiones (3 a 30)");
+    }
+    errors.push(...passwordErrors(password));
     if (fullName.length < 3) errors.push("Escribe tu nombre completo");
-    if (password.length < 8) errors.push("La contraseña debe tener al menos 8 caracteres");
-    else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) errors.push("La contraseña debe incluir letras y números");
     if (errors.length) return send(res, 400, { statusCode: 400, message: errors });
-    if (users.has(email)) return send(res, 409, { statusCode: 409, message: "El correo ya está registrado" });
+    if (users.has(username)) {
+      return send(res, 409, { statusCode: 409, message: "Ya existe una cuenta con esa matrícula" });
+    }
 
     const user = {
       id: randomUUID(),
-      email,
+      username,
       fullName,
       role: "STUDENT",
       status: "ACTIVE",
-      enrollment: body.enrollment || null,
+      mustChangePassword: false,
       facultyId: body.facultyId || null,
       careerId: body.careerId || null,
     };
-    users.set(email, { password, user });
+    users.set(username, { password, user });
     const session = createSession(user);
     send(res, 201, session, { "Set-Cookie": sessionCookie(session) });
   },
@@ -143,17 +160,54 @@ const routes = {
     send(res, 204, undefined, { "Set-Cookie": `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0` }),
 
   "GET /auth/me": (req, res) => {
-    const user = userFromToken(readToken(req) ?? "");
-    if (!user) return send(res, 401, { statusCode: 401, message: "Sesión inválida o expirada" });
-    send(res, 200, user);
+    const entry = entryFromToken(readToken(req) ?? "");
+    if (!entry) return unauthorized(res);
+    send(res, 200, entry.user);
+  },
+
+  "POST /auth/change-password": async (req, res) => {
+    const entry = entryFromToken(readToken(req) ?? "");
+    if (!entry) return unauthorized(res);
+    const { currentPassword = "", newPassword = "" } = await readJson(req);
+    const errors = passwordErrors(String(newPassword));
+    if (errors.length) return send(res, 400, { statusCode: 400, message: errors });
+    if (entry.password !== currentPassword) {
+      return send(res, 400, { statusCode: 400, message: "La contraseña actual no es correcta" });
+    }
+    if (currentPassword === newPassword) {
+      return send(res, 400, { statusCode: 400, message: "La nueva contraseña debe ser distinta de la actual" });
+    }
+    entry.password = newPassword;
+    entry.user.mustChangePassword = false;
+    const session = createSession(entry.user);
+    send(res, 200, session, { "Set-Cookie": sessionCookie(session) });
   },
 
   "GET /academic/faculties": (_req, res) => send(res, 200, FACULTIES),
 };
 
+/** POST /users/:id/reset-password (solo ADMIN): asigna una contraseña temporal. */
+async function resetPassword(req, res, userId) {
+  const admin = entryFromToken(readToken(req) ?? "");
+  if (!admin) return unauthorized(res);
+  if (admin.user.role !== "ADMIN") {
+    return send(res, 403, { statusCode: 403, message: "No tienes permisos para realizar esta acción" });
+  }
+  const entry = [...users.values()].find(({ user }) => user.id === userId);
+  if (!entry) return send(res, 404, { statusCode: 404, message: "El usuario no existe" });
+  const temporaryPassword = `temp-${randomUUID().slice(0, 8)}`;
+  entry.password = temporaryPassword;
+  entry.user.mustChangePassword = true;
+  const { id, username, fullName } = entry.user;
+  send(res, 200, { user: { id, username, fullName }, temporaryPassword });
+}
+
 createServer(async (req, res) => {
   const path = new URL(req.url ?? "/", "http://localhost").pathname.replace(/\/+$/, "") || "/";
-  const handler = routes[`${req.method} ${path}`];
+  const reset = req.method === "POST" && path.match(/^\/users\/([^/]+)\/reset-password$/);
+  const handler = reset
+    ? (request, response) => resetPassword(request, response, reset[1])
+    : routes[`${req.method} ${path}`];
   console.log(`${req.method} ${path}${handler ? "" : "  (no simulado)"}`);
   if (!handler) return send(res, 404, { statusCode: 404, message: "Ruta no disponible en el backend simulado" });
   try {
@@ -173,8 +227,9 @@ createServer(async (req, res) => {
   .listen(PORT, () => {
     console.log(`Backend SIMULADO en http://localhost:${PORT} (sin base de datos)\n`);
     console.log("Cuentas de prueba:");
-    for (const [email, { password, user }] of users) {
-      console.log(`  ${user.role.padEnd(9)} ${email.padEnd(20)} ${password}`);
+    for (const [username, { password, user }] of users) {
+      const note = user.mustChangePassword ? "  (temporal: pedirá cambiarla)" : "";
+      console.log(`  ${user.role.padEnd(9)} ${username.padEnd(12)} ${password}${note}`);
     }
     console.log("\nTambién puedes registrar alumnos en /registro (se pierden al reiniciar).");
   });

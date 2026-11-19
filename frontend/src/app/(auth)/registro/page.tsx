@@ -47,8 +47,7 @@ export default function RegistroPage() {
         method: "POST",
         body: {
           fullName: form.get("fullName"),
-          email: form.get("email"),
-          enrollment: form.get("enrollment") || undefined,
+          username: form.get("username"),
           facultyId: form.get("facultyId") || undefined,
           careerId: form.get("careerId") || undefined,
           password,
@@ -74,14 +73,14 @@ export default function RegistroPage() {
 
         <TextField label="Nombre completo" name="fullName" autoComplete="name" required minLength={3} />
         <TextField
-          label="Correo institucional"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="nombre@uach.mx"
+          label="Matrícula"
+          name="username"
+          autoComplete="username"
+          autoCapitalize="characters"
+          spellCheck={false}
+          hint="Con ella iniciarás sesión."
           required
         />
-        <TextField label="Matrícula" name="enrollment" autoComplete="off" />
 
         {faculties.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2">

@@ -1,7 +1,12 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE, type SessionUser, type UserRole } from "@/lib/session";
+import {
+  CHANGE_PASSWORD_ROUTE,
+  SESSION_COOKIE,
+  type SessionUser,
+  type UserRole,
+} from "@/lib/session";
 
 const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 
@@ -38,9 +43,16 @@ const fetchCurrentUser = cache(async (): Promise<SessionUser> => {
 export async function requireUser(allowedRoles?: UserRole[]): Promise<SessionUser> {
   const user = await fetchCurrentUser();
 
+  if (user.mustChangePassword) redirect(CHANGE_PASSWORD_ROUTE);
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     redirect("/acceso-denegado");
   }
 
   return user;
+}
+
+/** Para la página de cambio de contraseña: no redirige por contraseña temporal. */
+export function requireUserForPasswordChange(): Promise<SessionUser> {
+  return fetchCurrentUser();
 }

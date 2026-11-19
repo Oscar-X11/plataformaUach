@@ -24,8 +24,15 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | POST | `/auth/login` | Público (5/min) | Inicio de sesión; crea la cookie `uach_session` |
 | POST | `/auth/logout` | Público | Borra la cookie de sesión |
 | GET | `/auth/me` | Autenticado | Usuario actual |
+| POST | `/auth/change-password` | Autenticado | Cambia la contraseña propia (también la temporal) |
+| POST | `/users/:id/reset-password` | Administrador | Asigna una contraseña temporal al usuario |
 | GET | `/academic/faculties` | Público | Facultades y carreras (para el registro) |
 | GET | `/files/<área>/<ruta>` | Autenticado | Descarga de archivos de `storage/` con permisos |
+
+Cuentas y acceso:
+
+- Se inicia sesión con **matrícula** (alumnos) o **número de empleado** (docentes y administradores). La plataforma no usa correo: la universidad no da correo a los alumnos.
+- Contraseña olvidada: un administrador la restablece y entrega una contraseña temporal; con ella el usuario solo puede entrar a `/cambiar-contrasena` hasta elegir una nueva (el backend responde 403 al resto de la API).
 
 Seguridad:
 
@@ -42,7 +49,7 @@ Seguridad:
 ### Frontend
 
 - Protección de rutas por rol en `src/middleware.ts` (experiencia de usuario; la autorización real está en el backend).
-- Layouts con barra lateral y barra superior por grupo: `(auth)`, `(dashboard)`, `(admin)`, `(seguridad)`.
+- Layouts con barra lateral y barra superior por grupo: `(auth)`, `(cuenta)`, `(dashboard)`, `(admin)`.
 - Navegación según el rol (`src/lib/navigation.ts`).
 - Cliente HTTP (`src/lib/api.ts`) y validación de sesión del lado del servidor (`src/lib/server-session.ts`).
 - Ventanas funcionales: **inicio de sesión** y **registro**. El resto muestran un aviso con la fase en la que se implementan.
@@ -52,7 +59,6 @@ Seguridad:
 | --- | --- |
 | Alumno / Docente | `/dashboard` |
 | Administrador | `/administracion` |
-| Seguridad | `/seguridad` |
 
 ## Requisitos
 
@@ -104,11 +110,10 @@ La plataforma queda en `http://localhost` (puerto `NGINX_PORT`). MySQL y Redis s
 | `JWT_EXPIRES_IN` | Duración de la sesión (por ejemplo `8h`) |
 | `COOKIE_SECURE` | `true` en producción con HTTPS |
 | `CORS_ORIGINS` | Orígenes permitidos, separados por coma |
-| `REGISTRATION_EMAIL_DOMAINS` | Dominios de correo permitidos en el registro (vacío = cualquiera) |
 | `STORAGE_PATH` | Carpeta de archivos (por defecto `../storage` desde `backend/`) |
 | `FILES_ACCEL_REDIRECT` | `true` cuando Nginx entrega los archivos |
 | `API_INTERNAL_URL` | URL del backend vista por el servidor de Next.js |
-| `SEED_ADMIN_*` | Administrador inicial creado por el seed |
+| `SEED_ADMIN_*` | Administrador inicial creado por el seed (`SEED_ADMIN_USERNAME` es su número de empleado) |
 
 ## Scripts
 
@@ -138,7 +143,7 @@ Plataforma_UACH/
 │       ├── database/        # PrismaService
 │       └── files/           # Descarga protegida de archivos
 ├── frontend/src/
-│   ├── app/                 # Rutas: (auth), (dashboard), (admin), (seguridad)
+│   ├── app/                 # Rutas: (auth), (cuenta), (dashboard), (admin)
 │   ├── components/          # layout/, providers/, ui/
 │   ├── lib/                 # api, session, server-session, navigation
 │   └── middleware.ts        # Protección de rutas por rol

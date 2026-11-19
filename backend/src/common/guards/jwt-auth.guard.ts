@@ -1,11 +1,13 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SESSION_COOKIE, TokenService } from '../../auth/token.service';
+import { ALLOW_PENDING_PASSWORD_KEY } from '../decorators/allow-pending-password.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { AuthRequest } from '../types/auth-request';
 
@@ -40,6 +42,16 @@ export class JwtAuthGuard implements CanActivate {
     const payload = this.tokens.verify(token);
     if (!payload) {
       throw new UnauthorizedException('Sesión inválida o expirada');
+    }
+
+    const allowPending = this.reflector.getAllAndOverride<boolean>(
+      ALLOW_PENDING_PASSWORD_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (payload.mustChangePassword && !allowPending) {
+      throw new ForbiddenException(
+        'Debes cambiar tu contraseña temporal antes de continuar',
+      );
     }
 
     request.user = payload;

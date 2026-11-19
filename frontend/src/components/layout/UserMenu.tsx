@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, LoaderCircle, LogOut, User } from "lucide-react";
+import { ChevronDown, KeyRound, LoaderCircle, LogOut, User } from "lucide-react";
 import { EASE_OUT } from "@/lib/motion";
 import { useSession } from "@/components/providers/SessionProvider";
 import { ROLE_LABELS, initials } from "@/lib/session";
@@ -57,10 +57,9 @@ export function UserMenu() {
         >
           <div className="border-b border-uach-ink/10 px-3 pb-3 pt-2">
             <p className="truncate text-sm font-semibold text-uach-ink">{user.fullName}</p>
-            <p className="truncate text-xs text-uach-muted">{user.email}</p>
+            <p className="truncate text-xs text-uach-muted">{user.username}</p>
             <p className="mt-1.5 inline-block rounded-full bg-uach-subtle px-2 py-0.5 text-[11px] font-medium text-uach-tealDark">
               {ROLE_LABELS[user.role]}
-              {user.enrollment ? ` · ${user.enrollment}` : ""}
             </p>
           </div>
           <Link
@@ -71,6 +70,15 @@ export function UserMenu() {
           >
             <User className="h-4 w-4 text-uach-soft" aria-hidden />
             Mi perfil
+          </Link>
+          <Link
+            href="/cambiar-contrasena"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-uach-ink hover:bg-uach-canvas"
+          >
+            <KeyRound className="h-4 w-4 text-uach-soft" aria-hidden />
+            Cambiar contraseña
           </Link>
           <button
             type="button"

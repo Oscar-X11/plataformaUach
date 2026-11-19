@@ -4,22 +4,23 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { EnvironmentVariables } from '../config/env.validation';
 import { PrismaService } from '../database/prisma.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenService } from './token.service';
 
+export const BCRYPT_ROUNDS = 12;
+
 const SESSION_USER_SELECT = {
   id: true,
-  email: true,
+  username: true,
   fullName: true,
   role: true,
   status: true,
-  enrollment: true,
+  mustChangePassword: true,
   facultyId: true,
   careerId: true,
 } satisfies Prisma.UserSelect;
@@ -27,56 +28,54 @@ const SESSION_USER_SELECT = {
 type SessionUser = Prisma.UserGetPayload<{ select: typeof SESSION_USER_SELECT }>;
 
 // Hash usado para igualar el tiempo de respuesta cuando el usuario no existe.
-const DUMMY_HASH = bcrypt.hashSync('uach-timing-equalizer', 12);
+const DUMMY_HASH = bcrypt.hashSync('uach-timing-equalizer', BCRYPT_ROUNDS);
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokenService,
-    private readonly config: ConfigService<EnvironmentVariables, true>,
   ) {}
 
   async register(dto: RegisterDto) {
-    const email = dto.email.toLowerCase();
-    this.assertAllowedDomain(email);
     await this.assertAcademicData(dto.facultyId, dto.careerId);
 
-    const existing = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          ...(dto.enrollment ? [{ enrollment: dto.enrollment }] : []),
-        ],
-      },
+    const existing = await this.prisma.user.findUnique({
+      where: { username: dto.username },
       select: { id: true },
     });
-
     if (existing) {
-      throw new ConflictException(
-        'Ya existe una cuenta con ese correo o matrícula',
-      );
+      throw new ConflictException('Ya existe una cuenta con esa matrícula');
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        passwordHash: await bcrypt.hash(dto.password, 12),
-        fullName: dto.fullName,
-        enrollment: dto.enrollment || null,
-        role: 'STUDENT',
-        facultyId: dto.facultyId,
-        careerId: dto.careerId,
-      },
-      select: SESSION_USER_SELECT,
-    });
-
-    return this.createSession(user);
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          username: dto.username,
+          passwordHash: await bcrypt.hash(dto.password, BCRYPT_ROUNDS),
+          fullName: dto.fullName,
+          role: 'STUDENT',
+          facultyId: dto.facultyId,
+          careerId: dto.careerId,
+        },
+        select: SESSION_USER_SELECT,
+      });
+      return this.createSession(user);
+    } catch (error) {
+      // Dos registros simultáneos con la misma matrícula.
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Ya existe una cuenta con esa matrícula');
+      }
+      throw error;
+    }
   }
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+      where: { username: dto.username },
       select: { ...SESSION_USER_SELECT, passwordHash: true },
     });
 
@@ -110,27 +109,43 @@ export class AuthService {
     return user;
   }
 
+  /** Cambia la contraseña propia y emite una sesión nueva sin la marca de temporal. */
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, status: true },
+    });
+    if (!user || user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Usuario no encontrado o inactivo');
+    }
+
+    if (!(await bcrypt.compare(dto.currentPassword, user.passwordHash))) {
+      throw new BadRequestException('La contraseña actual no es correcta');
+    }
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser distinta de la actual',
+      );
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS),
+        mustChangePassword: false,
+      },
+      select: SESSION_USER_SELECT,
+    });
+    return this.createSession(updated);
+  }
+
   private createSession(user: SessionUser) {
     const { token, expiresAt } = this.tokens.sign({
       sub: user.id,
-      email: user.email,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     });
     return { user, accessToken: token, expiresAt };
-  }
-
-  private assertAllowedDomain(email: string) {
-    const domains = this.config
-      .get('REGISTRATION_EMAIL_DOMAINS', { infer: true })
-      ?.split(',')
-      .map((domain) => domain.trim().toLowerCase())
-      .filter(Boolean);
-
-    if (domains?.length && !domains.includes(email.split('@')[1])) {
-      throw new BadRequestException(
-        `Usa tu correo institucional (${domains.join(', ')})`,
-      );
-    }
   }
 
   private async assertAcademicData(facultyId?: string, careerId?: string) {

@@ -62,11 +62,6 @@ export class EnvironmentVariables {
   @Transform(toBoolean)
   @IsBoolean()
   COOKIE_SECURE = false;
-
-  /** Dominios de correo permitidos en el registro, separados por coma. Vacío = cualquiera. */
-  @IsOptional()
-  @IsString()
-  REGISTRATION_EMAIL_DOMAINS?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

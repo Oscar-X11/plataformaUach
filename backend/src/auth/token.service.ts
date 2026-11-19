@@ -8,8 +8,9 @@ export const SESSION_COOKIE = 'uach_session';
 
 export interface TokenPayload {
   sub: string;
-  email: string;
   role: UserRole;
+  /** Contraseña temporal pendiente de cambiar: solo se permiten rutas de cuenta. */
+  mustChangePassword: boolean;
 }
 
 @Injectable()
@@ -39,8 +40,8 @@ export class TokenService {
       }
       return {
         sub: payload.sub,
-        email: payload.email as string,
         role: payload.role as UserRole,
+        mustChangePassword: payload.mustChangePassword === true,
       };
     } catch {
       return null;

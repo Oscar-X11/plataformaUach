@@ -1,6 +1,6 @@
 # Avance del proyecto — Plataforma UACH
 
-> Última actualización: 2026-11-18
+> Última actualización: 2026-11-19
 >
 > Leyenda: ✅ Hecho · 🔄 En proceso · ⬜ Pendiente · ❓ Por decidir
 >
@@ -37,7 +37,7 @@
 - ✅ Seguridad: validación de variables de entorno al arrancar, cookie `httpOnly`, guards globales (throttler → JWT → roles), CORS restringido.
 
 ### Frontend (Next.js)
-- ✅ Layouts por grupo: `(auth)`, `(dashboard)`, `(admin)`, `(seguridad)`.
+- ✅ Layouts por grupo: `(auth)`, `(cuenta)`, `(dashboard)`, `(admin)`.
 - ✅ Protección de rutas por rol (`middleware.ts`) y navegación según rol.
 - ✅ Cliente HTTP y validación de sesión del lado del servidor.
 - ✅ Ventanas funcionales: inicio de sesión y registro.
@@ -50,8 +50,9 @@
 
 ### Preparación (antes de empezar)
 - ⬜ Crear y versionar la migración inicial de Prisma (`backend/prisma/migrations` no existe aún).
-- ❓ Decidir si el rol `SECURITY` (control de accesos) entra en el alcance o se retira.
-- ❓ Elegir servicio de correo (necesario para recuperar contraseña y notificaciones por correo).
+- ✅ Rol `SECURITY` retirado del alcance (enum, modelo `AccessLog`, rutas y navegación eliminados).
+- ✅ Sin servicio de correo: los alumnos no tienen correo institucional. Acceso con matrícula (alumnos) o número de empleado (personal); el campo `email` se eliminó del modelo `User`.
+- ✅ Contraseña olvidada: la restablece un administrador (`POST /users/:id/reset-password`) con una contraseña temporal que se debe cambiar al entrar (`/cambiar-contrasena`).
 
 ### Entregables
 | # | Entregable | Backend | Frontend | Estado |
@@ -64,9 +65,9 @@
 | 6 | **Calificar y devolver** entregas | ⬜ | ⬜ | ⬜ |
 | 7 | **Calificaciones**: vista alumno, libro del docente, exportación | ⬜ | ⬜ `/cursos/[cursoId]/calificaciones` | ⬜ |
 | 8 | **Notificaciones** dentro de la plataforma | ⬜ (falta modelo) | ⬜ `/notificaciones` | ⬜ |
-| 9 | **Dashboard** con resumen de cursos y pendientes | — | ⬜ `/dashboard` | ⬜ |
+| 9 | **Dashboard** con resumen de cursos y pendientes | ⬜ endpoint de resumen | ✅ `/dashboard` con datos de ejemplo | 🔄 |
 | 10 | **Perfil** (datos y avatar) | ⬜ | ⬜ `/perfil` | ⬜ |
-| 11 | **Recuperar contraseña** por correo | ⬜ | 🔄 página con aviso temporal | ⬜ |
+| 11 | **Recuperar contraseña** (restablece un administrador) | ✅ | ✅ `/recuperar-contrasena`, `/cambiar-contrasena`; ⬜ botón en `/administracion/usuarios` | 🔄 |
 
 ---
 
@@ -85,8 +86,6 @@
 - ⬜ Foros y mensajería.
 - ⬜ Rúbricas.
 - ⬜ Videoclases.
-- ⬜ Notificaciones por correo.
-- ⬜ Control de accesos (rol `SECURITY`) y auditoría — sujeto a la decisión de alcance.
 
 ---
 

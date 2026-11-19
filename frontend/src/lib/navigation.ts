@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Library,
   School,
-  ShieldCheck,
   User,
   Users,
   UsersRound,
@@ -91,16 +90,7 @@ export function navigationForRole(role: UserRole): NavSection[] {
           items: [
             { label: "Cursos", href: "/cursos", icon: BookOpen },
             { label: "Repositorio", href: "/repositorio", icon: Library },
-            { label: "Control de accesos", href: "/seguridad", icon: ShieldCheck },
           ],
-        },
-        ACCOUNT,
-      ];
-
-    case "SECURITY":
-      return [
-        {
-          items: [{ label: "Control de accesos", href: "/seguridad", icon: ShieldCheck }],
         },
         ACCOUNT,
       ];

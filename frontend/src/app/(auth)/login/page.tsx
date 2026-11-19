@@ -5,7 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { FormAlert, SubmitButton, TextField } from "@/components/ui/form";
 import { api, ApiError } from "@/lib/api";
-import { homeForRole, safeRedirectPath, type SessionUser } from "@/lib/session";
+import {
+  CHANGE_PASSWORD_ROUTE,
+  homeForRole,
+  safeRedirectPath,
+  type SessionUser,
+} from "@/lib/session";
 
 function LoginForm() {
   const router = useRouter();
@@ -23,10 +28,12 @@ function LoginForm() {
     try {
       const { user } = await api<{ user: SessionUser }>("/auth/login", {
         method: "POST",
-        body: { email: form.get("email"), password: form.get("password") },
+        body: { username: form.get("username"), password: form.get("password") },
       });
       const next = safeRedirectPath(searchParams.get("next"));
-      router.replace(next ?? homeForRole(user.role));
+      router.replace(
+        user.mustChangePassword ? CHANGE_PASSWORD_ROUTE : (next ?? homeForRole(user.role)),
+      );
       router.refresh();
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "No se pudo iniciar sesión.");
@@ -37,7 +44,7 @@ function LoginForm() {
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight text-uach-petrol">Iniciar sesión</h1>
-      <p className="mt-1.5 text-sm text-uach-muted">Accede con tu correo institucional.</p>
+      <p className="mt-1.5 text-sm text-uach-muted">Accede con tu matrícula o número de empleado.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
         {expired && !error && (
@@ -46,11 +53,11 @@ function LoginForm() {
         {error && <FormAlert message={error} />}
 
         <TextField
-          label="Correo electrónico"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="nombre@uach.mx"
+          label="Matrícula o número de empleado"
+          name="username"
+          autoComplete="username"
+          autoCapitalize="characters"
+          spellCheck={false}
           required
           autoFocus
         />

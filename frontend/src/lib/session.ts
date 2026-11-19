@@ -5,15 +5,17 @@
 
 export const SESSION_COOKIE = "uach_session";
 
-export type UserRole = "STUDENT" | "TEACHER" | "ADMIN" | "SECURITY";
+export type UserRole = "STUDENT" | "TEACHER" | "ADMIN";
 
 export interface SessionUser {
   id: string;
-  email: string;
+  /** Matrícula (alumnos) o número de empleado (personal). */
+  username: string;
   fullName: string;
   role: UserRole;
   status: "ACTIVE" | "INACTIVE" | "GRADUATED";
-  enrollment: string | null;
+  /** Contraseña temporal asignada por un administrador: debe cambiarla. */
+  mustChangePassword: boolean;
   facultyId: string | null;
   careerId: string | null;
 }
@@ -22,31 +24,30 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   STUDENT: "Alumno",
   TEACHER: "Docente",
   ADMIN: "Administrador",
-  SECURITY: "Seguridad",
 };
 
 export const PUBLIC_ROUTES = [
   "/login",
   "/registro",
   "/recuperar-contrasena",
-  "/restablecer-contrasena",
 ];
+
+/** Única ruta disponible mientras la contraseña sea temporal. */
+export const CHANGE_PASSWORD_ROUTE = "/cambiar-contrasena";
 
 /** Rutas abiertas con o sin sesión. */
 export const OPEN_ROUTES = ["/acceso-denegado", "/cerrar-sesion"];
 
-const ALL_ROLES: UserRole[] = ["STUDENT", "TEACHER", "ADMIN", "SECURITY"];
-const ACADEMIC_ROLES: UserRole[] = ["STUDENT", "TEACHER", "ADMIN"];
+const ALL_ROLES: UserRole[] = ["STUDENT", "TEACHER", "ADMIN"];
 
 /** Reglas de acceso por prefijo de ruta. La primera coincidencia gana. */
 const ROUTE_RULES: { prefix: string; roles: UserRole[] }[] = [
   { prefix: "/administracion", roles: ["ADMIN"] },
-  { prefix: "/seguridad", roles: ["SECURITY", "ADMIN"] },
-  { prefix: "/dashboard", roles: ACADEMIC_ROLES },
-  { prefix: "/cursos", roles: ACADEMIC_ROLES },
+  { prefix: "/dashboard", roles: ALL_ROLES },
+  { prefix: "/cursos", roles: ALL_ROLES },
   { prefix: "/entregas", roles: ["STUDENT", "TEACHER"] },
-  { prefix: "/grupos-estudio", roles: ACADEMIC_ROLES },
-  { prefix: "/repositorio", roles: ACADEMIC_ROLES },
+  { prefix: "/grupos-estudio", roles: ALL_ROLES },
+  { prefix: "/repositorio", roles: ALL_ROLES },
   { prefix: "/notificaciones", roles: ALL_ROLES },
   { prefix: "/perfil", roles: ALL_ROLES },
 ];
@@ -62,14 +63,7 @@ export function canAccess(pathname: string, role: UserRole) {
 }
 
 export function homeForRole(role: UserRole) {
-  switch (role) {
-    case "ADMIN":
-      return "/administracion";
-    case "SECURITY":
-      return "/seguridad";
-    default:
-      return "/dashboard";
-  }
+  return role === "ADMIN" ? "/administracion" : "/dashboard";
 }
 
 /** Evita redirecciones abiertas: solo rutas internas. */
@@ -81,6 +75,7 @@ export function safeRedirectPath(value: string | null | undefined) {
 interface TokenClaims {
   sub: string;
   role: UserRole;
+  mustChangePassword: boolean;
   exp: number;
 }
 
@@ -104,7 +99,12 @@ export function readTokenClaims(token: string | undefined): TokenClaims | null {
       return null;
     }
     if (json.exp * 1000 <= Date.now()) return null;
-    return { sub: json.sub, role: json.role, exp: json.exp };
+    return {
+      sub: json.sub,
+      role: json.role,
+      mustChangePassword: json.mustChangePassword === true,
+      exp: json.exp,
+    };
   } catch {
     return null;
   }

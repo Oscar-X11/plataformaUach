@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  CHANGE_PASSWORD_ROUTE,
   OPEN_ROUTES,
   PUBLIC_ROUTES,
   SESSION_COOKIE,
@@ -32,6 +33,12 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.redirect(loginUrl);
     if (token) response.cookies.delete(SESSION_COOKIE);
     return response;
+  }
+
+  // Contraseña temporal: nada más hasta cambiarla.
+  const onChangePassword = matchesRoute(pathname, CHANGE_PASSWORD_ROUTE);
+  if (claims.mustChangePassword && !onChangePassword) {
+    return NextResponse.redirect(new URL(CHANGE_PASSWORD_ROUTE, request.url));
   }
 
   if (isPublic || pathname === "/") {

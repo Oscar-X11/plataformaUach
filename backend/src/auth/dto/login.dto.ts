@@ -1,12 +1,16 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsString, MaxLength, MinLength } from 'class-validator';
+import { normalizeUsername } from './fields';
 
 export class LoginDto {
+  /** Matrícula o número de empleado. Sin validar formato: un error genérico basta. */
   @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
+    typeof value === 'string' ? normalizeUsername(value) : value,
   )
-  @IsEmail({}, { message: 'Correo electrónico inválido' })
-  email!: string;
+  @IsString()
+  @MinLength(1, { message: 'Escribe tu matrícula o número de empleado' })
+  @MaxLength(30)
+  username!: string;
 
   @IsString()
   @MinLength(1, { message: 'Escribe tu contraseña' })

@@ -43,16 +43,16 @@ describe('TokenService', () => {
   const tokens = new TokenService(configFor({}));
 
   it('firma y verifica tokens', () => {
-    const { token, expiresAt } = tokens.sign({ sub: 'u1', email: 'a@b.c', role: 'STUDENT' });
+    const { token, expiresAt } = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false });
     expect(expiresAt.getTime()).toBeGreaterThan(Date.now());
-    expect(tokens.verify(token)).toEqual({ sub: 'u1', email: 'a@b.c', role: 'STUDENT' });
+    expect(tokens.verify(token)).toEqual({ sub: 'u1', role: 'STUDENT', mustChangePassword: false });
   });
 
   it('rechaza tokens manipulados', () => {
-    const { token } = tokens.sign({ sub: 'u1', email: 'a@b.c', role: 'STUDENT' });
+    const { token } = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false });
     const [header, , signature] = token.split('.');
     const forged = Buffer.from(
-      JSON.stringify({ sub: 'u1', email: 'a@b.c', role: 'ADMIN' }),
+      JSON.stringify({ sub: 'u1', role: 'ADMIN', mustChangePassword: false }),
     ).toString('base64url');
     expect(tokens.verify(`${header}.${forged}.${signature}`)).toBeNull();
     expect(tokens.verify('basura')).toBeNull();
@@ -69,7 +69,7 @@ describe('FilesService', () => {
   const findFirst = jest.fn();
   const prisma = { submission: { findFirst } } as unknown as PrismaService;
   const files = new FilesService(prisma, configFor({ STORAGE_PATH: root }));
-  const student = { sub: 's1', email: 's@u.mx', role: 'STUDENT' as const };
+  const student = { sub: 's1', role: 'STUDENT' as const, mustChangePassword: false };
 
   it('entrega archivos del repositorio a usuarios autenticados', async () => {
     await expect(files.authorize('repository/guia.pdf', student)).resolves.toMatchObject({

@@ -11,7 +11,6 @@ enum UserRole {
   STUDENT
   TEACHER
   ADMIN
-  SECURITY
 }
 
 enum AcademicStatus {
@@ -36,63 +35,65 @@ enum ResourceType {
 }
 
 model Faculty {
-  id        String     @id @default(uuid())
-  name      String     @unique
-  code      String     @unique
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String   @unique
   careers   Career[]
   users     User[]
-  createdAt DateTime   @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Career {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  code      String   @unique
+  code      String    @unique
   facultyId String
-  faculty   Faculty  @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  faculty   Faculty   @relation(fields: [facultyId], references: [id], onDelete: Restrict)
   subjects  Subject[]
   users     User[]
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([facultyId])
 }
 
 model Subject {
-  id        String   @id @default(uuid())
-  name      String
-  code      String   @unique
-  semester  Int
-  careerId  String
-  career    Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  courses   Course[]
-  resources Resource[]
+  id          String       @id @default(uuid())
+  name        String
+  code        String       @unique
+  semester    Int
+  careerId    String
+  career      Career       @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  courses     Course[]
+  resources   Resource[]
   studyGroups StudyGroup[]
 
   @@index([careerId, semester])
 }
 
 model User {
-  id             String          @id @default(uuid())
-  enrollment     String?         @unique
-  email          String          @unique
-  passwordHash   String
-  fullName       String
-  role           UserRole
-  status         AcademicStatus  @default(ACTIVE)
-  facultyId      String?
-  careerId       String?
-  faculty        Faculty?        @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  career         Career?         @relation(fields: [careerId], references: [id], onDelete: SetNull)
-  taughtCourses  Course[]        @relation("TeacherCourses")
-  enrollments    Enrollment[]
-  posts          Post[]
-  assignments    Assignment[]    @relation("CreatedAssignments")
-  submissions    Submission[]
-  resources      Resource[]      @relation("ResourceAuthors")
-  studyGroups    StudyGroup[]    @relation("GroupCreators")
-  accessLogs     AccessLog[]     @relation("UserAccessLogs")
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                 String         @id @default(uuid())
+  /// Matrícula (alumnos) o número de empleado (docentes y administradores).
+  /// La universidad no da correo a los alumnos: este es el identificador de acceso.
+  username           String         @unique @db.VarChar(30)
+  passwordHash       String
+  /// true tras un restablecimiento hecho por un administrador: debe cambiarla al entrar.
+  mustChangePassword Boolean        @default(false)
+  fullName           String
+  role               UserRole
+  status             AcademicStatus @default(ACTIVE)
+  facultyId          String?
+  careerId           String?
+  faculty            Faculty?       @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  career             Career?        @relation(fields: [careerId], references: [id], onDelete: SetNull)
+  taughtCourses      Course[]       @relation("TeacherCourses")
+  enrollments        Enrollment[]
+  posts              Post[]
+  assignments        Assignment[]   @relation("CreatedAssignments")
+  submissions        Submission[]
+  resources          Resource[]     @relation("ResourceAuthors")
+  studyGroups        StudyGroup[]   @relation("GroupCreators")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   @@index([role, status])
 }
@@ -139,15 +140,15 @@ model Post {
 }
 
 model Assignment {
-  id          String       @id @default(uuid())
-  title       String
-  instructions String      @db.Text
-  dueAt       DateTime
-  courseId    String
-  teacherId   String
-  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  teacher     User         @relation("CreatedAssignments", fields: [teacherId], references: [id], onDelete: Restrict)
-  submissions Submission[]
+  id           String       @id @default(uuid())
+  title        String
+  instructions String       @db.Text
+  dueAt        DateTime
+  courseId     String
+  teacherId    String
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher      User         @relation("CreatedAssignments", fields: [teacherId], references: [id], onDelete: Restrict)
+  submissions  Submission[]
 }
 
 model Submission {
@@ -191,17 +192,4 @@ model StudyGroup {
   subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   creator     User     @relation("GroupCreators", fields: [creatorId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
-}
-
-model AccessLog {
-  id          String   @id @default(uuid())
-  userId      String
-  allowed     Boolean
-  method      String
-  entrance    String?
-  reason      String?
-  user        User     @relation("UserAccessLogs", fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-
-  @@index([userId, createdAt])
 }

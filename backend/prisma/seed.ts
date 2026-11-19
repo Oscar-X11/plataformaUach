@@ -5,7 +5,8 @@
  *
  * - Crea/actualiza el catálogo académico (facultades, carreras y materias).
  *   ⚠️ Los datos de CATALOG son de EJEMPLO: reemplázalos por el catálogo oficial.
- * - Crea el usuario administrador inicial con SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
+ * - Crea el usuario administrador inicial con SEED_ADMIN_USERNAME (número de empleado) /
+ *   SEED_ADMIN_PASSWORD.
  *   Si el administrador ya existe, NO se modifica su contraseña.
  *
  * Es idempotente: puede ejecutarse varias veces.
@@ -103,12 +104,12 @@ async function seedCatalog() {
 }
 
 async function seedAdmin() {
-  const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  const username = process.env.SEED_ADMIN_USERNAME?.trim().toUpperCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
 
-  if (!email || !password) {
+  if (!username || !password) {
     console.warn(
-      '⚠ SEED_ADMIN_EMAIL o SEED_ADMIN_PASSWORD no definidos: se omite el administrador.',
+      '⚠ SEED_ADMIN_USERNAME o SEED_ADMIN_PASSWORD no definidos: se omite el administrador.',
     );
     return;
   }
@@ -116,24 +117,28 @@ async function seedAdmin() {
     throw new Error('SEED_ADMIN_PASSWORD debe tener al menos 12 caracteres.');
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  if (!/^[A-Z0-9-]{3,30}$/.test(username)) {
+    throw new Error('SEED_ADMIN_USERNAME solo admite letras, números y guiones (3 a 30).');
+  }
+
+  const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) {
     if (existing.role !== 'ADMIN') {
-      await prisma.user.update({ where: { email }, data: { role: 'ADMIN' } });
+      await prisma.user.update({ where: { username }, data: { role: 'ADMIN' } });
     }
-    console.log(`✔ Administrador existente conservado: ${email}`);
+    console.log(`✔ Administrador existente conservado: ${username}`);
     return;
   }
 
   await prisma.user.create({
     data: {
-      email,
+      username,
       fullName: process.env.SEED_ADMIN_NAME?.trim() || 'Administrador UACH',
       passwordHash: await bcrypt.hash(password, 12),
       role: 'ADMIN',
     },
   });
-  console.log(`✔ Administrador creado: ${email}`);
+  console.log(`✔ Administrador creado: ${username}`);
 }
 
 async function main() {
