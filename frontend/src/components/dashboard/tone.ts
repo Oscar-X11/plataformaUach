@@ -50,3 +50,12 @@ export function courseInitials(name: string) {
   const letters = (words.length > 1 ? words.slice(0, 2) : [name, name.slice(1)]).map((word) => word[0]);
   return letters.join("").toUpperCase();
 }
+
+const TONES: CourseTone[] = ["teal", "petrol", "emerald", "tealDark", "ink"];
+
+/** Tono estable por curso (mismo id → mismo color en todas las pantallas). */
+export function toneFor(id: string): CourseTone {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return TONES[hash % TONES.length];
+}

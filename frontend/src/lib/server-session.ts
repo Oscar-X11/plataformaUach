@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   CHANGE_PASSWORD_ROUTE,
   SESSION_COOKIE,
@@ -11,17 +11,16 @@ import {
 const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? "http://localhost:4000";
 
 /**
- * Obtiene el usuario actual desde el backend (verifica firma, expiración y
- * estado de la cuenta). Si la sesión no es válida, la cierra y envía al login.
- * Memorizada por petición: layout y página comparten una sola consulta.
+ * GET a la API desde el servidor con el token de la cookie. Si la sesión no
+ * es válida la cierra y envía al login; un 404 muestra la página "no encontrado".
  */
-const fetchCurrentUser = cache(async (): Promise<SessionUser> => {
+export async function serverApi<T>(path: string): Promise<T> {
   const token = cookies().get(SESSION_COOKIE)?.value;
   if (!token) redirect("/login");
 
   let response: Response;
   try {
-    response = await fetch(`${API_INTERNAL_URL}/auth/me`, {
+    response = await fetch(`${API_INTERNAL_URL}${path}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -33,12 +32,19 @@ const fetchCurrentUser = cache(async (): Promise<SessionUser> => {
     // Un route handler borra la cookie; desde un layout no se puede.
     redirect("/cerrar-sesion?motivo=expirada");
   }
+  if (response.status === 404) notFound();
   if (!response.ok) {
-    throw new Error(`Error al validar la sesión (${response.status}).`);
+    throw new Error(`Error al consultar ${path} (${response.status}).`);
   }
 
-  return (await response.json()) as SessionUser;
-});
+  return (await response.json()) as T;
+}
+
+/**
+ * Usuario actual validado por el backend (firma, expiración y estado de la
+ * cuenta). Memorizada por petición: layout y página comparten una consulta.
+ */
+const fetchCurrentUser = cache(() => serverApi<SessionUser>("/auth/me"));
 
 export async function requireUser(allowedRoles?: UserRole[]): Promise<SessionUser> {
   const user = await fetchCurrentUser();

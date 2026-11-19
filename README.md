@@ -27,6 +27,14 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | POST | `/auth/change-password` | Autenticado | Cambia la contraseña propia (también la temporal) |
 | POST | `/users/:id/reset-password` | Administrador | Asigna una contraseña temporal al usuario |
 | GET | `/academic/faculties` | Público | Facultades y carreras (para el registro) |
+| GET | `/academic/subjects` | Docente, admin | Materias con su carrera (para crear cursos) |
+| GET | `/courses` | Autenticado | Cursos propios: los que imparte, en los que está inscrito o todos (admin) |
+| POST | `/courses` | Docente | Crea un curso con código de invitación |
+| POST | `/courses/join` | Alumno | Se une con el código de invitación |
+| GET | `/courses/:id` | Miembro del curso | Detalle (el código solo lo ve el docente o un admin) |
+| GET | `/courses/:id/people` | Miembro del curso | Docente y alumnos (los alumnos no ven matrículas ajenas) |
+| POST | `/courses/:id/invitation` | Docente del curso, admin | Genera un código nuevo (el anterior deja de servir) |
+| DELETE | `/courses/:id/students/:studentId` | Docente del curso, admin | Quita a un alumno |
 | GET | `/files/<área>/<ruta>` | Autenticado | Descarga de archivos de `storage/` con permisos |
 
 Cuentas y acceso:
@@ -39,6 +47,7 @@ Seguridad:
 - Sesión por cookie `httpOnly` + `SameSite=Lax` (navegador) o `Authorization: Bearer` (clientes HTTP).
 - Configuración validada al arrancar (`src/config/env.validation.ts`): el backend no inicia sin `JWT_SECRET` de 32+ caracteres.
 - Guards globales en orden: límite de peticiones → JWT → roles.
+- Pertenencia al curso: `CourseAccessService` (exportado por `CoursesModule`) valida que el usuario sea el docente, un alumno inscrito o un admin; si no, responde 404 para no revelar qué cursos existen. Todo endpoint con `courseId` debe usarlo.
 - CORS restringido a `CORS_ORIGINS`.
 - Archivos privados: Nginx ya no expone `storage/`; el backend valida la sesión y los permisos y responde con `X-Accel-Redirect`.
   - `submissions/`: solo el alumno dueño, el docente del curso o un administrador.
