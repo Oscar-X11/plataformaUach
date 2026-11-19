@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { BookOpen, Info } from "lucide-react";
 import { AnnouncementsPanel } from "@/components/dashboard/AnnouncementsPanel";
 import { ContinueCard, CourseCard } from "@/components/dashboard/CourseCard";
@@ -16,7 +16,7 @@ import {
   formatLongDate,
   greetingFor,
 } from "@/lib/dashboard/format";
-import type { DashboardAssignment, StudentDashboardData } from "@/lib/dashboard/types";
+import type { StudentDashboardData } from "@/lib/dashboard/types";
 import { useFirstLoad } from "@/lib/motion";
 
 /** Índice de la entrada escalonada (50ms entre bloques). */
@@ -41,17 +41,7 @@ export function StudentDashboard({
 }) {
   const now = useMemo(() => new Date(nowIso), [nowIso]);
   const animateIn = useFirstLoad();
-  const [submitted, setSubmitted] = useState<DashboardAssignment[]>([]);
-
-  const onSubmitted = useCallback(
-    (item: DashboardAssignment) => setSubmitted((list) => [...list, { ...item, status: "SUBMITTED" }]),
-    [],
-  );
-
-  const pending = useMemo(
-    () => data.pending.filter((item) => !submitted.some((done) => done.id === item.id)),
-    [data.pending, submitted],
-  );
+  const pending = data.pending;
   const urgent = pending.filter((item) => dueUrgency(item.dueAt, now) !== "later");
   const later = pending.filter((item) => dueUrgency(item.dueAt, now) === "later");
   const overdue = urgent.filter((item) => dueUrgency(item.dueAt, now) === "overdue").length;
@@ -81,7 +71,7 @@ export function StudentDashboard({
         {data.isSample && (
           <p
             className="inline-flex items-center gap-1.5 self-start rounded-full border border-uach-ink/[0.08] bg-uach-surface px-3 py-1 text-xs font-medium text-uach-ink/75 sm:self-auto"
-            title="El backend de cursos aún no está disponible; la información es ilustrativa y las entregas son simuladas."
+            title="La información es ilustrativa."
           >
             <Info className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
             Datos de ejemplo
@@ -95,13 +85,12 @@ export function StudentDashboard({
           items={urgent}
           upcomingTitle={later[0]?.title ?? null}
           now={now}
-          onSubmitted={onSubmitted}
           className="enter md:col-span-2 xl:col-span-1"
           style={stagger(1)}
         />
         <WeekPanel
           pending={pending}
-          submitted={[...data.recentlySubmitted, ...submitted]}
+          submitted={data.recentlySubmitted}
           now={now}
           className="enter"
           style={stagger(2)}

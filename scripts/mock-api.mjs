@@ -8,12 +8,15 @@
  * - Implementa: POST /auth/login, POST /auth/register, POST /auth/logout,
  *   GET /auth/me, POST /auth/change-password, POST /users/:id/reset-password,
  *   GET /academic/faculties, GET /academic/subjects y los endpoints de /courses.
+ * - Tareas, entregas, tablón, notificaciones, perfil, usuarios y dashboard
+ *   viven en ./mock-classwork.mjs.
  * - Se inicia sesión con matrícula (alumnos) o número de empleado (personal).
  * - Todo vive en memoria: al reiniciar se pierden las cuentas registradas.
  * - Los tokens NO están firmados; el backend real los rechaza. Solo para desarrollo.
  */
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { createClasswork } from "./mock-classwork.mjs";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const COOKIE = "uach_session";
@@ -59,6 +62,7 @@ const users = new Map(
         role,
         status: "ACTIVE",
         mustChangePassword,
+        avatarUrl: null,
         facultyId: role === "STUDENT" ? "fac-fing" : null,
         careerId: role === "STUDENT" ? "car-isc" : null,
       },
@@ -276,6 +280,9 @@ const routes = {
     if (!entry || entry.password !== password) {
       return send(res, 401, { statusCode: 401, message: "Credenciales incorrectas" });
     }
+    if (entry.user.status !== "ACTIVE") {
+      return send(res, 401, { statusCode: 401, message: "La cuenta no está activa" });
+    }
     const session = createSession(entry.user);
     send(res, 200, session, { "Set-Cookie": sessionCookie(session) });
   },
@@ -303,6 +310,8 @@ const routes = {
       role: "STUDENT",
       status: "ACTIVE",
       mustChangePassword: false,
+      avatarUrl: null,
+      createdAt: new Date().toISOString(),
       facultyId: body.facultyId || null,
       careerId: body.careerId || null,
     };
@@ -316,7 +325,7 @@ const routes = {
 
   "GET /auth/me": (req, res) => {
     const entry = entryFromToken(readToken(req) ?? "");
-    if (!entry) return unauthorized(res);
+    if (!entry || entry.user.status !== "ACTIVE") return unauthorized(res);
     send(res, 200, entry.user);
   },
 
@@ -372,21 +381,28 @@ async function resetPassword(req, res, userId) {
   send(res, 200, { user: { id, username, fullName }, temporaryPassword });
 }
 
+const classwork = createClasswork({ users, courses, findUser, courseRole, send, readJson, forbidden, SUBJECTS });
+
+/** Rutas con sesión: primero trabajo de clase y compañía, luego /courses. */
+async function authenticatedRoutes(req, res, path) {
+  const entry = entryFromToken(readToken(req) ?? "");
+  if (!entry) return unauthorized(res);
+  if (entry.user.status !== "ACTIVE") return unauthorized(res);
+  if (entry.user.mustChangePassword) {
+    return forbidden(res, "Debes cambiar tu contraseña temporal antes de continuar");
+  }
+  if (await classwork(req, res, path, entry.user)) return;
+  if (path.startsWith("/courses") && (await courseRoutes(req, res, path))) return;
+  send(res, 404, { statusCode: 404, message: "Ruta no disponible en el backend simulado" });
+}
+
 createServer(async (req, res) => {
   const path = new URL(req.url ?? "/", "http://localhost").pathname.replace(/\/+$/, "") || "/";
   const reset = req.method === "POST" && path.match(/^\/users\/([^/]+)\/reset-password$/);
-  let handler = reset
+  const handler = reset
     ? (request, response) => resetPassword(request, response, reset[1])
-    : routes[`${req.method} ${path}`];
-  if (!handler && path.startsWith("/courses")) {
-    handler = async (request, response) => {
-      if (!(await courseRoutes(request, response, path))) {
-        send(response, 404, { statusCode: 404, message: "Ruta no disponible en el backend simulado" });
-      }
-    };
-  }
-  console.log(`${req.method} ${path}${handler ? "" : "  (no simulado)"}`);
-  if (!handler) return send(res, 404, { statusCode: 404, message: "Ruta no disponible en el backend simulado" });
+    : (routes[`${req.method} ${path}`] ?? ((request, response) => authenticatedRoutes(request, response, path)));
+  console.log(`${req.method} ${path}`);
   try {
     await handler(req, res);
   } catch (error) {

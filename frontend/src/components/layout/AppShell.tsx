@@ -228,7 +228,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
 
               <div className="flex-1" />
 
-              <NotificationsMenu role={user.role} />
+              <NotificationsMenu />
               <UserMenu />
             </header>
 

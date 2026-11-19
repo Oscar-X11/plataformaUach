@@ -160,3 +160,18 @@ export function weekDays(now: Date): WeekDay[] {
     };
   });
 }
+
+const dateTimeFormat = new Intl.DateTimeFormat("es-MX", {
+  timeZone: UACH_TIME_ZONE,
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/** "jue 20 nov, 23:59" (hora de la universidad). */
+export function formatDateTime(iso: string) {
+  return dateTimeFormat.format(new Date(iso)).replace(/\./g, "");
+}

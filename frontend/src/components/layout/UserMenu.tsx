@@ -6,7 +6,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, KeyRound, LoaderCircle, LogOut, User } from "lucide-react";
 import { EASE_OUT } from "@/lib/motion";
 import { useSession } from "@/components/providers/SessionProvider";
-import { ROLE_LABELS, initials } from "@/lib/session";
+import { Avatar } from "@/components/ui/Avatar";
+import { ROLE_LABELS } from "@/lib/session";
 
 export function UserMenu() {
   const { user, logout, loggingOut } = useSession();
@@ -36,9 +37,7 @@ export function UserMenu() {
         onClick={() => setOpen((value) => !value)}
         className="press flex h-10 items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-uach-ink/[0.05] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-uach-teal/40"
       >
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-uach-tealDark text-xs font-semibold text-white">
-          {initials(user.fullName)}
-        </span>
+        <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="sm" />
         <span className="hidden max-w-[160px] truncate text-sm font-medium text-uach-ink sm:block">
           {user.fullName}
         </span>

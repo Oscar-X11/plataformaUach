@@ -1,26 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, ClipboardCheck, Megaphone, Star } from "lucide-react";
+import { Bell } from "lucide-react";
+import { NOTIFICATION_ICON } from "@/components/notifications/notification-meta";
+import { api } from "@/lib/api";
+import type { NotificationList, NotificationView } from "@/lib/classwork";
+import { formatRelative } from "@/lib/dashboard/format";
 import { EASE_OUT } from "@/lib/motion";
-import type { UserRole } from "@/lib/session";
-
-/** DATOS DE EJEMPLO hasta que exista el modelo Notification en el backend. */
-const SAMPLE = [
-  { id: "n1", icon: Star, text: "Calificaron “Práctica 5: vistas y disparadores”: 9/10", time: "Hace 5 h", unread: true },
-  { id: "n2", icon: Megaphone, text: "Nuevo aviso en Redes de Computadoras", time: "Hace 3 h", unread: true },
-  { id: "n3", icon: ClipboardCheck, text: "Tu entrega de “Maqueta responsiva” fue recibida", time: "Hace 2 días", unread: false },
-];
 
 const FOCUS = "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-uach-teal/40";
+/** Revisa cada 2 minutos mientras la pestaña está abierta. */
+const POLL_MS = 120_000;
 
-export function NotificationsMenu({ role }: { role: UserRole }) {
+export function NotificationsMenu() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState(() => (role === "STUDENT" ? SAMPLE : []));
+  const [items, setItems] = useState<NotificationView[]>([]);
+  const [unread, setUnread] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const unread = items.filter((item) => item.unread).length;
+
+  const load = useCallback(() => {
+    api<NotificationList>("/notifications")
+      .then((data) => {
+        setItems(data.items.slice(0, 6));
+        setUnread(data.unreadCount);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  // Al cambiar de página y periódicamente (solo si la pestaña está visible).
+  useEffect(() => {
+    load();
+  }, [load, pathname]);
+  useEffect(() => {
+    const timer = window.setInterval(() => document.visibilityState === "visible" && load(), POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -35,6 +53,23 @@ export function NotificationsMenu({ role }: { role: UserRole }) {
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  function markAll() {
+    const now = new Date().toISOString();
+    setItems((list) => list.map((item) => ({ ...item, readAt: item.readAt ?? now })));
+    setUnread(0);
+    void api("/notifications/read-all", { method: "POST" }).catch(() => undefined);
+  }
+
+  function follow(item: NotificationView) {
+    setOpen(false);
+    if (item.readAt) return;
+    setItems((list) => list.map((n) => (n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n)));
+    setUnread((count) => Math.max(0, count - 1));
+    void api(`/notifications/${item.id}/read`, { method: "POST" }).catch(() => undefined);
+  }
+
+  const now = new Date();
 
   return (
     <div ref={containerRef} className="relative">
@@ -68,7 +103,7 @@ export function NotificationsMenu({ role }: { role: UserRole }) {
               {unread > 0 && (
                 <button
                   type="button"
-                  onClick={() => setItems((list) => list.map((item) => ({ ...item, unread: false })))}
+                  onClick={markAll}
                   className={`rounded-md text-xs font-medium text-uach-teal hover:text-uach-tealDark ${FOCUS}`}
                 >
                   Marcar como leídas
@@ -80,24 +115,24 @@ export function NotificationsMenu({ role }: { role: UserRole }) {
             ) : (
               <ul>
                 {items.map((item) => {
-                  const Icon = item.icon;
+                  const Icon = NOTIFICATION_ICON[item.type];
                   return (
                     <li key={item.id}>
                       <Link
-                        href="/notificaciones"
-                        onClick={() => setOpen(false)}
+                        href={item.link ?? "/notificaciones"}
+                        onClick={() => follow(item)}
                         className={`flex gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-uach-canvas ${FOCUS}`}
                       >
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-uach-teal/10 text-uach-teal">
                           <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className={`block text-sm leading-snug ${item.unread ? "font-medium text-uach-ink" : "text-uach-ink/75"}`}>
-                            {item.text}
+                          <span className={`block text-sm leading-snug ${item.readAt ? "text-uach-ink/75" : "font-medium text-uach-ink"}`}>
+                            {item.title}
                           </span>
-                          <span className="mt-0.5 block text-xs text-uach-ink/75">{item.time}</span>
+                          <span className="mt-0.5 block text-xs text-uach-ink/75">{formatRelative(item.createdAt, now)}</span>
                         </span>
-                        {item.unread && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-uach-teal" aria-label="No leída" />}
+                        {!item.readAt && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-uach-teal" aria-label="No leída" />}
                       </Link>
                     </li>
                   );

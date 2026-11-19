@@ -12,6 +12,8 @@ export interface SessionUser {
   /** Matrícula (alumnos) o número de empleado (personal). */
   username: string;
   fullName: string;
+  /** Ruta relativa en storage/ (avatars/...), si subió foto. */
+  avatarUrl: string | null;
   role: UserRole;
   status: "ACTIVE" | "INACTIVE" | "GRADUATED";
   /** Contraseña temporal asignada por un administrador: debe cambiarla. */

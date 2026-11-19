@@ -35,6 +35,23 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | GET | `/courses/:id/people` | Miembro del curso | Docente y alumnos (los alumnos no ven matrículas ajenas) |
 | POST | `/courses/:id/invitation` | Docente del curso, admin | Genera un código nuevo (el anterior deja de servir) |
 | DELETE | `/courses/:id/students/:studentId` | Docente del curso, admin | Quita a un alumno |
+| GET/POST | `/courses/:id/assignments` | Miembro / docente | Tareas del curso; crear tarea |
+| GET/PATCH/DELETE | `/assignments/:id` | Miembro / docente | Detalle (con la entrega propia del alumno); editar; borrar |
+| POST/DELETE | `/assignments/:id/submission/files[/:fileId]` | Alumno inscrito | Adjuntar (multipart `files`) o quitar archivos |
+| POST | `/assignments/:id/submission/turn-in` · `/unsubmit` | Alumno inscrito | Entregar o anular la entrega |
+| GET | `/assignments/:id/submissions` | Docente del curso, admin | Entregas de todos los inscritos |
+| PATCH | `/assignments/:id/submissions/:studentId` | Docente del curso, admin | Calificar (`grade`, `feedback`) y devolver (`return: true`) |
+| GET | `/classwork/overview` | Alumno, docente | Mis tareas (alumno) o entregas por calificar (docente) |
+| GET | `/courses/:id/grades` · `/grades/export` | Miembro / docente | Calificaciones; CSV para Excel |
+| GET/POST | `/courses/:id/posts` | Miembro / docente | Tablón; publicar aviso |
+| DELETE | `/posts/:id` · `/comments/:id` | Autor o docente | Borrar aviso o comentario |
+| POST | `/posts/:id/comments` | Miembro del curso | Comentar |
+| GET | `/notifications` | Autenticado | Últimas 50 y número sin leer |
+| POST | `/notifications/read-all` · `/notifications/:id/read` | Autenticado | Marcar como leídas |
+| GET | `/profile` · POST/DELETE `/profile/avatar` | Autenticado | Perfil y foto (multipart `file`) |
+| GET/POST | `/users` | Administrador | Buscar usuarios; alta de personal con contraseña temporal |
+| PATCH | `/users/:id/status` | Administrador | Activar, desactivar o marcar como egresado |
+| GET | `/dashboard/student` · `/teacher` · `/admin` | Según el rol | Resumen de la pantalla de inicio |
 | GET | `/files/<área>/<ruta>` | Autenticado | Descarga de archivos de `storage/` con permisos |
 
 Cuentas y acceso:
@@ -50,7 +67,8 @@ Seguridad:
 - Pertenencia al curso: `CourseAccessService` (exportado por `CoursesModule`) valida que el usuario sea el docente, un alumno inscrito o un admin; si no, responde 404 para no revelar qué cursos existen. Todo endpoint con `courseId` debe usarlo.
 - CORS restringido a `CORS_ORIGINS`.
 - Archivos privados: Nginx ya no expone `storage/`; el backend valida la sesión y los permisos y responde con `X-Accel-Redirect`.
-  - `submissions/`: solo el alumno dueño, el docente del curso o un administrador.
+  - `submissions/`: solo el alumno dueño, el docente del curso o un administrador (se busca en `SubmissionFile`).
+  - Las subidas se validan por extensión **y** por contenido (firma del archivo), con límite de tamaño, y se guardan con nombre aleatorio y su `sha256`.
   - `avatars/`, `repository/`: cualquier usuario autenticado.
   - `classroom-drive/`: alumnos y docentes (la validación por curso llega con el modelo `Attachment` en la fase 1).
 - Las columnas `fileUrl` guardan la ruta relativa dentro de `storage/`, por ejemplo `submissions/<cursoId>/<archivo>.pdf`.

@@ -66,8 +66,8 @@ describe('FilesService', () => {
   writeFileSync(join(root, 'repository', 'guia.pdf'), 'pdf');
   writeFileSync(join(root, 'submissions', 'tarea.pdf'), 'pdf');
 
-  const findFirst = jest.fn();
-  const prisma = { submission: { findFirst } } as unknown as PrismaService;
+  const findUnique = jest.fn();
+  const prisma = { submissionFile: { findUnique } } as unknown as PrismaService;
   const files = new FilesService(prisma, configFor({ STORAGE_PATH: root }));
   const student = { sub: 's1', role: 'STUDENT' as const, mustChangePassword: false };
 
@@ -85,9 +85,8 @@ describe('FilesService', () => {
   );
 
   it('solo el alumno dueño o el docente del curso ven una entrega', async () => {
-    findFirst.mockResolvedValue({
-      studentId: 'otro',
-      assignment: { course: { teacherId: 't1' } },
+    findUnique.mockResolvedValue({
+      submission: { studentId: 'otro', assignment: { course: { teacherId: 't1' } } },
     });
     await expect(files.authorize('submissions/tarea.pdf', student)).rejects.toBeInstanceOf(
       ForbiddenException,

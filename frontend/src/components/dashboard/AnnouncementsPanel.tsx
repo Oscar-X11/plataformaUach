@@ -7,6 +7,7 @@ import { CheckCheck, X } from "lucide-react";
 import { CARD, FOCUS_RING, TONE_BG } from "@/components/dashboard/tone";
 import { formatRelative } from "@/lib/dashboard/format";
 import type { DashboardAnnouncement } from "@/lib/dashboard/types";
+import { api } from "@/lib/api";
 import { EASE_OUT } from "@/lib/motion";
 
 export function AnnouncementsPanel({
@@ -26,7 +27,10 @@ export function AnnouncementsPanel({
   const unread = items.filter((item) => item.unread).length;
 
   const dismiss = (id: string) => setItems((list) => list.filter((item) => item.id !== id));
-  const markAllRead = () => setItems((list) => list.map((item) => ({ ...item, unread: false })));
+  const markAllRead = () => {
+    setItems((list) => list.map((item) => ({ ...item, unread: false })));
+    void api("/notifications/read-all?type=POST_CREATED", { method: "POST" }).catch(() => undefined);
+  };
 
   return (
     <section aria-labelledby="avisos-titulo" style={style} className={`${CARD} p-5 ${className ?? ""}`}>

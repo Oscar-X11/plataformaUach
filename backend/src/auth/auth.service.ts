@@ -18,6 +18,7 @@ const SESSION_USER_SELECT = {
   id: true,
   username: true,
   fullName: true,
+  avatarUrl: true,
   role: true,
   status: true,
   mustChangePassword: true,

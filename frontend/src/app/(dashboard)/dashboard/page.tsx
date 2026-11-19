@@ -1,22 +1,23 @@
+import { redirect } from "next/navigation";
 import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
-import { ModulePending } from "@/components/ui/ModulePending";
-import { getStudentDashboard } from "@/lib/dashboard/sample-data";
-import { requireUser } from "@/lib/server-session";
+import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
+import { withTones, type StudentDashboardResponse, type TeacherDashboardData } from "@/lib/dashboard/api";
+import { requireUser, serverApi } from "@/lib/server-session";
+
+export const metadata = { title: "Inicio" };
 
 export default async function UachDashboardPage() {
   const user = await requireUser();
+  // La hora se fija en el servidor para que servidor y cliente muestren lo mismo.
+  const nowIso = new Date().toISOString();
 
-  if (user.role !== "STUDENT") {
-    return (
-      <ModulePending
-        title="Inicio"
-        phase={1}
-        description="Aquí verás tus clases, las entregas por calificar y los avisos más recientes."
-      />
-    );
+  if (user.role === "ADMIN") redirect("/administracion");
+
+  if (user.role === "TEACHER") {
+    const data = await serverApi<TeacherDashboardData>("/dashboard/teacher");
+    return <TeacherDashboard fullName={user.fullName} data={data} nowIso={nowIso} />;
   }
 
-  const data = await getStudentDashboard();
-  // La hora se fija en el servidor para que servidor y cliente muestren lo mismo.
-  return <StudentDashboard fullName={user.fullName} data={data} nowIso={new Date().toISOString()} />;
+  const data = await serverApi<StudentDashboardResponse>("/dashboard/student");
+  return <StudentDashboard fullName={user.fullName} data={withTones(data)} nowIso={nowIso} />;
 }

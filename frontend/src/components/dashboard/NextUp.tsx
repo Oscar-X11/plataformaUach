@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, LoaderCircle, Upload } from "lucide-react";
-import { DrawnCheck } from "@/components/dashboard/primitives";
+import { ArrowRight, Upload } from "lucide-react";
 import { FOCUS_RING, TONE_BG } from "@/components/dashboard/tone";
 import { dueUrgency, formatTimeLeft, type DueUrgency } from "@/lib/dashboard/format";
 import type { DashboardAssignment } from "@/lib/dashboard/types";
@@ -18,41 +16,20 @@ const ON_DARK: Record<DueUrgency, { chip: string; text: string; label: string }>
   later: { chip: "bg-white/10 text-white/85", text: "text-white/85", label: "Próxima" },
 };
 
-type SubmitState = "idle" | "sending" | "done";
-
 export function NextUp({
   items,
   upcomingTitle,
   now,
-  onSubmitted,
   className,
   style,
 }: {
   items: DashboardAssignment[];
   upcomingTitle: string | null;
   now: Date;
-  onSubmitted: (item: DashboardAssignment) => void;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const [state, setState] = useState<SubmitState>("idle");
-  const timers = useRef<number[]>([]);
   const [hero, ...rest] = items;
-
-  useEffect(() => () => timers.current.forEach(window.clearTimeout), []);
-
-  function submit() {
-    if (!hero || state !== "idle") return;
-    setState("sending");
-    // Simulación local: el backend de entregas aún no existe.
-    timers.current.push(
-      window.setTimeout(() => setState("done"), 650),
-      window.setTimeout(() => {
-        onSubmitted(hero);
-        setState("idle");
-      }, 2000),
-    );
-  }
 
   const urgency = hero ? dueUrgency(hero.dueAt, now) : "later";
 
@@ -60,9 +37,7 @@ export function NextUp({
     <section
       aria-labelledby="sigue-titulo"
       style={style}
-      className={`relative flex flex-col overflow-hidden rounded-2xl bg-uach-petrol p-5 text-white sm:p-6 ${
-        state === "done" ? "celebrate" : ""
-      } ${className ?? ""}`}
+      className={`relative flex flex-col overflow-hidden rounded-2xl bg-uach-petrol p-5 text-white sm:p-6 ${className ?? ""}`}
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="sigue-titulo" className="text-base font-semibold">
@@ -100,37 +75,14 @@ export function NextUp({
               <span className="text-sm tabular-nums text-white/70">{hero.points} pts</span>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3" aria-live="polite">
-              {state === "done" ? (
-                <p className="flex h-11 items-center gap-2.5 text-sm font-medium">
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-uach-emerald text-white">
-                    <DrawnCheck className="h-5 w-5" />
-                  </span>
-                  ¡Entregada! Buen trabajo.
-                </p>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={submit}
-                    disabled={state === "sending"}
-                    className={`press inline-flex h-11 items-center gap-2 rounded-xl bg-uach-teal px-5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-uach-teal/85 disabled:cursor-wait ${FOCUS_RING} focus-visible:ring-offset-uach-petrol`}
-                  >
-                    {state === "sending" ? (
-                      <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
-                    ) : (
-                      <Upload className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    )}
-                    {state === "sending" ? "Entregando…" : "Entregar"}
-                  </button>
-                  <Link
-                    href={`/cursos/${hero.courseId}/tareas/${hero.id}`}
-                    className={`press inline-flex h-11 items-center rounded-xl px-3 text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white ${FOCUS_RING} focus-visible:ring-offset-uach-petrol`}
-                  >
-                    Ver instrucciones
-                  </Link>
-                </>
-              )}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href={`/cursos/${hero.courseId}/tareas/${hero.id}`}
+                className={`press inline-flex h-11 items-center gap-2 rounded-xl bg-uach-teal px-5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-uach-teal/85 ${FOCUS_RING} focus-visible:ring-offset-uach-petrol`}
+              >
+                <Upload className="h-4 w-4" strokeWidth={2} aria-hidden />
+                Abrir y entregar
+              </Link>
             </div>
           </motion.div>
         ) : (

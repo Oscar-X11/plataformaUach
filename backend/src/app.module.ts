@@ -7,12 +7,17 @@ import { AcademicModule } from './academic/academic.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { ClassworkModule } from './classwork/classwork.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { validateEnv } from './config/env.validation';
 import { CoursesModule } from './courses/courses.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DatabaseModule } from './database/database.module';
 import { FilesModule } from './files/files.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ProfileModule } from './profile/profile.module';
+import { StreamModule } from './stream/stream.module';
 import { UsersModule } from './users/users.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
@@ -31,6 +36,11 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AuthModule,
     AcademicModule,
     CoursesModule,
+    ClassworkModule,
+    NotificationsModule,
+    StreamModule,
+    ProfileModule,
+    DashboardModule,
     FilesModule,
     UsersModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error

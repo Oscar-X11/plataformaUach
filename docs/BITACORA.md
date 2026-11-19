@@ -27,6 +27,32 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - **Validación de pertenencia:** `CourseAccessService` comprueba que el usuario sea el docente, un alumno inscrito o un admin. Si no, responde 404 para no revelar qué cursos existen.
   - **Frontend:** `/cursos`, `/cursos/[id]` (encabezado, código de invitación y pestañas) y `/cursos/[id]/personas`.
   - Tests del backend: 31 en total (13 nuevos de cursos).
+- **Resto de la fase 1** (entregables 3 a 11, **sin commit todavía**):
+  - **Esquema:** modelos `Comment`, `SubmissionFile` y `Notification`; `Assignment.points` (10 por defecto) y fecha de entrega opcional; `User.avatarUrl`. El estado de la entrega queda en `ASSIGNED` → `SUBMITTED` → `RETURNED`; «tarde» y «sin entregar» se calculan con la fecha. Segunda migración: `20261119120000_fase1_classroom`.
+  - **Tareas:** crear, editar y borrar (el docente); los alumnos inscritos reciben un aviso.
+  - **Entregas:**
+    - El alumno adjunta hasta 10 archivos de máximo 20 MB cada uno.
+    - Se valida la extensión **y el contenido real** del archivo, y se guarda su `sha256`.
+    - Puede entregar, o «marcar como hecha» si la tarea no lleva archivo, y anular la entrega mientras no esté calificada.
+  - **Calificar y devolver:**
+    - El docente puede guardar la calificación como borrador o devolverla al alumno; en ambos casos con comentario.
+    - El alumno solo ve la nota cuando se la devuelven y recibe un aviso.
+  - **Calificaciones:**
+    - Vista del alumno con su promedio (escala 0–10, ponderado por puntos).
+    - Libro del docente.
+    - Exportación a CSV para Excel, con protección contra fórmulas inyectadas.
+  - **Tablón:** el docente publica avisos y todos los miembros comentan; cada quien borra lo suyo y el docente modera.
+  - **Notificaciones** dentro de la plataforma:
+    - Página `/notificaciones`.
+    - Campana con datos reales que se actualiza cada 2 minutos.
+  - **Perfil:** datos de la cuenta, foto (PNG/JPG/WebP de hasta 2 MB) y acceso a cambiar la contraseña.
+  - **Administración:**
+    - Panel con métricas.
+    - `/administracion/usuarios`: búsqueda, alta de docentes y administradores con contraseña temporal, restablecer contraseña y activar o desactivar cuentas.
+    - `/administracion/cursos`: todos los cursos.
+  - **Dashboard con datos reales:** el del alumno ya no usa datos de ejemplo (se borró `sample-data.ts`) y el docente tiene uno propio («por calificar», próximas entregas, sus clases). El admin va a `/administracion`.
+  - **Backend simulado** ampliado (`scripts/mock-classwork.mjs`) con todos los endpoints nuevos y datos de ejemplo.
+  - Tests del backend: 46 en total (15 nuevos). Se probaron todos los flujos de punta a punta con la demo.
 
 ### Decisiones
 - **Sin rol de Seguridad** (control de accesos): queda fuera del alcance.
@@ -44,6 +70,8 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Riesgo abierto:** como el registro es libre, alguien podría registrarse con la matrícula de otro alumno. Hay dos opciones:
   - que la administración cargue la lista oficial de matrículas y solo esas puedan registrarse;
   - que un admin apruebe cada cuenta nueva.
+- **Desactivar una cuenta** impide iniciar sesión, pero una sesión ya abierta sigue funcionando hasta que expira (8 h). Lo mismo pasa al restablecer una contraseña. Pendiente: invalidar sesiones.
+- Los archivos subidos se guardan en `storage/submissions/<curso>/<tarea>/` y `storage/avatars/<usuario>/` con nombres aleatorios; el nombre original solo se muestra.
 - **Cuentas del backend simulado:**
 
   | Rol | Usuario | Contraseña |
@@ -56,9 +84,10 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - El catálogo del seed (facultades, carreras y materias) es **de ejemplo**. Hay que reemplazarlo por el oficial.
 
 ### Pendiente
-- **Tareas y entregas** (entregables 4 y 5): el docente crea tareas con fecha de entrega y el alumno entrega con archivos adjuntos.
-- Pantalla `/administracion/usuarios` con el botón para restablecer contraseñas (el endpoint ya existe).
-- Conectar el dashboard a datos reales (hoy usa `sample-data.ts`).
+- Hacer commit del resto de la fase 1.
+- Probar todo con una base de datos real cuando exista.
+- Invalidar sesiones abiertas al desactivar una cuenta o restablecer su contraseña.
+- Fase 2: repositorio, grupos de estudio, recursos del curso, reportes y calendario.
 - Decidir cómo evitar registros con matrículas ajenas.
 
 ---

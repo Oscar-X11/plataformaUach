@@ -13,11 +13,11 @@
 | Fase | Descripción | Estado |
 | --- | --- | --- |
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
-| Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | 🔄 En desarrollo — 2 de 11 entregables listos, 2 en proceso |
+| Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa con backend simulado — falta probar con base de datos real |
 | Fase 2 | Valor institucional (calendario, repositorio, administración) | ⬜ Pendiente |
 | Fase 3 | Funciones tipo Moodle (cuestionarios, asistencia, foros…) | ⬜ Pendiente |
 
-**Siguiente paso:** entregables 4 y 5 (tareas y entregas con archivos adjuntos).
+**Siguiente paso:** crear la base de datos y probar la fase 1 completa con el backend real; después, Fase 2.
 
 ### Estado del entorno
 
@@ -25,7 +25,7 @@
 | --- | --- |
 | Base de datos MySQL | ⬜ No existe todavía. La migración ya está lista para aplicarse. |
 | Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer toda la plataforma sin base de datos. |
-| Pruebas del backend | ✅ 31 tests (autenticación, contraseña temporal, archivos y cursos). |
+| Pruebas del backend | ✅ 46 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón y usuarios). |
 | Despliegue (Docker / servidor) | ⬜ Sin probar con datos reales. |
 
 ---
@@ -56,8 +56,8 @@
 - ✅ Backend simulado (`scripts/mock-api.mjs`) y `npm run dev:demo` para desarrollar sin base de datos.
 
 ### Backend (NestJS + Prisma)
-- ✅ Modelo de datos base en `schema.prisma`: Faculty, Career, Subject, User, Course, Enrollment, Post, Assignment, Submission, Resource, StudyGroup.
-- ✅ Migración inicial versionada (`prisma/migrations/20261119000000_init`).
+- ✅ Modelo de datos en `schema.prisma`: Faculty, Career, Subject, User, Course, Enrollment, Post, Comment, Assignment, Submission, SubmissionFile, Notification, Resource, StudyGroup.
+- ✅ Migraciones versionadas: `20261119000000_init` y `20261119120000_fase1_classroom`.
 - ✅ Seed con catálogos académicos de ejemplo y el administrador inicial (`SEED_ADMIN_USERNAME`).
 - ✅ Registro (solo alumnos, con matrícula), login, logout y `GET /auth/me`.
 - ✅ Cambio de contraseña (`POST /auth/change-password`) y restablecimiento por un administrador (`POST /users/:id/reset-password`).
@@ -88,15 +88,17 @@
 | --- | --- | --- | --- | --- |
 | 1 | **Cursos**: crear (docente), listar, código de invitación, unirse por código, personas | ✅ módulo `courses` | ✅ `/cursos`, `/cursos/[cursoId]`, `/cursos/[cursoId]/personas` | ✅ (falta probar con BD real) |
 | 2 | **Validación de pertenencia al curso** en el backend (no solo rol global) | ✅ `CourseAccessService` | — | ✅ |
-| 3 | **Tablón** con publicaciones y comentarios | ⬜ (falta modelo `Comment`) | ⬜ `/cursos/[cursoId]` | ⬜ |
-| 4 | **Tareas**: crear, editar, fecha de entrega | ⬜ | ⬜ `/cursos/[cursoId]/tareas` | ⬜ **Siguiente** |
-| 5 | **Entregas** con adjuntos (validar tipo y tamaño de archivo, `sha256`) | ⬜ | ⬜ `/tareas/[tareaId]`, `/entregas` | ⬜ **Siguiente** |
-| 6 | **Calificar y devolver** entregas | ⬜ | ⬜ | ⬜ |
-| 7 | **Calificaciones**: vista alumno, libro del docente, exportación | ⬜ | ⬜ `/cursos/[cursoId]/calificaciones` | ⬜ |
-| 8 | **Notificaciones** dentro de la plataforma | ⬜ (falta modelo) | ⬜ `/notificaciones` | ⬜ |
-| 9 | **Dashboard** con resumen de cursos y pendientes | ⬜ endpoint de resumen | ✅ `/dashboard` con datos de ejemplo | 🔄 |
-| 10 | **Perfil** (datos y avatar) | ⬜ | ⬜ `/perfil` | ⬜ |
-| 11 | **Recuperar contraseña** (restablece un administrador) | ✅ | ✅ `/recuperar-contrasena`, `/cambiar-contrasena`; ⬜ botón en `/administracion/usuarios` | 🔄 |
+| 3 | **Tablón** con publicaciones y comentarios | ✅ módulo `stream` | ✅ `/cursos/[cursoId]` | ✅ |
+| 4 | **Tareas**: crear, editar, fecha de entrega | ✅ módulo `classwork` | ✅ `/cursos/[cursoId]/tareas` | ✅ |
+| 5 | **Entregas** con adjuntos (validar tipo y tamaño de archivo, `sha256`) | ✅ (contenido real verificado, hasta 10 × 20 MB) | ✅ `/tareas/[tareaId]`, `/entregas` | ✅ |
+| 6 | **Calificar y devolver** entregas | ✅ | ✅ panel de revisión en la tarea | ✅ |
+| 7 | **Calificaciones**: vista alumno, libro del docente, exportación | ✅ (CSV para Excel) | ✅ `/cursos/[cursoId]/calificaciones` | ✅ |
+| 8 | **Notificaciones** dentro de la plataforma | ✅ módulo `notifications` | ✅ `/notificaciones` y campana | ✅ |
+| 9 | **Dashboard** con resumen de cursos y pendientes | ✅ `/dashboard/student`, `/teacher`, `/admin` | ✅ alumno, docente y admin | ✅ |
+| 10 | **Perfil** (datos y avatar) | ✅ módulo `profile` | ✅ `/perfil` | ✅ |
+| 11 | **Recuperar contraseña** (restablece un administrador) | ✅ | ✅ `/recuperar-contrasena`, `/cambiar-contrasena`, `/administracion/usuarios` | ✅ |
+
+Todos los entregables se probaron con el backend simulado; falta repetir las pruebas con la base de datos real.
 
 ---
 
@@ -106,7 +108,7 @@
 - ⬜ Temas/unidades y material del curso (`/cursos/[cursoId]/recursos`).
 - ⬜ Repositorio institucional con búsqueda y moderación (`/repositorio`).
 - ⬜ Grupos de estudio con miembros (`/grupos-estudio`).
-- ⬜ Administración: usuarios (alta de docentes y administradores, restablecer contraseñas), catálogos, periodos, cursos y reportes (`/administracion/*`).
+- 🔄 Administración: ✅ usuarios (alta de personal, restablecer contraseñas, activar/desactivar), ✅ listado de cursos, ✅ panel con métricas; ⬜ catálogos, periodos, reasignar docentes y reportes.
 
 ## Fase 3 — Funciones tipo Moodle ⬜
 
@@ -124,5 +126,5 @@
 - ⬜ Reemplazar el catálogo de ejemplo del seed por las facultades, carreras y materias oficiales.
 - ⬜ Reemplazar `GET /` ("Hello World!") por un endpoint `/health` real.
 - ⬜ Refresh token para sesiones largas.
-- ⬜ Invalidar las sesiones abiertas cuando un administrador restablece una contraseña.
-- 🔄 Pruebas automatizadas de la fase 1: hechas para autenticación y cursos; faltan los módulos siguientes y las pruebas e2e con base de datos.
+- ⬜ Invalidar las sesiones abiertas cuando un administrador desactiva una cuenta o restablece su contraseña.
+- 🔄 Pruebas automatizadas de la fase 1: unitarias de todos los módulos (46); faltan pruebas e2e con base de datos.

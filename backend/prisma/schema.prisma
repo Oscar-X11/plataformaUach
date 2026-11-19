@@ -19,11 +19,21 @@ enum AcademicStatus {
   GRADUATED
 }
 
-enum AssignmentStatus {
+/// Estado guardado de una entrega. "Atrasada" y "sin entregar" se calculan con Assignment.dueAt.
+enum SubmissionStatus {
+  /// El alumno trabaja en ella (puede tener archivos) pero no la ha entregado.
   ASSIGNED
+  /// Entregada; el docente puede calificarla.
   SUBMITTED
-  LATE
-  GRADED
+  /// Calificada y devuelta: el alumno ya ve su calificación.
+  RETURNED
+}
+
+enum NotificationType {
+  ASSIGNMENT_CREATED
+  SUBMISSION_RETURNED
+  POST_CREATED
+  COMMENT_CREATED
 }
 
 enum ResourceType {
@@ -79,6 +89,8 @@ model User {
   /// true tras un restablecimiento hecho por un administrador: debe cambiarla al entrar.
   mustChangePassword Boolean        @default(false)
   fullName           String
+  /// Ruta relativa dentro de storage/ (avatars/...).
+  avatarUrl          String?
   role               UserRole
   status             AcademicStatus @default(ACTIVE)
   facultyId          String?
@@ -88,6 +100,8 @@ model User {
   taughtCourses      Course[]       @relation("TeacherCourses")
   enrollments        Enrollment[]
   posts              Post[]
+  comments           Comment[]
+  notifications      Notification[]
   assignments        Assignment[]   @relation("CreatedAssignments")
   submissions        Submission[]
   resources          Resource[]     @relation("ResourceAuthors")
@@ -128,42 +142,95 @@ model Enrollment {
 }
 
 model Post {
-  id        String   @id @default(uuid())
-  content   String   @db.Text
+  id        String    @id @default(uuid())
+  content   String    @db.Text
   courseId  String
   authorId  String
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+
+  @@index([courseId, createdAt])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  postId    String
+  authorId  String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@index([courseId, createdAt])
+  @@index([postId, createdAt])
 }
 
 model Assignment {
   id           String       @id @default(uuid())
   title        String
   instructions String       @db.Text
-  dueAt        DateTime
+  /// Sin fecha = se puede entregar cuando sea.
+  dueAt        DateTime?
+  /// Puntaje máximo (la escala habitual es 10).
+  points       Int          @default(10)
   courseId     String
   teacherId    String
   course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   teacher      User         @relation("CreatedAssignments", fields: [teacherId], references: [id], onDelete: Restrict)
   submissions  Submission[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([courseId, dueAt])
 }
 
 model Submission {
   id           String           @id @default(uuid())
   assignmentId String
   studentId    String
-  status       AssignmentStatus @default(ASSIGNED)
-  fileUrl      String?
+  status       SubmissionStatus @default(ASSIGNED)
   grade        Decimal?         @db.Decimal(5, 2)
   feedback     String?          @db.Text
   submittedAt  DateTime?
+  returnedAt   DateTime?
   assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   student      User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  files        SubmissionFile[]
+  updatedAt    DateTime         @updatedAt
 
   @@unique([assignmentId, studentId])
+  @@index([studentId, status])
+}
+
+/// Archivo adjunto a una entrega. fileUrl es la ruta relativa dentro de storage/.
+model SubmissionFile {
+  id           String     @id @default(uuid())
+  submissionId String
+  fileUrl      String     @unique
+  originalName String
+  mimeType     String
+  size         Int
+  sha256       String     @db.Char(64)
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([submissionId])
+}
+
+/// Aviso dentro de la plataforma (no hay correo).
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  /// Ruta interna a la que lleva, p. ej. /cursos/<id>/tareas/<id>.
+  link      String?
+  readAt    DateTime?
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt, createdAt])
 }
 
 model Resource {

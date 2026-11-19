@@ -90,13 +90,18 @@ export class FilesService {
         return;
 
       case 'submissions': {
-        const submission = await this.prisma.submission.findFirst({
+        const file = await this.prisma.submissionFile.findUnique({
           where: { fileUrl: relativePath },
           select: {
-            studentId: true,
-            assignment: { select: { course: { select: { teacherId: true } } } },
+            submission: {
+              select: {
+                studentId: true,
+                assignment: { select: { course: { select: { teacherId: true } } } },
+              },
+            },
           },
         });
+        const submission = file?.submission;
         if (
           submission &&
           (submission.studentId === user.sub ||
