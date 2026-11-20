@@ -40,6 +40,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Tablas y columnas en español:** con `@@map`/`@map` en `schema.prisma` (p. ej. `User` → `usuarios`, `fullName` → `nombre_completo`). El código TypeScript no cambia: sigue usando los nombres de Prisma en inglés. Las tres migraciones se reemplazaron por una sola, `20261120120000_init`, y la BD local se recreó desde cero. Backend probado (login 200) y 58 tests en verde.
 - **Importar alumnos desde Excel** (Administración › Usuarios › «Importar alumnos»): se sube el `.xlsx` de la universidad (columnas `matricula`, `nombre`, `ap_pat`, `ap_mat`), se ve una vista previa con las nuevas, las que ya tienen cuenta y las filas con error, y se confirma. Al terminar se descarga un CSV con las contraseñas iniciales. Endpoint `POST /users/import-students` (también en el mock); el Excel se lee en el navegador con `read-excel-file` 9.3.14. 7 tests nuevos (65 en total). Probado con el backend real.
 - Commit `70ead6a`: base de datos en Docker, nombres en español e importación de alumnos.
+- **Prueba de punta a punta con el sistema real** (frontend + backend + MySQL en Docker): 63 comprobaciones correctas para los tres roles: páginas, importación de alumnos, cambio obligatorio de contraseña, cursos, material, tareas, entregas con archivo, calificación y CSV, tablón, calendario, repositorio con moderación, grupos de estudio, reportes y desactivación de cuentas. Quedaron datos de prueba en la BD local: docente `PRUEBA-DOC`, alumnos `999900001` y `999900002` (este desactivado) y el «Curso de Prueba E2E».
 
 ### Decisiones
 - **Contraseña inicial de los alumnos importados** (pedida por el usuario): últimos 3 dígitos de la matrícula + primer nombre en minúsculas, sin acentos ni signos (500525123, Óscar → `123oscar`). Se marca `mustChangePassword` para obligar a cambiarla al primer inicio de sesión. Es una contraseña adivinable, así que conviene que los alumnos entren y la cambien pronto.
@@ -52,6 +53,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 ### Importante
 - Ya hay base de datos local (Docker). En este equipo existe además un MySQL nativo de Windows en el puerto 3306, así que el contenedor se publica en el **3307** (`MYSQL_HOST_PORT` en `.env`; `DATABASE_URL` apunta a `localhost:3307`).
 - El seed usa `SEED_ADMIN_USERNAME` (número de empleado), no `SEED_ADMIN_EMAIL`; se corrigió el `.env`.
+- Si `npm run dev:backend` falla con `EADDRINUSE :::4000`, es que quedó otro backend encendido (por ejemplo `node dist/main`). Hay que cerrarlo antes de arrancar de nuevo.
 - Los archivos nuevos se guardan en `storage/classroom-drive/<curso>/` (material) y `storage/repository/<materia>/` (repositorio).
 
 ### Pendiente
