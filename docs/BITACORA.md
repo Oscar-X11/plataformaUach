@@ -36,17 +36,25 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Backend simulado** ampliado: `scripts/mock-institutional.mjs`.
 - Tests del backend: 58 en total (12 nuevos).
 - **README actualizado** con el estado por fases, todas las ventanas del frontend, la estructura de módulos, el backend simulado y sus cuentas, y los siguientes pasos. Commit de toda la fase 2.
+- **Base de datos local de pruebas en Docker:** se levantaron MySQL 8.4 y Redis con `docker compose up -d mysql redis`, se aplicaron las tres migraciones (`prisma:deploy`) y se ejecutó el seed (2 facultades + administrador `ADMIN`). Se comprobó que el backend real arranca y que el login del administrador responde 200.
+- **Tablas y columnas en español:** con `@@map`/`@map` en `schema.prisma` (p. ej. `User` → `usuarios`, `fullName` → `nombre_completo`). El código TypeScript no cambia: sigue usando los nombres de Prisma en inglés. Las tres migraciones se reemplazaron por una sola, `20261120120000_init`, y la BD local se recreó desde cero. Backend probado (login 200) y 58 tests en verde.
+- **Importar alumnos desde Excel** (Administración › Usuarios › «Importar alumnos»): se sube el `.xlsx` de la universidad (columnas `matricula`, `nombre`, `ap_pat`, `ap_mat`), se ve una vista previa con las nuevas, las que ya tienen cuenta y las filas con error, y se confirma. Al terminar se descarga un CSV con las contraseñas iniciales. Endpoint `POST /users/import-students` (también en el mock); el Excel se lee en el navegador con `read-excel-file` 9.3.14. 7 tests nuevos (65 en total). Probado con el backend real.
 
 ### Decisiones
+- **Contraseña inicial de los alumnos importados** (pedida por el usuario): últimos 3 dígitos de la matrícula + primer nombre en minúsculas, sin acentos ni signos (500525123, Óscar → `123oscar`). Se marca `mustChangePassword` para obligar a cambiarla al primer inicio de sesión. Es una contraseña adivinable, así que conviene que los alumnos entren y la cambien pronto.
+- **Importación:** la carrera no viene en el Excel y se queda vacía (se asignará después). Las matrículas que ya tienen cuenta se omiten y nunca se sobrescriben. La matrícula debe tener solo dígitos.
+- **Nombres en la BD en español**, en `snake_case` y tablas en plural; sin «ñ» ni acentos (`contrasena_hash`, `tamano_bytes`). Los valores de los enums (`ADMIN`, `SUBMITTED`…) se quedan en inglés porque el código y el frontend los comparan.
+- **Se juntaron las migraciones en una sola** porque no había ninguna BD en producción. A partir de ahora las migraciones nuevas se agregan encima y ya no se reescriben.
 - **Moderación del repositorio:** lo de alumnos se revisa; lo de docentes y admins se publica directo. Rechazar exige explicar el motivo al autor.
 - **Grupos de estudio abiertos** a toda la comunidad (no ligados a un curso). Quien lo crea no puede salirse: si ya no se reunirán, lo borra.
 
 ### Importante
-- Siguen sin base de datos. Al crearla, aplicar las **tres** migraciones con `npm run prisma:deploy`.
+- Ya hay base de datos local (Docker). En este equipo existe además un MySQL nativo de Windows en el puerto 3306, así que el contenedor se publica en el **3307** (`MYSQL_HOST_PORT` en `.env`; `DATABASE_URL` apunta a `localhost:3307`).
+- El seed usa `SEED_ADMIN_USERNAME` (número de empleado), no `SEED_ADMIN_EMAIL`; se corrigió el `.env`.
 - Los archivos nuevos se guardan en `storage/classroom-drive/<curso>/` (material) y `storage/repository/<materia>/` (repositorio).
 
 ### Pendiente
-- Probar todo con la base de datos real.
+- Probar todos los módulos con la base de datos real (el backend ya conecta).
 - Administración: catálogos (facultades, carreras, materias), periodos y reasignar docentes.
 - Invalidar sesiones al desactivar cuentas o restablecer contraseñas.
 - Decidir cómo evitar registros con matrículas ajenas.

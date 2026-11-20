@@ -10,7 +10,7 @@ export default async function AdministracionUsuariosPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-uach-petrol">Usuarios</h1>
         <p className="mt-1 text-sm text-uach-ink/75">
-          Da de alta al personal, restablece contraseñas olvidadas y activa o desactiva cuentas.
+          Importa alumnos desde Excel, da de alta al personal, restablece contraseñas olvidadas y activa o desactiva cuentas.
         </p>
       </header>
       <UsersAdmin currentUserId={user.id} />

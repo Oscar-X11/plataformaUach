@@ -60,55 +60,59 @@ enum MaterialKind {
 
 model Faculty {
   id        String   @id @default(uuid())
-  name      String   @unique
-  code      String   @unique
+  name      String   @unique @map("nombre")
+  code      String   @unique @map("clave")
   careers   Career[]
   users     User[]
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("creado_en")
+
+  @@map("facultades")
 }
 
 model Career {
   id        String    @id @default(uuid())
-  name      String
-  code      String    @unique
-  facultyId String
+  name      String    @map("nombre")
+  code      String    @unique @map("clave")
+  facultyId String    @map("facultad_id")
   faculty   Faculty   @relation(fields: [facultyId], references: [id], onDelete: Restrict)
   subjects  Subject[]
   users     User[]
-  createdAt DateTime  @default(now())
+  createdAt DateTime  @default(now()) @map("creado_en")
 
   @@index([facultyId])
+  @@map("carreras")
 }
 
 model Subject {
   id          String       @id @default(uuid())
-  name        String
-  code        String       @unique
-  semester    Int
-  careerId    String
+  name        String       @map("nombre")
+  code        String       @unique @map("clave")
+  semester    Int          @map("semestre")
+  careerId    String       @map("carrera_id")
   career      Career       @relation(fields: [careerId], references: [id], onDelete: Cascade)
   courses     Course[]
   resources   Resource[]
   studyGroups StudyGroup[]
 
   @@index([careerId, semester])
+  @@map("materias")
 }
 
 model User {
   id                 String             @id @default(uuid())
   /// Matrícula (alumnos) o número de empleado (docentes y administradores).
   /// La universidad no da correo a los alumnos: este es el identificador de acceso.
-  username           String             @unique @db.VarChar(30)
-  passwordHash       String
+  username           String             @unique @map("usuario") @db.VarChar(30)
+  passwordHash       String             @map("contrasena_hash")
   /// true tras un restablecimiento hecho por un administrador: debe cambiarla al entrar.
-  mustChangePassword Boolean            @default(false)
-  fullName           String
+  mustChangePassword Boolean            @default(false) @map("debe_cambiar_contrasena")
+  fullName           String             @map("nombre_completo")
   /// Ruta relativa dentro de storage/ (avatars/...).
-  avatarUrl          String?
-  role               UserRole
-  status             AcademicStatus     @default(ACTIVE)
-  facultyId          String?
-  careerId           String?
+  avatarUrl          String?            @map("ruta_avatar")
+  role               UserRole           @map("rol")
+  status             AcademicStatus     @default(ACTIVE) @map("estado")
+  facultyId          String?            @map("facultad_id")
+  careerId           String?            @map("carrera_id")
   faculty            Faculty?           @relation(fields: [facultyId], references: [id], onDelete: SetNull)
   career             Career?            @relation(fields: [careerId], references: [id], onDelete: SetNull)
   taughtCourses      Course[]           @relation("TeacherCourses")
@@ -123,19 +127,20 @@ model User {
   studyGroups        StudyGroup[]       @relation("GroupCreators")
   groupMemberships   StudyGroupMember[]
   materials          CourseMaterial[]
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime           @default(now()) @map("creado_en")
+  updatedAt          DateTime           @updatedAt @map("actualizado_en")
 
   @@index([role, status])
+  @@map("usuarios")
 }
 
 model Course {
   id          String           @id @default(uuid())
-  name        String
-  term        String
-  invitation  String           @unique
-  subjectId   String
-  teacherId   String
+  name        String           @map("nombre")
+  term        String           @map("periodo")
+  invitation  String           @unique @map("codigo_invitacion")
+  subjectId   String           @map("materia_id")
+  teacherId   String           @map("docente_id")
   subject     Subject          @relation(fields: [subjectId], references: [id], onDelete: Restrict)
   teacher     User             @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
   enrollments Enrollment[]
@@ -143,201 +148,214 @@ model Course {
   assignments Assignment[]
   topics      CourseTopic[]
   materials   CourseMaterial[]
-  createdAt   DateTime         @default(now())
+  createdAt   DateTime         @default(now()) @map("creado_en")
 
   @@index([teacherId])
   @@index([subjectId])
+  @@map("cursos")
 }
 
 model Enrollment {
   id        String   @id @default(uuid())
-  courseId  String
-  studentId String
+  courseId  String   @map("curso_id")
+  studentId String   @map("alumno_id")
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  joinedAt  DateTime @default(now())
+  joinedAt  DateTime @default(now()) @map("inscrito_en")
 
   @@unique([courseId, studentId])
+  @@map("inscripciones")
 }
 
 model Post {
   id        String    @id @default(uuid())
-  content   String    @db.Text
-  courseId  String
-  authorId  String
+  content   String    @map("contenido") @db.Text
+  courseId  String    @map("curso_id")
+  authorId  String    @map("autor_id")
   course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
-  createdAt DateTime  @default(now())
+  createdAt DateTime  @default(now()) @map("creado_en")
 
   @@index([courseId, createdAt])
+  @@map("publicaciones")
 }
 
 model Comment {
   id        String   @id @default(uuid())
-  content   String   @db.Text
-  postId    String
-  authorId  String
+  content   String   @map("contenido") @db.Text
+  postId    String   @map("publicacion_id")
+  authorId  String   @map("autor_id")
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("creado_en")
 
   @@index([postId, createdAt])
+  @@map("comentarios")
 }
 
 model Assignment {
   id           String       @id @default(uuid())
-  title        String
-  instructions String       @db.Text
+  title        String       @map("titulo")
+  instructions String       @map("instrucciones") @db.Text
   /// Sin fecha = se puede entregar cuando sea.
-  dueAt        DateTime?
+  dueAt        DateTime?    @map("fecha_limite")
   /// Puntaje máximo (la escala habitual es 10).
-  points       Int          @default(10)
-  courseId     String
-  teacherId    String
+  points       Int          @default(10) @map("puntos")
+  courseId     String       @map("curso_id")
+  teacherId    String       @map("docente_id")
   course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   teacher      User         @relation("CreatedAssignments", fields: [teacherId], references: [id], onDelete: Restrict)
   submissions  Submission[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime     @default(now()) @map("creado_en")
+  updatedAt    DateTime     @updatedAt @map("actualizado_en")
 
   @@index([courseId, dueAt])
+  @@map("tareas")
 }
 
 model Submission {
   id           String           @id @default(uuid())
-  assignmentId String
-  studentId    String
-  status       SubmissionStatus @default(ASSIGNED)
-  grade        Decimal?         @db.Decimal(5, 2)
-  feedback     String?          @db.Text
-  submittedAt  DateTime?
-  returnedAt   DateTime?
+  assignmentId String           @map("tarea_id")
+  studentId    String           @map("alumno_id")
+  status       SubmissionStatus @default(ASSIGNED) @map("estado")
+  grade        Decimal?         @map("calificacion") @db.Decimal(5, 2)
+  feedback     String?          @map("retroalimentacion") @db.Text
+  submittedAt  DateTime?        @map("entregada_en")
+  returnedAt   DateTime?        @map("devuelta_en")
   assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   student      User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
   files        SubmissionFile[]
-  updatedAt    DateTime         @updatedAt
+  updatedAt    DateTime         @updatedAt @map("actualizado_en")
 
   @@unique([assignmentId, studentId])
   @@index([studentId, status])
+  @@map("entregas")
 }
 
 /// Archivo adjunto a una entrega. fileUrl es la ruta relativa dentro de storage/.
 model SubmissionFile {
   id           String     @id @default(uuid())
-  submissionId String
-  fileUrl      String     @unique
-  originalName String
-  mimeType     String
-  size         Int
+  submissionId String     @map("entrega_id")
+  fileUrl      String     @unique @map("ruta_archivo")
+  originalName String     @map("nombre_original")
+  mimeType     String     @map("tipo_mime")
+  size         Int        @map("tamano_bytes")
   sha256       String     @db.Char(64)
   submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime   @default(now()) @map("creado_en")
 
   @@index([submissionId])
+  @@map("archivos_entrega")
 }
 
 /// Aviso dentro de la plataforma (no hay correo).
 model Notification {
   id        String           @id @default(uuid())
-  userId    String
-  type      NotificationType
-  title     String
+  userId    String           @map("usuario_id")
+  type      NotificationType @map("tipo")
+  title     String           @map("titulo")
   /// Ruta interna a la que lleva, p. ej. /cursos/<id>/tareas/<id>.
-  link      String?
-  readAt    DateTime?
+  link      String?          @map("enlace")
+  readAt    DateTime?        @map("leida_en")
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime         @default(now())
+  createdAt DateTime         @default(now()) @map("creado_en")
 
   @@index([userId, readAt, createdAt])
+  @@map("notificaciones")
 }
 
 model Resource {
   id           String         @id @default(uuid())
-  title        String
-  description  String?        @db.Text
-  type         ResourceType
-  status       ResourceStatus @default(PENDING)
-  fileUrl      String         @unique
-  originalName String
-  mimeType     String
-  size         Int
+  title        String         @map("titulo")
+  description  String?        @map("descripcion") @db.Text
+  type         ResourceType   @map("tipo")
+  status       ResourceStatus @default(PENDING) @map("estado")
+  fileUrl      String         @unique @map("ruta_archivo")
+  originalName String         @map("nombre_original")
+  mimeType     String         @map("tipo_mime")
+  size         Int            @map("tamano_bytes")
   sha256       String?        @db.Char(64)
-  subjectId    String
-  authorId     String
+  subjectId    String         @map("materia_id")
+  authorId     String         @map("autor_id")
   /// Motivo del rechazo (lo ve el autor).
-  reviewNote   String?        @db.VarChar(500)
-  reviewedById String?
-  reviewedAt   DateTime?
+  reviewNote   String?        @map("nota_revision") @db.VarChar(500)
+  reviewedById String?        @map("revisado_por_id")
+  reviewedAt   DateTime?      @map("revisado_en")
   subject      Subject        @relation(fields: [subjectId], references: [id], onDelete: Restrict)
   author       User           @relation("ResourceAuthors", fields: [authorId], references: [id], onDelete: Cascade)
   reviewedBy   User?          @relation("ResourceReviewers", fields: [reviewedById], references: [id], onDelete: SetNull)
-  createdAt    DateTime       @default(now())
+  createdAt    DateTime       @default(now()) @map("creado_en")
 
   @@index([subjectId, type])
   @@index([status, createdAt])
+  @@map("recursos")
 }
 
 /// Tema o unidad del curso para agrupar el material.
 model CourseTopic {
   id        String           @id @default(uuid())
-  courseId  String
-  title     String           @db.VarChar(120)
-  position  Int              @default(0)
+  courseId  String           @map("curso_id")
+  title     String           @map("titulo") @db.VarChar(120)
+  position  Int              @default(0) @map("posicion")
   course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   materials CourseMaterial[]
-  createdAt DateTime         @default(now())
+  createdAt DateTime         @default(now()) @map("creado_en")
 
   @@index([courseId, position])
+  @@map("temas_curso")
 }
 
 /// Material del curso: un archivo (storage/classroom-drive/...) o un enlace.
 model CourseMaterial {
   id           String       @id @default(uuid())
-  courseId     String
-  topicId      String?
-  title        String       @db.VarChar(150)
-  description  String?      @db.Text
-  kind         MaterialKind
-  fileUrl      String?      @unique
+  courseId     String       @map("curso_id")
+  topicId      String?      @map("tema_id")
+  title        String       @map("titulo") @db.VarChar(150)
+  description  String?      @map("descripcion") @db.Text
+  kind         MaterialKind @map("tipo")
+  fileUrl      String?      @unique @map("ruta_archivo")
   url          String?      @db.VarChar(500)
-  originalName String?
-  mimeType     String?
-  size         Int?
+  originalName String?      @map("nombre_original")
+  mimeType     String?      @map("tipo_mime")
+  size         Int?         @map("tamano_bytes")
   sha256       String?      @db.Char(64)
-  authorId     String
+  authorId     String       @map("autor_id")
   course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   topic        CourseTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
   author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt    DateTime     @default(now())
+  createdAt    DateTime     @default(now()) @map("creado_en")
 
   @@index([courseId, topicId])
+  @@map("materiales_curso")
 }
 
 model StudyGroup {
   id          String             @id @default(uuid())
-  title       String
-  description String             @db.Text
-  capacity    Int
+  title       String             @map("titulo")
+  description String             @map("descripcion") @db.Text
+  capacity    Int                @map("cupo")
   /// Cuándo y dónde se reúnen, p. ej. "Martes 16:00, biblioteca".
-  meetingInfo String?            @db.VarChar(200)
-  subjectId   String?
-  creatorId   String
+  meetingInfo String?            @map("lugar_horario") @db.VarChar(200)
+  subjectId   String?            @map("materia_id")
+  creatorId   String             @map("creador_id")
   subject     Subject?           @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   creator     User               @relation("GroupCreators", fields: [creatorId], references: [id], onDelete: Cascade)
   members     StudyGroupMember[]
-  createdAt   DateTime           @default(now())
+  createdAt   DateTime           @default(now()) @map("creado_en")
 
   @@index([subjectId])
+  @@map("grupos_estudio")
 }
 
 model StudyGroupMember {
-  groupId  String
-  userId   String
+  groupId  String     @map("grupo_id")
+  userId   String     @map("usuario_id")
   group    StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  joinedAt DateTime   @default(now())
+  joinedAt DateTime   @default(now()) @map("unido_en")
 
   @@id([groupId, userId])
   @@index([userId])
+  @@map("miembros_grupo_estudio")
 }

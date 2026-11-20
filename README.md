@@ -21,7 +21,7 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | Fase 2 | Valor institucional (calendario, material del curso, repositorio, grupos de estudio, reportes) | 🔄 Casi completa — faltan catálogos y periodos en administración |
 | Fase 3 | Funciones tipo Moodle (cuestionarios, asistencia, foros…) | ⬜ Pendiente |
 
-> Todavía no hay base de datos MySQL: todo se ha probado con el backend simulado (`npm run dev:demo`). Las tres migraciones están listas para aplicarse con `npm run prisma:deploy`.
+> Base de datos local de pruebas: MySQL 8.4 en Docker (`docker compose up -d mysql redis`, puerto del host en `MYSQL_HOST_PORT`). Se crea con `npm run prisma:deploy` y `npm run prisma:seed`. Las tablas y columnas están en español (`@@map`/`@map` en `schema.prisma`); el código sigue usando los nombres de los modelos en inglés.
 
 ### Backend
 
@@ -58,6 +58,7 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | POST | `/notifications/read-all` · `/notifications/:id/read` | Autenticado | Marcar como leídas |
 | GET | `/profile` · POST/DELETE `/profile/avatar` | Autenticado | Perfil y foto (multipart `file`) |
 | GET/POST | `/users` | Administrador | Buscar usuarios; alta de personal con contraseña temporal |
+| POST | `/users/import-students` | Administrador | Importar alumnos desde el Excel (`dryRun: true` = vista previa; hasta 100 cuentas por petición) |
 | PATCH | `/users/:id/status` | Administrador | Activar, desactivar o marcar como egresado |
 | GET | `/dashboard/student` · `/teacher` · `/admin` | Según el rol | Resumen de la pantalla de inicio |
 | GET | `/calendar?from=ISO&to=ISO` | Autenticado | Entregas de mis cursos en el rango (máx. 62 días) |

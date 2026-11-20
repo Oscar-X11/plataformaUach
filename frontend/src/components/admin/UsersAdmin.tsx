@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Copy, KeyRound, LoaderCircle, Search, UserPlus, X } from "lucide-react";
+import { Copy, FileSpreadsheet, KeyRound, LoaderCircle, Search, UserPlus, X } from "lucide-react";
+import { StudentImport } from "@/components/admin/StudentImport";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
@@ -83,7 +84,7 @@ function CreateStaffForm({ onCreated, onCancel }: { onCreated: (row: AdminUserRo
   return (
     <form onSubmit={submit} noValidate className={`${CARD} space-y-4 p-5`}>
       <h2 className="text-base font-semibold text-uach-ink">Alta de personal</h2>
-      <p className="text-sm text-uach-ink/75">Los alumnos se registran solos con su matrícula.</p>
+      <p className="text-sm text-uach-ink/75">Para los alumnos usa «Importar alumnos» (desde Excel).</p>
       {error && <FormAlert message={error} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
         <div>
@@ -120,6 +121,7 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
   const [data, setData] = useState<AdminUserPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [secret, setSecret] = useState<{ user: { fullName: string; username: string }; password: string } | null>(null);
 
@@ -178,7 +180,9 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
     <div className="space-y-4">
       {secret && <TemporaryPassword user={secret.user} password={secret.password} onClose={() => setSecret(null)} />}
 
-      {creating ? (
+      {importing ? (
+        <StudentImport onClose={() => setImporting(false)} onImported={load} />
+      ) : creating ? (
         <CreateStaffForm
           onCancel={() => setCreating(false)}
           onCreated={(user, password) => {
@@ -218,6 +222,10 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
             <option value="TEACHER">Docentes</option>
             <option value="ADMIN">Administradores</option>
           </select>
+          <button type="button" onClick={() => setImporting(true)} className={BTN_SECONDARY}>
+            <FileSpreadsheet className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            Importar alumnos
+          </button>
           <button type="button" onClick={() => setCreating(true)} className={BTN_PRIMARY}>
             <UserPlus className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             Alta de personal

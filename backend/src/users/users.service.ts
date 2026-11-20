@@ -9,7 +9,8 @@ import * as bcrypt from 'bcrypt';
 import { randomInt } from 'node:crypto';
 import { BCRYPT_ROUNDS } from '../auth/auth.service';
 import { PrismaService } from '../database/prisma.service';
-import { CreateStaffDto, ListUsersQuery } from './dto/users.dto';
+import { CreateStaffDto, IMPORT_CREATE_MAX, ImportStudentsDto, ListUsersQuery } from './dto/users.dto';
+import { prepareStudentRows, studentInitialPassword, summarize } from './student-import';
 
 // Sin caracteres que se confunden al dictarlos (0/o, 1/l/i).
 const TEMP_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
@@ -89,6 +90,54 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Alta masiva de alumnos desde el Excel de la universidad. Con dryRun solo
+   * revisa (vista previa). Las matrículas que ya tienen cuenta se omiten: nunca
+   * se sobrescribe la contraseña de alguien que ya entró.
+   */
+  async importStudents(dto: ImportStudentsDto) {
+    const rows = prepareStudentRows(dto.rows);
+
+    const candidates = rows.filter((row) => row.status === 'new').map((row) => row.username);
+    if (candidates.length) {
+      const existing = await this.prisma.user.findMany({
+        where: { username: { in: candidates } },
+        select: { username: true },
+      });
+      const taken = new Set(existing.map((user) => user.username));
+      for (const row of rows) {
+        if (row.status === 'new' && taken.has(row.username)) row.status = 'exists';
+      }
+    }
+
+    const toCreate = rows.filter((row) => row.status === 'new');
+    if (dto.dryRun || toCreate.length === 0) return { rows, summary: summarize(rows) };
+
+    if (toCreate.length > IMPORT_CREATE_MAX) {
+      throw new BadRequestException(`Importa como máximo ${IMPORT_CREATE_MAX} alumnos por petición`);
+    }
+
+    const inputs = new Map(dto.rows.map((row) => [row.line, row]));
+    const data = await Promise.all(
+      toCreate.map(async (row) => {
+        const input = inputs.get(row.line)!;
+        row.initialPassword = studentInitialPassword(input.matricula, input.nombre);
+        return {
+          username: row.username,
+          fullName: row.fullName,
+          role: 'STUDENT' as const,
+          passwordHash: await bcrypt.hash(row.initialPassword, BCRYPT_ROUNDS),
+          mustChangePassword: true,
+        };
+      }),
+    );
+    // skipDuplicates por si otra importación creó la misma matrícula al mismo tiempo.
+    await this.prisma.user.createMany({ data, skipDuplicates: true });
+    for (const row of toCreate) row.status = 'created';
+
+    return { rows, summary: summarize(rows) };
   }
 
   async setStatus(userId: string, status: AcademicStatus, adminId: string) {

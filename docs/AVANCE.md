@@ -57,7 +57,7 @@
 
 ### Backend (NestJS + Prisma)
 - ✅ Modelo de datos en `schema.prisma`: Faculty, Career, Subject, User, Course, Enrollment, Post, Comment, Assignment, Submission, SubmissionFile, Notification, Resource, CourseTopic, CourseMaterial, StudyGroup, StudyGroupMember.
-- ✅ Migraciones versionadas: `20261119000000_init`, `20261119120000_fase1_classroom` y `20261120090000_fase2_institucional`.
+- ✅ Migración inicial única `20261120120000_init` (sustituye a las tres anteriores), con tablas y columnas en español.
 - ✅ Seed con catálogos académicos de ejemplo y el administrador inicial (`SEED_ADMIN_USERNAME`).
 - ✅ Registro (solo alumnos, con matrícula), login, logout y `GET /auth/me`.
 - ✅ Cambio de contraseña (`POST /auth/change-password`) y restablecimiento por un administrador (`POST /users/:id/reset-password`).

@@ -551,6 +551,44 @@ export function createClasswork(ctx) {
       users.set(username, { password: temporaryPassword, user: created });
       send(res, 201, { user: adminRow(created), temporaryPassword });
     }],
+    // Mismas reglas que backend/src/users/student-import.ts
+    ["POST", /^\/users\/import-students$/, async (req, res, _p, user) => {
+      if (user.role !== "ADMIN") return forbidden(res);
+      const body = await readJson(req);
+      if (!Array.isArray(body.rows) || body.rows.length === 0) return bad(res, ["El archivo no tiene alumnos"]);
+      const collapse = (v) => String(v ?? "").trim().replace(/\s+/g, " ");
+      const plain = (v) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+      const seen = new Map();
+      const rows = body.rows.map((row) => {
+        const username = collapse(row.matricula);
+        const nombre = collapse(row.nombre);
+        const fullName = [nombre, collapse(row.apPat), collapse(row.apMat)].filter(Boolean).join(" ");
+        const base = { line: row.line, username, fullName };
+        const fail = (error) => ({ ...base, status: "error", error });
+        if (!username) return fail("Falta la matrícula");
+        if (!/^\d{3,30}$/.test(username)) return fail("La matrícula solo debe tener números");
+        if (!nombre) return fail("Falta el nombre");
+        if (!plain(nombre.split(" ")[0])) return fail("El nombre no tiene letras válidas");
+        if (!collapse(row.apPat)) return fail("Falta el apellido paterno");
+        if (seen.has(username)) return fail(`Matrícula repetida (ya aparece en la fila ${seen.get(username)})`);
+        seen.set(username, row.line);
+        if (users.has(username)) return { ...base, status: "exists" };
+        return { ...base, status: "new", nombre };
+      });
+      const toCreate = rows.filter((row) => row.status === "new");
+      if (!body.dryRun && toCreate.length > 100) return bad(res, "Importa como máximo 100 alumnos por petición");
+      for (const row of rows) {
+        if (row.status === "new" && !body.dryRun) {
+          row.initialPassword = `${row.username.slice(-3)}${plain(row.nombre.split(" ")[0])}`;
+          const created = { id: randomUUID(), username: row.username, fullName: row.fullName, role: "STUDENT", status: "ACTIVE", mustChangePassword: true, avatarUrl: null, facultyId: null, careerId: null, createdAt: new Date().toISOString() };
+          users.set(row.username, { password: row.initialPassword, user: created });
+          row.status = "created";
+        }
+        delete row.nombre;
+      }
+      const count = (status) => rows.filter((row) => row.status === status).length;
+      send(res, 200, { rows, summary: { new: count("new"), created: count("created"), exists: count("exists"), errors: count("error") } });
+    }],
     ["PATCH", /^\/users\/([^/]+)\/status$/, async (req, res, [id], user) => {
       if (user.role !== "ADMIN") return forbidden(res);
       const { status } = await readJson(req);
