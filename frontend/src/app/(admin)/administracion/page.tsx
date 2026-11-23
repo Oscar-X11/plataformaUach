@@ -79,7 +79,7 @@ export default async function AdministracionPage() {
             {[
               { href: "/administracion/usuarios", label: "Alta de docentes y restablecer contraseñas" },
               { href: "/administracion/periodos", label: "Abrir o cerrar periodos" },
-              { href: "/administracion/catalogos", label: "Facultades, carreras y materias" },
+              { href: "/administracion/materias", label: "Materias, carreras y facultades" },
               { href: "/administracion/cursos", label: "Revisar cursos y cambiar docentes" },
               { href: "/cursos", label: "Entrar a un curso como administrador" },
             ].map((item) => (

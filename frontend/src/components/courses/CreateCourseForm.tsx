@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert, SelectField, SubmitButton, TextField } from "@/components/ui/form";
 import { api, ApiError } from "@/lib/api";
-import type { AcademicTerm } from "@/lib/academic";
+import { SCHEME_TEXT, schemeOf, type AcademicTerm } from "@/lib/academic";
 import type { CourseSummary, SubjectOption } from "@/lib/courses";
 
 /** Docente: crea un curso ligado a una materia del catálogo. */
@@ -17,6 +17,7 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
   const [terms, setTerms] = useState<AcademicTerm[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [subjectId, setSubjectId] = useState("");
 
   useEffect(() => {
     if (!open || subjects) return;
@@ -32,7 +33,11 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
       });
   }, [open, subjects]);
 
-  const currentTerm = terms?.find((term) => term.isCurrent)?.code ?? terms?.[0]?.code ?? "";
+  // Solo los periodos del tipo de la materia: cuatrimestres (licenciatura) o semestres (bachillerato).
+  const subject = subjects?.find((item) => item.id === subjectId);
+  const scheme = schemeOf(subject?.career.faculty);
+  const termOptions = subject ? (terms ?? []).filter((term) => schemeOf(term) === scheme) : null;
+  const currentTerm = termOptions?.find((term) => term.isCurrent)?.code ?? termOptions?.[0]?.code ?? "";
 
   // Agrupa las materias por carrera para el <select>.
   const byCareer = useMemo(() => {
@@ -80,8 +85,11 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
     <form onSubmit={handleSubmit} noValidate className={`${CARD} w-full space-y-4 p-5 text-uach-ink sm:p-6`}>
       <h2 className="text-base font-semibold">Nuevo curso</h2>
       {error && <FormAlert message={error} />}
-      {terms?.length === 0 && (
-        <FormAlert tone="info" message="La administración todavía no abre ningún periodo. Pídele que dé de alta el semestre." />
+      {termOptions?.length === 0 && (
+        <FormAlert
+          tone="info"
+          message={`La administración todavía no abre ningún ${SCHEME_TEXT[scheme].unit}. Pídele que lo dé de alta.`}
+        />
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -95,16 +103,17 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
           autoFocus
         />
         <SelectField
-          key={currentTerm}
-          label="Periodo"
+          key={`${scheme}-${currentTerm}`}
+          label={subject ? SCHEME_TEXT[scheme].unit.replace(/^./, (c) => c.toUpperCase()) : "Periodo"}
           name="term"
           required
           defaultValue={currentTerm}
-          disabled={!terms?.length}
+          disabled={!termOptions?.length}
         >
           {terms === null && <option value="">Cargando…</option>}
-          {terms?.length === 0 && <option value="">No hay periodos abiertos</option>}
-          {terms?.map((term) => (
+          {terms !== null && !subject && <option value="">Elige primero la materia</option>}
+          {termOptions?.length === 0 && <option value="">No hay periodos abiertos</option>}
+          {termOptions?.map((term) => (
             <option key={term.id} value={term.code}>
               {term.code}
               {term.name !== term.code ? ` · ${term.name}` : ""}
@@ -113,7 +122,14 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
         </SelectField>
       </div>
 
-      <SelectField label="Materia" name="subjectId" required defaultValue="" disabled={!subjects?.length}>
+      <SelectField
+        label="Materia"
+        name="subjectId"
+        required
+        value={subjectId}
+        onChange={(event) => setSubjectId(event.target.value)}
+        disabled={!subjects?.length}
+      >
         <option value="" disabled>
           {subjects === null ? "Cargando materias…" : "Selecciona una materia"}
         </option>
@@ -121,7 +137,7 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
           <optgroup key={career} label={career}>
             {list.map((subject) => (
               <option key={subject.id} value={subject.id}>
-                {subject.code} · {subject.name} ({subject.semester}.º semestre)
+                {subject.code} · {subject.name} ({subject.semester}.º {SCHEME_TEXT[schemeOf(subject.career.faculty)].unit})
               </option>
             ))}
           </optgroup>

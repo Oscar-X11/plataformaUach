@@ -112,7 +112,7 @@ Ventanas funcionales:
 | `(auth)` | `/login`, `/registro`, `/recuperar-contrasena` |
 | `(cuenta)` | `/cambiar-contrasena` |
 | `(dashboard)` | `/dashboard` (alumno y docente), `/cursos`, `/cursos/[cursoId]` (tablón), `/cursos/[cursoId]/tareas`, `/cursos/[cursoId]/tareas/[tareaId]`, `/cursos/[cursoId]/recursos`, `/cursos/[cursoId]/personas`, `/cursos/[cursoId]/calificaciones`, `/entregas`, `/calendario`, `/repositorio`, `/grupos-estudio`, `/grupos-estudio/[grupoId]`, `/notificaciones`, `/perfil` |
-| `(admin)` | `/administracion` (panel), `/administracion/usuarios`, `/administracion/cursos`, `/administracion/catalogos`, `/administracion/periodos`, `/administracion/reportes` |
+| `(admin)` | `/administracion` (panel), `/administracion/usuarios`, `/administracion/cursos`, `/administracion/materias`, `/administracion/periodos`, `/administracion/reportes` |
 
 | Rol | Página de inicio |
 | --- | --- |
@@ -244,7 +244,7 @@ Plataforma_UACH/
 ## Siguientes pasos
 
 - **Instalar en el servidor Debian** (4 GB): swap, respaldos de la BD y de `storage/`, imágenes construidas fuera del servidor.
-- **Cargar el catálogo oficial** desde `/administracion/catalogos` y dar de alta los periodos en `/administracion/periodos`.
+- **Cargar el catálogo oficial** desde `/administracion/materias` y dar de alta los periodos en `/administracion/periodos`.
 - **Pendientes técnicos:** invalidar sesiones al desactivar cuentas o restablecer contraseñas, endpoint `/health`, refresh token y pruebas e2e.
 - **Por decidir:** cómo evitar registros con la matrícula de otro alumno.
 - **Fase 3:** cuestionarios, asistencia, rúbricas, libro de calificaciones avanzado y foros (detalle en [`docs/AVANCE.md`](docs/AVANCE.md)).

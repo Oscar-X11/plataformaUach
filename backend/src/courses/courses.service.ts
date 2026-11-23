@@ -77,15 +77,20 @@ export class CoursesService {
   async create(dto: CreateCourseDto, user: TokenPayload) {
     const subject = await this.prisma.subject.findUnique({
       where: { id: dto.subjectId },
-      select: { id: true },
+      select: { id: true, career: { select: { faculty: { select: { scheme: true } } } } },
     });
     if (!subject) throw new BadRequestException('La materia no existe');
     const term = await this.prisma.academicTerm.findUnique({
       where: { code: dto.term },
-      select: { code: true, closed: true },
+      select: { code: true, closed: true, scheme: true },
     });
     if (!term || term.closed) {
       throw new BadRequestException('Elige un periodo abierto (los da de alta la administración)');
+    }
+    // Una materia de bachillerato va en un semestre; una de licenciatura, en un cuatrimestre.
+    if (term.scheme !== subject.career.faculty.scheme) {
+      const expected = subject.career.faculty.scheme === 'SEMESTRAL' ? 'semestral' : 'cuatrimestral';
+      throw new BadRequestException(`Esta materia se imparte en periodos de tipo ${expected}; elige uno de ese tipo`);
     }
 
     const row = await this.withFreshCode((invitation) =>

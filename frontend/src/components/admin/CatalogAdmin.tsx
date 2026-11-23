@@ -6,13 +6,13 @@ import { BookOpen, Building2, ChevronRight, GraduationCap, LoaderCircle, Pencil,
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
-import type { CatalogCareer, CatalogFaculty, CatalogSubject } from "@/lib/academic";
+import { SCHEME_TEXT, schemeOf, TERM_SCHEMES, type CatalogCareer, type CatalogFaculty, type CatalogSubject, type TermScheme } from "@/lib/academic";
 import { api, ApiError } from "@/lib/api";
 
 type Kind = "faculty" | "career" | "subject";
 
 const LABELS: Record<Kind, { one: string; endpoint: string; namePlaceholder: string; codePlaceholder: string }> = {
-  faculty: { one: "facultad", endpoint: "/academic/faculties", namePlaceholder: "Facultad de Ingeniería", codePlaceholder: "FING" },
+  faculty: { one: "facultad", endpoint: "/academic/faculties", namePlaceholder: "Ingenierías", codePlaceholder: "ING" },
   career: { one: "carrera", endpoint: "/academic/careers", namePlaceholder: "Ingeniería en Sistemas Computacionales", codePlaceholder: "ISC" },
   subject: { one: "materia", endpoint: "/academic/subjects", namePlaceholder: "Bases de Datos", codePlaceholder: "ISC-301" },
 };
@@ -26,12 +26,15 @@ function EntityForm({
   item,
   parent,
   faculties,
+  scheme = "CUATRIMESTRAL",
   onDone,
 }: {
   kind: Kind;
-  item?: { id: string; name: string; code: string; semester?: number };
+  item?: { id: string; name: string; code: string; semester?: number; scheme?: TermScheme };
   parent?: string;
   faculties?: CatalogFaculty[];
+  /** Tipo de periodo de la facultad: nombra el campo «Cuatrimestre» o «Semestre». */
+  scheme?: TermScheme;
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -44,6 +47,7 @@ function EntityForm({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const body: Record<string, unknown> = { name: form.get("name"), code: form.get("code") };
+    if (kind === "faculty") body.scheme = form.get("scheme");
     if (kind === "career") body.facultyId = form.get("facultyId") ?? parent;
     if (kind === "subject") {
       body.careerId = parent;
@@ -86,8 +90,20 @@ function EntityForm({
         </div>
         {kind === "subject" && (
           <div>
-            <label htmlFor={`${prefix}-semester`} className="mb-1 block text-xs font-medium text-uach-ink/75">Semestre</label>
+            <label htmlFor={`${prefix}-semester`} className="mb-1 block text-xs font-medium text-uach-ink/75">{scheme === "SEMESTRAL" ? "Semestre" : "Cuatrimestre"}</label>
             <input id={`${prefix}-semester`} name="semester" type="number" min={1} max={12} required defaultValue={item?.semester ?? 1} className={INPUT} />
+          </div>
+        )}
+        {kind === "faculty" && (
+          <div>
+            <label htmlFor={`${prefix}-scheme`} className="mb-1 block text-xs font-medium text-uach-ink/75">Periodos</label>
+            <select id={`${prefix}-scheme`} name="scheme" defaultValue={schemeOf(item)} className={INPUT}>
+              {TERM_SCHEMES.map((value) => (
+                <option key={value} value={value}>
+                  {SCHEME_TEXT[value].label}
+                </option>
+              ))}
+            </select>
           </div>
         )}
         {kind === "career" && item && faculties && (
@@ -161,19 +177,19 @@ function RowActions({
   );
 }
 
-function SubjectRow({ subject, careerId }: { subject: CatalogSubject; careerId: string }) {
+function SubjectRow({ subject, careerId, scheme }: { subject: CatalogSubject; careerId: string; scheme: TermScheme }) {
   const [editing, setEditing] = useState(false);
   const { courses, resources } = subject._count;
   if (editing) {
     return (
       <li className="py-2">
-        <EntityForm kind="subject" item={subject} parent={careerId} onDone={() => setEditing(false)} />
+        <EntityForm kind="subject" item={subject} parent={careerId} scheme={scheme} onDone={() => setEditing(false)} />
       </li>
     );
   }
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-14 shrink-0 text-xs tabular-nums text-uach-ink/60">{subject.semester}.º sem</span>
+      <span className="w-14 shrink-0 text-xs tabular-nums text-uach-ink/60">{subject.semester}.º {SCHEME_TEXT[scheme].short}</span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-uach-ink">{subject.name}</p>
         <p className="text-xs tabular-nums text-uach-ink/60">
@@ -192,7 +208,17 @@ function SubjectRow({ subject, careerId }: { subject: CatalogSubject; careerId: 
   );
 }
 
-function CareerBlock({ career, facultyId, faculties }: { career: CatalogCareer; facultyId: string; faculties: CatalogFaculty[] }) {
+function CareerBlock({
+  career,
+  facultyId,
+  faculties,
+  scheme,
+}: {
+  career: CatalogCareer;
+  facultyId: string;
+  faculties: CatalogFaculty[];
+  scheme: TermScheme;
+}) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -238,7 +264,7 @@ function CareerBlock({ career, facultyId, faculties }: { career: CatalogCareer; 
           {career.subjects.length > 0 ? (
             <ul className="divide-y divide-uach-ink/[0.06]">
               {career.subjects.map((subject) => (
-                <SubjectRow key={subject.id} subject={subject} careerId={career.id} />
+                <SubjectRow key={subject.id} subject={subject} careerId={career.id} scheme={scheme} />
               ))}
             </ul>
           ) : (
@@ -246,7 +272,7 @@ function CareerBlock({ career, facultyId, faculties }: { career: CatalogCareer; 
           )}
           {adding ? (
             <div className="pt-2">
-              <EntityForm kind="subject" parent={career.id} onDone={() => setAdding(false)} />
+              <EntityForm kind="subject" parent={career.id} scheme={scheme} onDone={() => setAdding(false)} />
             </div>
           ) : (
             <button type="button" onClick={() => setAdding(true)} className={`${BTN_GHOST} mt-1`}>
@@ -276,7 +302,8 @@ function FacultyCard({ faculty, faculties }: { faculty: CatalogFaculty; facultie
           <div className="min-w-0 flex-1">
             <h2 className="truncate font-semibold text-uach-ink">{faculty.name}</h2>
             <p className="text-xs tabular-nums text-uach-ink/60">
-              {faculty.code} · {faculty.careers.length} {faculty.careers.length === 1 ? "carrera" : "carreras"}
+              {faculty.code} · {SCHEME_TEXT[schemeOf(faculty)].label} · {faculty.careers.length}{" "}
+              {faculty.careers.length === 1 ? "carrera" : "carreras"}
             </p>
           </div>
           <RowActions
@@ -291,7 +318,7 @@ function FacultyCard({ faculty, faculties }: { faculty: CatalogFaculty; facultie
 
       <ul className="mt-3 divide-y divide-uach-ink/[0.06]">
         {faculty.careers.map((career) => (
-          <CareerBlock key={career.id} career={career} facultyId={faculty.id} faculties={faculties} />
+          <CareerBlock key={career.id} career={career} facultyId={faculty.id} faculties={faculties} scheme={schemeOf(faculty)} />
         ))}
       </ul>
       {adding ? (

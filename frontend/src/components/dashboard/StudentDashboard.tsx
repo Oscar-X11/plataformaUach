@@ -124,7 +124,7 @@ export function StudentDashboard({
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-uach-teal/10 text-uach-teal">
                 <BookOpen className="h-6 w-6" strokeWidth={1.5} aria-hidden />
               </span>
-              <p className="mt-4 font-semibold text-uach-petrol">Tu semestre empieza aquí</p>
+              <p className="mt-4 font-semibold text-uach-petrol">Tu ciclo escolar empieza aquí</p>
               <p className="mt-1 max-w-sm text-sm text-uach-ink/75">
                 Pide a tu docente el código de invitación y únete a tu primer curso.
               </p>

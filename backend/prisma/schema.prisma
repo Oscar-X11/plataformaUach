@@ -59,10 +59,18 @@ enum MaterialKind {
   LINK
 }
 
+/// Cómo se divide el año escolar. Licenciaturas e ingenierías: cuatrimestres; bachillerato: semestres.
+enum TermScheme {
+  CUATRIMESTRAL
+  SEMESTRAL
+}
+
 model Faculty {
-  id        String   @id @default(uuid())
-  name      String   @unique @map("nombre")
-  code      String   @unique @map("clave")
+  id        String     @id @default(uuid())
+  name      String     @unique @map("nombre")
+  code      String     @unique @map("clave")
+  /// Tipo de periodo de todas sus carreras: decide en qué periodos se abren sus cursos.
+  scheme    TermScheme @default(CUATRIMESTRAL) @map("tipo_periodo")
   careers   Career[]
   users     User[]
   createdAt DateTime @default(now()) @map("creado_en")
@@ -88,6 +96,7 @@ model Subject {
   id          String       @id @default(uuid())
   name        String       @map("nombre")
   code        String       @unique @map("clave")
+  /// Número de cuatrimestre o semestre, según el tipo de periodo de la facultad.
   semester    Int          @map("semestre")
   careerId    String       @map("carrera_id")
   career      Career       @relation(fields: [careerId], references: [id], onDelete: Cascade)
@@ -135,14 +144,16 @@ model User {
   @@map("usuarios")
 }
 
-/// Periodo académico (semestre). Los cursos se ligan por la clave ("2026-2").
+/// Periodo académico (cuatrimestre o semestre). Los cursos se ligan por la clave ("2026-C3").
 model AcademicTerm {
-  id        String    @id @default(uuid())
-  code      String    @unique @map("clave")
-  name      String    @map("nombre")
+  id        String     @id @default(uuid())
+  code      String     @unique @map("clave")
+  name      String     @map("nombre")
+  /// Solo lo usan las facultades con el mismo tipo de periodo.
+  scheme    TermScheme @default(CUATRIMESTRAL) @map("tipo")
   startsAt  DateTime? @map("inicia_en") @db.Date
   endsAt    DateTime? @map("termina_en") @db.Date
-  /// Periodo que se propone por omisión al crear cursos. Solo uno a la vez.
+  /// Periodo que se propone por omisión al crear cursos. Solo uno a la vez por tipo.
   isCurrent Boolean   @default(false) @map("actual")
   /// Cerrado: ya no se crean cursos en él.
   closed    Boolean   @default(false) @map("cerrado")

@@ -8,6 +8,36 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 
 ---
 
+## 2026-11-23
+
+### Qué se hizo
+- Se extrajeron datos del sitio oficial (`uach.edu.mx`: index, Courses, Identidad y niveles).
+- El seed carga el catálogo real: 11 licenciaturas, 4 ingenierías y la Preparatoria Rosario Castellanos con sus 4 áreas de bachillerato.
+- La pantalla de acceso muestra el lema («Educación es progreso»), la dirección, el teléfono y el correo de la universidad.
+- **Tipo de periodo** (migración `20261123120000_tipos_de_periodo`): cada facultad y cada periodo son cuatrimestrales o semestrales.
+  - Hay un periodo actual por tipo; un curso solo se abre en un periodo del tipo de su facultad (el backend lo valida).
+  - Al crear un curso, el docente elige primero la materia y solo ve los periodos de su tipo.
+  - El seed crea el periodo en curso de cada tipo si no hay uno actual (`2026-C3` y `2026-S2`).
+- «Catálogos» pasó a llamarse **Materias** (`/administracion/materias`).
+
+### Decisiones
+- Licenciaturas e ingenierías: cuatrimestrales. Bachillerato: semestral (lo confirmó el usuario).
+- El sitio no publica facultades. Se agrupa como él: «Licenciaturas» (`LIC`), «Ingenierías» (`ING`) y «Preparatoria Rosario Castellanos» (`PREP`).
+- Las facultades de ejemplo `FING` y `FCA` se integraron en `ING` y `LIC` con sus usuarios y carreras.
+- Siglas de Arquitectura, Gastronomía y Turismo: `LA`, `LG` y `LT` (las indicó el usuario; el seed renombra las claves anteriores).
+- Áreas de bachillerato con claves propias: `BEA`, `BFM`, `BQB`, `BSH`. El significado de «BPProfesional» no aparece en el sitio.
+- Las materias se capturan desde Administración → Materias; no se cargaron posgrados.
+- La migración se generó con `prisma migrate diff`: el usuario de MySQL no puede crear la base temporal de `migrate dev`.
+
+### Importante
+- Detener la tarea del backend no siempre cierra el proceso de Node: revisar el puerto 4000 antes de relanzarlo.
+
+### Pendiente
+- Capturar las materias reales de cada carrera.
+- El periodo `2026-2` (anterior al cambio) quedó como cuatrimestral; revisarlo o cerrarlo desde Periodos.
+
+---
+
 ## 2026-11-22
 
 ### Qué se hizo

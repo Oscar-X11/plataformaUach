@@ -7,6 +7,7 @@ const TERM_SELECT = {
   id: true,
   code: true,
   name: true,
+  scheme: true,
   startsAt: true,
   endsAt: true,
   isCurrent: true,
@@ -47,6 +48,7 @@ export class CatalogService {
         id: true,
         name: true,
         code: true,
+        scheme: true,
         _count: { select: { users: true } },
         careers: {
           orderBy: { name: 'asc' },
@@ -162,19 +164,22 @@ export class CatalogService {
 
   terms() {
     return this.prisma.academicTerm.findMany({
-      orderBy: [{ isCurrent: 'desc' }, { startsAt: 'desc' }, { code: 'desc' }],
+      orderBy: [{ scheme: 'asc' }, { isCurrent: 'desc' }, { startsAt: 'desc' }, { code: 'desc' }],
       select: TERM_SELECT,
     });
   }
 
   async createTerm(dto: TermDto) {
     this.assertRange(dto.startsAt, dto.endsAt);
-    const isFirst = (await this.prisma.academicTerm.count()) === 0;
+    const scheme = dto.scheme ?? 'CUATRIMESTRAL';
+    // El primer periodo de cada tipo queda como actual.
+    const isFirst = (await this.prisma.academicTerm.count({ where: { scheme } })) === 0;
     return this.prisma.academicTerm
       .create({
         data: {
           code: dto.code,
           name: dto.name,
+          scheme,
           startsAt: toDate(dto.startsAt),
           endsAt: toDate(dto.endsAt),
           isCurrent: isFirst,
@@ -211,9 +216,12 @@ export class CatalogService {
     if (!dto.isCurrent) {
       return this.prisma.academicTerm.update({ where: { id }, data, select: TERM_SELECT });
     }
-    // Solo un periodo actual: el anterior deja de serlo en la misma transacción.
+    // Un periodo actual por tipo: el anterior del mismo tipo deja de serlo en la misma transacción.
     const [, updated] = await this.prisma.$transaction([
-      this.prisma.academicTerm.updateMany({ where: { id: { not: id }, isCurrent: true }, data: { isCurrent: false } }),
+      this.prisma.academicTerm.updateMany({
+        where: { id: { not: id }, scheme: term.scheme, isCurrent: true },
+        data: { isCurrent: false },
+      }),
       this.prisma.academicTerm.update({ where: { id }, data, select: TERM_SELECT }),
     ]);
     return updated;

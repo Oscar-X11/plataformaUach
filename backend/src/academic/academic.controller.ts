@@ -34,7 +34,7 @@ export class AcademicController {
         name: true,
         code: true,
         semester: true,
-        career: { select: { id: true, name: true, code: true } },
+        career: { select: { id: true, name: true, code: true, faculty: { select: { scheme: true } } } },
       },
     });
   }

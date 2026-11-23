@@ -6,7 +6,7 @@ import { CalendarPlus, LoaderCircle, Lock, LockOpen, Pencil, Star, Trash2 } from
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
-import { formatTermDate, type AcademicTerm } from "@/lib/academic";
+import { formatTermDate, SCHEME_TEXT, schemeOf, TERM_SCHEMES, type AcademicTerm } from "@/lib/academic";
 import { api, ApiError } from "@/lib/api";
 
 function TermForm({ term, onDone }: { term?: AcademicTerm; onDone: () => void }) {
@@ -18,7 +18,7 @@ function TermForm({ term, onDone }: { term?: AcademicTerm; onDone: () => void })
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const body = {
-      ...(term ? {} : { code: form.get("code") }),
+      ...(term ? {} : { code: form.get("code"), scheme: form.get("scheme") }),
       name: form.get("name"),
       startsAt: form.get("startsAt") || null,
       endsAt: form.get("endsAt") || null,
@@ -40,6 +40,19 @@ function TermForm({ term, onDone }: { term?: AcademicTerm; onDone: () => void })
       <h2 className="text-base font-semibold text-uach-ink">{term ? `Editar ${term.code}` : "Nuevo periodo"}</h2>
       {error && <FormAlert message={error} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="sm:col-span-2 sm:max-w-xs">
+          <label htmlFor="term-scheme" className="mb-1.5 block text-sm font-medium text-uach-ink">Tipo</label>
+          <select id="term-scheme" name="scheme" defaultValue={schemeOf(term)} disabled={Boolean(term)} className={INPUT}>
+            {TERM_SCHEMES.map((scheme) => (
+              <option key={scheme} value={scheme}>
+                {SCHEME_TEXT[scheme].label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-uach-ink/60">
+            {term ? "No se puede cambiar después." : "Cuatrimestral: licenciaturas e ingenierías. Semestral: bachillerato."}
+          </p>
+        </div>
         <div>
           <label htmlFor="term-code" className="mb-1.5 block text-sm font-medium text-uach-ink">Clave</label>
           <input
@@ -47,7 +60,7 @@ function TermForm({ term, onDone }: { term?: AcademicTerm; onDone: () => void })
             name="code"
             required
             maxLength={30}
-            placeholder="2027-1"
+            placeholder="2027-C1"
             defaultValue={term?.code}
             disabled={Boolean(term)}
             autoFocus={!term}
@@ -62,7 +75,7 @@ function TermForm({ term, onDone }: { term?: AcademicTerm; onDone: () => void })
             name="name"
             required
             maxLength={80}
-            placeholder="Enero – Junio 2027"
+            placeholder="Enero – Abril 2027"
             defaultValue={term?.name}
             autoFocus={Boolean(term)}
             className={INPUT}
@@ -182,6 +195,10 @@ function TermRow({ term, onEdit }: { term: AcademicTerm; onEdit: () => void }) {
 
 export function TermsAdmin({ terms }: { terms: AcademicTerm[] }) {
   const [editing, setEditing] = useState<AcademicTerm | "new" | null>(terms.length === 0 ? "new" : null);
+  const groups = TERM_SCHEMES.map((scheme) => ({
+    scheme,
+    list: terms.filter((term) => schemeOf(term) === scheme),
+  })).filter((group) => group.list.length > 0);
 
   return (
     <div className="space-y-4">
@@ -194,13 +211,18 @@ export function TermsAdmin({ terms }: { terms: AcademicTerm[] }) {
         </button>
       )}
 
-      {terms.length > 0 && (
-        <ul className={`${CARD} divide-y divide-uach-ink/[0.06] p-0`}>
-          {terms.map((term) => (
-            <TermRow key={term.id} term={term} onEdit={() => setEditing(term)} />
-          ))}
-        </ul>
-      )}
+      {groups.map(({ scheme, list }) => (
+        <section key={scheme} aria-labelledby={`terms-${scheme}`} className="space-y-2">
+          <h2 id={`terms-${scheme}`} className="text-sm font-semibold text-uach-ink/75">
+            {scheme === "CUATRIMESTRAL" ? "Cuatrimestres · licenciaturas e ingenierías" : "Semestres · bachillerato"}
+          </h2>
+          <ul className={`${CARD} divide-y divide-uach-ink/[0.06] p-0`}>
+            {list.map((term) => (
+              <TermRow key={term.id} term={term} onEdit={() => setEditing(term)} />
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

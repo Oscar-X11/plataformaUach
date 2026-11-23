@@ -75,11 +75,11 @@ describe('CatalogService', () => {
 
   it('solo hay un periodo actual y un periodo cerrado deja de serlo', async () => {
     const { service, prisma } = setup();
-    prisma.academicTerm.findUnique.mockResolvedValue({ id: 't2', startsAt: null, endsAt: null });
+    prisma.academicTerm.findUnique.mockResolvedValue({ id: 't2', scheme: 'SEMESTRAL', startsAt: null, endsAt: null });
 
     await service.updateTerm('t2', { isCurrent: true });
     expect(prisma.academicTerm.updateMany).toHaveBeenCalledWith({
-      where: { id: { not: 't2' }, isCurrent: true },
+      where: { id: { not: 't2' }, scheme: 'SEMESTRAL', isCurrent: true },
       data: { isCurrent: false },
     });
     expect(prisma.academicTerm.update.mock.calls[0][0].data).toMatchObject({ isCurrent: true, closed: false });

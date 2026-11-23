@@ -112,7 +112,7 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 - ✅ Grupos de estudio con miembros y cupo (`/grupos-estudio`).
 - ✅ Reportes por curso con exportación CSV (`/administracion/reportes`).
 - ✅ Administración: usuarios, panel con métricas y reportes.
-- ✅ Catálogos (`/administracion/catalogos`): facultades → carreras → materias, con alta, edición y borrado (solo de lo que no se usa).
+- ✅ Materias (`/administracion/materias`, antes «Catálogos»): facultades → carreras → materias, con alta, edición y borrado (solo de lo que no se usa).
 - ✅ Periodos (`/administracion/periodos`): alta con fechas, periodo actual, cerrar y reabrir. Los cursos solo se crean en periodos abiertos.
 - ✅ Cursos (`/administracion/cursos`): búsqueda, filtro por periodo y cambiar el docente (con aviso al nuevo docente).
 - ✅ Carrera de los alumnos: al importar el Excel o en bloque desde la lista de usuarios (filtro «sin carrera»).

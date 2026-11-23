@@ -87,7 +87,7 @@ export function navigationForRole(role: UserRole): NavSection[] {
             { label: "Panel", href: "/administracion", icon: LayoutDashboard, exact: true },
             { label: "Usuarios", href: "/administracion/usuarios", icon: Users },
             { label: "Cursos", href: "/administracion/cursos", icon: School },
-            { label: "Catálogos", href: "/administracion/catalogos", icon: FolderTree },
+            { label: "Materias", href: "/administracion/materias", icon: FolderTree },
             { label: "Periodos", href: "/administracion/periodos", icon: CalendarRange },
             { label: "Reportes", href: "/administracion/reportes", icon: BarChart3 },
           ],

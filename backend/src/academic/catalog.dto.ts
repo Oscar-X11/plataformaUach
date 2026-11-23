@@ -1,7 +1,9 @@
+import { TermScheme } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -39,7 +41,14 @@ class NamedWithCode {
   code!: string;
 }
 
-export class FacultyDto extends NamedWithCode {}
+const SCHEME_MESSAGE = 'El tipo de periodo debe ser cuatrimestral o semestral';
+
+export class FacultyDto extends NamedWithCode {
+  /** Si se omite, la facultad queda cuatrimestral (o conserva el que tenía). */
+  @IsOptional()
+  @IsEnum(TermScheme, { message: SCHEME_MESSAGE })
+  scheme?: TermScheme;
+}
 
 export class CareerDto extends NamedWithCode {
   @IsUUID('all', { message: 'Selecciona una facultad' })
@@ -48,9 +57,9 @@ export class CareerDto extends NamedWithCode {
 
 export class SubjectDto extends NamedWithCode {
   @Type(() => Number)
-  @IsInt({ message: 'El semestre debe ser un número entero' })
-  @Min(1, { message: 'El semestre va de 1 a 12' })
-  @Max(12, { message: 'El semestre va de 1 a 12' })
+  @IsInt({ message: 'El cuatrimestre o semestre debe ser un número entero' })
+  @Min(1, { message: 'El cuatrimestre o semestre va de 1 a 12' })
+  @Max(12, { message: 'El cuatrimestre o semestre va de 1 a 12' })
   semester!: number;
 
   @IsUUID('all', { message: 'Selecciona una carrera' })
@@ -58,17 +67,22 @@ export class SubjectDto extends NamedWithCode {
 }
 
 export class TermDto {
-  /** Clave corta que ven todos: "2026-2". */
+  /** Cuatrimestral (licenciaturas e ingenierías) o semestral (bachillerato). No cambia después. */
+  @IsOptional()
+  @IsEnum(TermScheme, { message: SCHEME_MESSAGE })
+  scheme?: TermScheme;
+
+  /** Clave corta que ven todos: "2026-C3". */
   @Transform(code)
   @IsString()
-  @MinLength(3, { message: 'Indica la clave del periodo (por ejemplo 2026-2)' })
+  @MinLength(3, { message: 'Indica la clave del periodo (por ejemplo 2026-C3)' })
   @MaxLength(30)
   @Matches(/^[A-Z0-9][A-Z0-9 \-/]*$/, {
     message: 'La clave solo admite letras, números, espacios, guiones y "/"',
   })
   code!: string;
 
-  /** Nombre descriptivo: "Agosto – Diciembre 2026". */
+  /** Nombre descriptivo: "Septiembre – Diciembre 2026". */
   @Transform(trim)
   @IsString()
   @MinLength(3, { message: 'El nombre debe tener al menos 3 caracteres' })
@@ -104,7 +118,7 @@ export class UpdateTermDto {
   @IsDateString({ strict: true }, { message: 'Fecha de fin inválida' })
   endsAt?: string | null;
 
-  /** true lo vuelve el periodo actual (y deja de serlo el anterior). */
+  /** true lo vuelve el periodo actual de su tipo (y deja de serlo el anterior del mismo tipo). */
   @IsOptional()
   @IsBoolean()
   isCurrent?: boolean;

@@ -1,5 +1,7 @@
 /** Tipos de la API de cursos (backend/src/courses). */
 
+import type { TermScheme } from "@/lib/academic";
+
 export type CourseRole = "teacher" | "student" | "admin";
 
 export interface CourseSummary {
@@ -31,7 +33,7 @@ export interface SubjectOption {
   name: string;
   code: string;
   semester: number;
-  career: { id: string; name: string; code: string };
+  career: { id: string; name: string; code: string; faculty?: { scheme: TermScheme } };
 }
 
 export const canManage = (course: Pick<CourseSummary, "myRole">) => course.myRole !== "student";

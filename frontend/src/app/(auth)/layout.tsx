@@ -25,8 +25,22 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <p className="mt-4 text-sm leading-relaxed text-white/70">
             Universidad de los Altos de Chiapas — espacio académico para docentes y alumnos.
           </p>
+          <p className="mt-6 text-sm font-medium italic text-white/80">«Educación es progreso»</p>
         </div>
-        <p className="relative text-xs text-white/50">© {new Date().getFullYear()} UACH</p>
+        <footer className="relative space-y-1 text-xs text-white/50">
+          <address className="not-italic leading-relaxed">
+            Periférico Sur No. 1016, Barrio de María Auxiliadora, San Cristóbal de Las Casas, Chiapas
+            <br />
+            <a href="tel:+529676747700" className="hover:text-white/80">
+              967 674 7700
+            </a>
+            {" · "}
+            <a href="mailto:uach@uach.edu.mx" className="hover:text-white/80">
+              uach@uach.edu.mx
+            </a>
+          </address>
+          <p>© {new Date().getFullYear()} UACH</p>
+        </footer>
       </aside>
 
       <main className="flex items-center justify-center px-4 py-10 sm:px-8">

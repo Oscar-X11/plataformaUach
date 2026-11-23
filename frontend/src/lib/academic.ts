@@ -1,9 +1,25 @@
-/** Catálogos académicos y periodos (vistas de administración y formularios). */
+/** Facultades, carreras, materias y periodos (vistas de administración y formularios). */
+
+/** Licenciaturas e ingenierías: cuatrimestres. Bachillerato: semestres. */
+export type TermScheme = "CUATRIMESTRAL" | "SEMESTRAL";
+
+export const TERM_SCHEMES: TermScheme[] = ["CUATRIMESTRAL", "SEMESTRAL"];
+
+/** Textos por tipo de periodo: "Cuatrimestral", "cuatrimestre", "cuat". */
+export const SCHEME_TEXT: Record<TermScheme, { label: string; unit: string; short: string }> = {
+  CUATRIMESTRAL: { label: "Cuatrimestral", unit: "cuatrimestre", short: "cuat" },
+  SEMESTRAL: { label: "Semestral", unit: "semestre", short: "sem" },
+};
+
+/** Las respuestas antiguas (o del backend simulado) pueden no traer el tipo. */
+export const schemeOf = (value: { scheme?: TermScheme } | null | undefined): TermScheme =>
+  value?.scheme ?? "CUATRIMESTRAL";
 
 export interface AcademicTerm {
   id: string;
   code: string;
   name: string;
+  scheme: TermScheme;
   startsAt: string | null;
   endsAt: string | null;
   isCurrent: boolean;
@@ -31,6 +47,7 @@ export interface CatalogFaculty {
   id: string;
   name: string;
   code: string;
+  scheme: TermScheme;
   _count: { users: number };
   careers: CatalogCareer[];
 }

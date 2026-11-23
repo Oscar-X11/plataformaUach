@@ -33,23 +33,33 @@ const SUBJECTS = [
 
 const FACULTIES = [
   {
-    id: "fac-fca",
-    name: "Facultad de Ciencias Administrativas",
-    code: "FCA",
+    id: "fac-lic",
+    name: "Licenciaturas",
+    code: "LIC",
+    scheme: "CUATRIMESTRAL",
     careers: [{ id: "car-lae", name: "Licenciatura en Administración de Empresas", code: "LAE" }],
   },
   {
-    id: "fac-fing",
-    name: "Facultad de Ingeniería",
-    code: "FING",
+    id: "fac-ing",
+    name: "Ingenierías",
+    code: "ING",
+    scheme: "CUATRIMESTRAL",
     careers: [{ id: "car-isc", name: "Ingeniería en Sistemas Computacionales", code: "ISC" }],
+  },
+  {
+    id: "fac-prep",
+    name: "Preparatoria Rosario Castellanos",
+    code: "PREP",
+    scheme: "SEMESTRAL",
+    careers: [{ id: "car-bfm", name: "Bachillerato Físico-Matemáticas", code: "BFM" }],
   },
 ];
 
 /** Periodos de demostración (solo lectura en el mock). */
 const TERMS = [
-  { id: "term-2026-2", code: "2026-2", name: "Agosto – Diciembre 2026", startsAt: "2026-08-01", endsAt: "2026-12-20", isCurrent: true, closed: false },
-  { id: "term-2026-1", code: "2026-1", name: "Enero – Junio 2026", startsAt: "2026-01-15", endsAt: "2026-06-30", isCurrent: false, closed: true },
+  { id: "term-2026-2", code: "2026-2", name: "Agosto – Diciembre 2026", scheme: "CUATRIMESTRAL", startsAt: "2026-08-01", endsAt: "2026-12-20", isCurrent: true, closed: false },
+  { id: "term-2026-1", code: "2026-1", name: "Enero – Junio 2026", scheme: "CUATRIMESTRAL", startsAt: "2026-01-15", endsAt: "2026-06-30", isCurrent: false, closed: true },
+  { id: "term-2026-s2", code: "2026-S2", name: "Agosto – Diciembre 2026", scheme: "SEMESTRAL", startsAt: "2026-08-01", endsAt: "2026-12-31", isCurrent: true, closed: false },
 ];
 
 /** Cuentas de demostración: una por rol y un alumno con contraseña temporal. */
@@ -390,7 +400,9 @@ const routes = {
   "GET /academic/subjects": (req, res) => {
     const entry = entryFromToken(readToken(req) ?? "");
     if (!entry) return unauthorized(res);
-    const careers = FACULTIES.flatMap((faculty) => faculty.careers);
+    const careers = FACULTIES.flatMap((faculty) =>
+      faculty.careers.map((career) => ({ ...career, faculty: { scheme: faculty.scheme } })),
+    );
     send(
       res,
       200,
