@@ -180,7 +180,7 @@ export function formatBytes(bytes: number) {
 /** Tipos aceptados en entregas (deben coincidir con backend/src/files/upload.ts). */
 export const SUBMISSION_ACCEPT =
   ".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.pptx,.doc,.xls,.ppt,.zip,.txt,.csv";
-export const MAX_SUBMISSION_FILE_MB = 20;
+export const MAX_SUBMISSION_FILE_MB = 10;
 
 /** Materia del catálogo (GET /academic/subjects). */
 export interface SubjectOptionLite {

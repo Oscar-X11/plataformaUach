@@ -14,7 +14,7 @@ import { AssignmentsService, SUBMISSION_SELECT, submissionView } from './assignm
 import { GradeSubmissionDto } from './dto/grade.dto';
 import { decimalToNumber, submissionState } from './submission-state';
 
-export const MAX_FILE_BYTES = 20 * MB;
+export const MAX_FILE_BYTES = 10 * MB;
 export const MAX_FILES_PER_SUBMISSION = 10;
 
 @Injectable()
@@ -34,10 +34,10 @@ export class SubmissionsService {
     if (!files?.length) throw new BadRequestException('Selecciona al menos un archivo');
 
     // Valida todo antes de escribir nada en disco.
-    const inspected = files.map((file) => ({
-      file,
-      info: inspectUpload(file, SUBMISSION_EXTENSIONS, MAX_FILE_BYTES),
-    }));
+    const inspected = [];
+    for (const file of files) {
+      inspected.push({ file, info: await inspectUpload(file, SUBMISSION_EXTENSIONS, MAX_FILE_BYTES) });
+    }
 
     const submission = await this.ensureDraft(assignmentId, user.sub);
     const existing = await this.prisma.submissionFile.count({ where: { submissionId: submission.id } });
@@ -49,7 +49,7 @@ export class SubmissionsService {
 
     const directory = `submissions/${assignment.courseId}/${assignmentId}`;
     for (const { file, info } of inspected) {
-      const fileUrl = await this.storage.save(directory, info.ext, file.buffer);
+      const fileUrl = await this.storage.save(directory, info.ext, file);
       await this.prisma.submissionFile.create({
         data: {
           submissionId: submission.id,

@@ -11,6 +11,7 @@
     "dev:mock": "node scripts/mock-api.mjs",
     "dev:backend": "npm --workspace=backend run start:dev",
     "dev:frontend": "npm --workspace=frontend run dev",
+    "preview:frontend": "npm --workspace=frontend run build && npm --workspace=frontend run start",
     "build:all": "npm --workspace=backend run build && npm --workspace=frontend run build",
     "prisma:generate": "npm --workspace=backend run prisma:generate",
     "prisma:migrate": "npm --workspace=backend run prisma:migrate",

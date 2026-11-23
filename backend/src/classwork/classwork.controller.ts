@@ -16,6 +16,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskUpload } from '../files/disk-upload';
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import type { UploadedFileData } from '../files/upload';
@@ -69,7 +70,7 @@ export class ClassworkController {
 
   // Entrega del alumno
   @Post('assignments/:id/submission/files')
-  @UseInterceptors(FilesInterceptor('files', 5, { limits: { fileSize: MAX_FILE_BYTES, files: 5 } }))
+  @UseInterceptors(FilesInterceptor('files', 5, diskUpload(MAX_FILE_BYTES, 5)))
   upload(
     @Id('id') id: string,
     @UploadedFiles() files: UploadedFileData[],

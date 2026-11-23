@@ -49,6 +49,13 @@ export class UploadResourceDto {
 
   @IsUUID('all', { message: 'Selecciona una materia' })
   subjectId!: string;
+
+  /** En lugar del archivo: un enlace http(s), por ejemplo a Google Drive. */
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @MaxLength(500, { message: 'El enlace no puede exceder 500 caracteres' })
+  url?: string;
 }
 
 export class ReviewResourceDto {

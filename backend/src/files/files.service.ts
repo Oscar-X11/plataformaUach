@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { existsSync, statSync } from 'node:fs';
-import { isAbsolute, posix, resolve, sep } from 'node:path';
+import { posix, resolve, sep } from 'node:path';
+import { resolveStorageRoot } from './disk-upload';
 import { TokenPayload } from '../auth/token.service';
 import { EnvironmentVariables } from '../config/env.validation';
 import { PrismaService } from '../database/prisma.service';
@@ -34,11 +35,7 @@ export class FilesService {
   ) {
     const configured = config.get('STORAGE_PATH', { infer: true });
     // En desarrollo el proceso corre dentro de backend/, storage/ está en la raíz.
-    this.root = configured
-      ? isAbsolute(configured)
-        ? configured
-        : resolve(process.cwd(), configured)
-      : resolve(process.cwd(), '..', 'storage');
+    this.root = resolveStorageRoot(configured);
     this.useAccelRedirect = config.get('FILES_ACCEL_REDIRECT', { infer: true });
   }
 

@@ -1,6 +1,6 @@
 # Avance del proyecto — Plataforma UACH
 
-> Última actualización: 2026-11-20
+> Última actualización: 2026-11-22
 >
 > Leyenda: ✅ Hecho · 🔄 En proceso · ⬜ Pendiente · ❓ Por decidir
 >
@@ -13,7 +13,7 @@
 | Fase | Descripción | Estado |
 | --- | --- | --- |
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
-| Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa con backend simulado — falta probar con base de datos real |
+| Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa y probada con la base de datos real |
 | Fase 2 | Valor institucional (calendario, repositorio, administración) | 🔄 Casi completa con backend simulado — faltan catálogos y periodos |
 | Fase 3 | Funciones tipo Moodle (cuestionarios, asistencia, foros…) | ⬜ Pendiente |
 
@@ -23,10 +23,10 @@
 
 | Elemento | Estado |
 | --- | --- |
-| Base de datos MySQL | ⬜ No existe todavía. La migración ya está lista para aplicarse. |
+| Base de datos MySQL | ✅ Local en Docker (puerto 3307), migraciones aplicadas. Probada de punta a punta el 2026-11-20. |
 | Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer toda la plataforma sin base de datos. |
-| Pruebas del backend | ✅ 58 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón, usuarios, material, repositorio, grupos y reportes). |
-| Despliegue (Docker / servidor) | ⬜ Sin probar con datos reales. |
+| Pruebas del backend | ✅ 67 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón, usuarios, material, repositorio, grupos y reportes). |
+| Despliegue (Docker / servidor) | 🔄 Compose ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado). Falta instalarlo en el servidor Debian. |
 
 ---
 
@@ -90,7 +90,7 @@
 | 2 | **Validación de pertenencia al curso** en el backend (no solo rol global) | ✅ `CourseAccessService` | — | ✅ |
 | 3 | **Tablón** con publicaciones y comentarios | ✅ módulo `stream` | ✅ `/cursos/[cursoId]` | ✅ |
 | 4 | **Tareas**: crear, editar, fecha de entrega | ✅ módulo `classwork` | ✅ `/cursos/[cursoId]/tareas` | ✅ |
-| 5 | **Entregas** con adjuntos (validar tipo y tamaño de archivo, `sha256`) | ✅ (contenido real verificado, hasta 10 × 20 MB) | ✅ `/tareas/[tareaId]`, `/entregas` | ✅ |
+| 5 | **Entregas** con adjuntos (validar tipo y tamaño de archivo, `sha256`) | ✅ (contenido real verificado, hasta 10 archivos de 10 MB; se suben a disco, no a RAM) | ✅ `/tareas/[tareaId]`, `/entregas` | ✅ |
 | 6 | **Calificar y devolver** entregas | ✅ | ✅ panel de revisión en la tarea | ✅ |
 | 7 | **Calificaciones**: vista alumno, libro del docente, exportación | ✅ (CSV para Excel) | ✅ `/cursos/[cursoId]/calificaciones` | ✅ |
 | 8 | **Notificaciones** dentro de la plataforma | ✅ módulo `notifications` | ✅ `/notificaciones` y campana | ✅ |
@@ -106,7 +106,8 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 
 - ✅ Calendario de entregas (`/calendario`): mes en cuadrícula y agenda en móvil.
 - ✅ Temas/unidades y material del curso (`/cursos/[cursoId]/recursos`): archivos y enlaces, solo para miembros.
-- ✅ Repositorio institucional con búsqueda y moderación (`/repositorio`).
+- ✅ Repositorio institucional con búsqueda y moderación (`/repositorio`); archivo subido o enlace de Google Drive.
+- ✅ Vista previa de PDF, imágenes y enlaces de Drive en material y repositorio.
 - ✅ Grupos de estudio con miembros y cupo (`/grupos-estudio`).
 - ✅ Reportes por curso con exportación CSV (`/administracion/reportes`).
 - 🔄 Administración: ✅ usuarios, ✅ listado de cursos, ✅ panel con métricas, ✅ reportes; ⬜ catálogos (facultades, carreras, materias), periodos y reasignar docentes.
@@ -128,4 +129,6 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 - ⬜ Reemplazar `GET /` ("Hello World!") por un endpoint `/health` real.
 - ⬜ Refresh token para sesiones largas.
 - ⬜ Invalidar las sesiones abiertas cuando un administrador desactiva una cuenta o restablece su contraseña.
-- 🔄 Pruebas automatizadas: unitarias de todos los módulos (58); faltan pruebas e2e con base de datos.
+- ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
+- ⬜ Swap y respaldos automáticos en el servidor Debian.
+- 🔄 Pruebas automatizadas: unitarias de todos los módulos (67); faltan pruebas e2e con base de datos.

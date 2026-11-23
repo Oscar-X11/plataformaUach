@@ -8,6 +8,40 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 
 ---
 
+## 2026-11-22
+
+### Qué se hizo
+- **Lentitud al cambiar de pestaña:** se midió con la BD real. Con `next dev` cada página tarda **1–19 s la primera vez** (la está compilando) y 90–340 ms después; con el build de producción, **17–63 ms**. La lentitud es del modo desarrollo, no del código.
+  - Pantallas de carga (`loading.tsx`) en `(dashboard)`, `(admin)` y dentro del curso: al cambiar de pestaña aparece al instante un esqueleto (el encabezado y las pestañas del curso se quedan), en lugar de que la página parezca congelada.
+  - Script nuevo `npm run preview:frontend` para probar el frontend compilado como en producción.
+- **Subidas a disco, no a RAM** (el servidor tiene 4 GB):
+  - Multer escribe cada archivo en `storage/.tmp/` mientras se valida y luego se mueve a su lugar (rename, sin copiar). La validación (firma del archivo, UTF-8 y `sha256`) lee el disco por trozos.
+  - Un interceptor global borra los temporales que no se guardaron.
+  - Prueba real: 6 subidas simultáneas de 20 MB (120 MB) → el backend pasó de 111 a 115 MB de RAM. No quedaron temporales.
+- **Límites nuevos:** entregas 10 MB por archivo (antes 20) y 5 por envío; material del curso 25 MB (antes 50); repositorio 25 MB. Nginx acepta 55 MB por petición.
+- **Docker Compose para 4 GB:** `mem_limit` por servicio (MySQL 1 GB, backend y frontend 512 MB, Redis 160 MB, Nginx 96 MB) y `NODE_OPTIONS=--max-old-space-size=384`. MySQL con `innodb_buffer_pool_size=256M`, sin `performance_schema` y 60 conexiones: en la BD local bajó a ~205 MB.
+- **Vista previa** (botón «Vista previa» con diálogo) para PDF e imágenes subidos y para enlaces de Google Drive/Docs, en el material del curso y en el repositorio.
+- **Repositorio con enlaces:** además de subir archivo, se puede compartir un enlace de Drive. Migración `20261122120000_repositorio_enlaces` (columna `url`; los datos del archivo pasan a ser opcionales), aplicada en la BD local. Backend simulado actualizado.
+- Tests del backend: 67 (2 nuevos: validación desde disco y enlaces en el repositorio).
+
+### Decisiones
+- **Archivos:** las entregas de tareas se siguen subiendo al servidor (quedan fijas y con `sha256`). En material y repositorio se puede subir archivo o compartir un enlace de Drive. Un enlace de Drive lo puede cambiar o borrar su dueño en cualquier momento, y para verse debe estar compartido como «Cualquier persona con el enlace».
+- Servidor de producción: PC con Debian, 4 GB de RAM DDR4 y disco de 256 GB.
+
+### Importante
+- Para probar la velocidad real usar `npm run preview:frontend`, no `npm run dev:frontend`.
+- No compilar las imágenes en el servidor (`next build` puede usar más de 1.5 GB): construirlas en otra máquina y llevarlas.
+- 256 GB de disco: vigilar el crecimiento de `storage/` y respaldarlo junto con la BD.
+- Al recrear el contenedor de MySQL con `docker compose up -d mysql` se conservan los datos (volumen `mysql_data`).
+
+### Pendiente
+- Activar swap (2–4 GB) en el servidor Debian.
+- Respaldos automáticos de la BD y de `storage/` a otro disco.
+- Mandar `Content-Disposition` con el nombre original al descargar (hoy se baja con el nombre UUID).
+- Borrar o archivar los archivos de periodos cerrados.
+
+---
+
 ## 2026-11-20
 
 ### Qué se hizo

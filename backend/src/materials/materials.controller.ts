@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskUpload } from '../files/disk-upload';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import type { UploadedFileData } from '../files/upload';
 import { CreateMaterialDto, TopicDto } from './materials.dto';
@@ -31,7 +32,7 @@ export class MaterialsController {
 
   /** multipart: campo "file" opcional (si no, "url"). */
   @Post('courses/:courseId/materials')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_MATERIAL_BYTES, files: 1 } }))
+  @UseInterceptors(FileInterceptor('file', diskUpload(MAX_MATERIAL_BYTES)))
   create(
     @Id('courseId') courseId: string,
     @Body() dto: CreateMaterialDto,

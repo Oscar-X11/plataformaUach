@@ -8,7 +8,7 @@ import { inspectUpload, MB, SUBMISSION_EXTENSIONS, UploadedFileData } from '../f
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateMaterialDto, TopicDto } from './materials.dto';
 
-export const MAX_MATERIAL_BYTES = 50 * MB;
+export const MAX_MATERIAL_BYTES = 25 * MB;
 
 const MATERIAL_SELECT = {
   id: true,
@@ -108,8 +108,8 @@ export class MaterialsService {
 
     let data: Prisma.CourseMaterialUncheckedCreateInput;
     if (file) {
-      const info = inspectUpload(file, SUBMISSION_EXTENSIONS, MAX_MATERIAL_BYTES);
-      const fileUrl = await this.storage.save(`classroom-drive/${courseId}`, info.ext, file.buffer);
+      const info = await inspectUpload(file, SUBMISSION_EXTENSIONS, MAX_MATERIAL_BYTES);
+      const fileUrl = await this.storage.save(`classroom-drive/${courseId}`, info.ext, file);
       data = { ...base, kind: 'FILE', fileUrl, originalName: info.name, mimeType: info.mime, size: file.size, sha256: info.sha256 };
     } else {
       data = { ...base, kind: 'LINK', url: safeUrl(dto.url!) };

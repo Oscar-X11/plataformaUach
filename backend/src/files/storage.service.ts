@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, rename, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join, posix } from 'node:path';
 import { FilesService } from './files.service';
+import type { UploadedFileData } from './upload';
 
 /** Escritura en storage/. Las rutas devueltas son relativas (se guardan en la BD). */
 @Injectable()
@@ -11,12 +12,21 @@ export class StorageService {
 
   constructor(private readonly files: FilesService) {}
 
-  /** Guarda con un nombre aleatorio: el nombre original solo se muestra. */
-  async save(directory: string, ext: string, buffer: Buffer) {
+  /**
+   * Guarda con un nombre aleatorio: el nombre original solo se muestra.
+   * Si multer ya lo escribió en storage/.tmp solo se mueve (sin copiar ni usar RAM).
+   */
+  async save(directory: string, ext: string, file: Pick<UploadedFileData, 'path' | 'buffer'>) {
     const relativePath = posix.join(directory, `${randomUUID()}.${ext}`);
     const absolutePath = join(this.files.root, ...relativePath.split('/'));
     await mkdir(dirname(absolutePath), { recursive: true });
-    await writeFile(absolutePath, buffer, { flag: 'wx' });
+    if (file.path) {
+      await rename(file.path, absolutePath);
+    } else if (file.buffer) {
+      await writeFile(absolutePath, file.buffer, { flag: 'wx' });
+    } else {
+      throw new Error('Archivo sin contenido');
+    }
     return relativePath;
   }
 

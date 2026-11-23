@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Download, LoaderCircle, Search, Trash2, Upload, X } from "lucide-react";
+import { Check, Download, ExternalLink, LoaderCircle, Search, Trash2, Upload, X } from "lucide-react";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
+import { PreviewButton } from "@/components/ui/PreviewButton";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
 import { api, ApiError } from "@/lib/api";
 import { SUBMISSION_ACCEPT, fileHref, formatBytes, type SubjectOptionLite } from "@/lib/classwork";
@@ -15,6 +16,7 @@ import {
   type ResourceStatus,
   type ResourceType,
 } from "@/lib/institutional";
+import { previewFor } from "@/lib/preview";
 import type { UserRole } from "@/lib/session";
 
 type View = "explore" | "mine" | "review";
@@ -27,15 +29,20 @@ const STATUS: Record<ResourceStatus, { label: string; chip: string }> = {
 };
 
 function UploadForm({ subjects, role, onDone }: { subjects: SubjectOptionLite[]; role: UserRole; onDone: (uploaded: boolean) => void }) {
+  const [kind, setKind] = useState<"FILE" | "LINK">("FILE");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const file = form.get("file");
-    if (!(file instanceof File) || file.size === 0) return setError("Selecciona un archivo.");
-    if (file.size > MAX_MB * 1024 * 1024) return setError(`El archivo pesa más de ${MAX_MB} MB.`);
+    if (kind === "FILE") {
+      const file = form.get("file");
+      if (!(file instanceof File) || file.size === 0) return setError("Selecciona un archivo.");
+      if (file.size > MAX_MB * 1024 * 1024) return setError(`El archivo pesa más de ${MAX_MB} MB.`);
+    } else if (!String(form.get("url") ?? "").trim()) {
+      return setError("Pega el enlace del archivo.");
+    }
     setBusy(true);
     setError(null);
     try {
@@ -58,6 +65,22 @@ function UploadForm({ subjects, role, onDone }: { subjects: SubjectOptionLite[];
         </p>
       </div>
       {error && <FormAlert message={error} />}
+      <div role="radiogroup" aria-label="Cómo compartirlo" className="flex gap-1 rounded-xl bg-uach-canvas p-1">
+        {(["FILE", "LINK"] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={kind === value}
+            onClick={() => setKind(value)}
+            className={`h-10 flex-1 rounded-lg text-sm font-medium transition-colors ${
+              kind === value ? "bg-uach-surface text-uach-tealDark shadow-sm" : "text-uach-ink/75"
+            }`}
+          >
+            {value === "FILE" ? "Subir archivo" : "Enlace de Drive"}
+          </button>
+        ))}
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor="res-title" className="mb-1.5 block text-sm font-medium text-uach-ink">Título</label>
@@ -80,11 +103,21 @@ function UploadForm({ subjects, role, onDone }: { subjects: SubjectOptionLite[];
             ))}
           </select>
         </div>
-        <div className="sm:col-span-2">
-          <label htmlFor="res-file" className="mb-1.5 block text-sm font-medium text-uach-ink">Archivo</label>
-          <input id="res-file" name="file" type="file" accept={SUBMISSION_ACCEPT} className={`${INPUT} file:mr-3 file:rounded-md file:border-0 file:bg-uach-subtle file:px-3 file:py-1 file:text-sm file:text-uach-tealDark`} />
-          <p className="mt-1 text-xs text-uach-ink/60">PDF, Office, imágenes, ZIP o texto · hasta {MAX_MB} MB.</p>
-        </div>
+        {kind === "FILE" ? (
+          <div className="sm:col-span-2">
+            <label htmlFor="res-file" className="mb-1.5 block text-sm font-medium text-uach-ink">Archivo</label>
+            <input id="res-file" name="file" type="file" accept={SUBMISSION_ACCEPT} className={`${INPUT} file:mr-3 file:rounded-md file:border-0 file:bg-uach-subtle file:px-3 file:py-1 file:text-sm file:text-uach-tealDark`} />
+            <p className="mt-1 text-xs text-uach-ink/60">PDF, Office, imágenes, ZIP o texto · hasta {MAX_MB} MB.</p>
+          </div>
+        ) : (
+          <div className="sm:col-span-2">
+            <label htmlFor="res-url" className="mb-1.5 block text-sm font-medium text-uach-ink">Enlace</label>
+            <input id="res-url" name="url" type="url" placeholder="https://drive.google.com/…" maxLength={500} className={INPUT} />
+            <p className="mt-1 text-xs text-uach-ink/60">
+              Compártelo en Drive como «Cualquier persona con el enlace» para que los demás puedan verlo.
+            </p>
+          </div>
+        )}
         <div className="sm:col-span-2">
           <label htmlFor="res-desc" className="mb-1.5 block text-sm font-medium text-uach-ink">
             Descripción <span className="font-normal text-uach-ink/60">(opcional)</span>
@@ -96,7 +129,7 @@ function UploadForm({ subjects, role, onDone }: { subjects: SubjectOptionLite[];
         <button type="button" onClick={() => onDone(false)} className={BTN_GHOST}>Cancelar</button>
         <button type="submit" disabled={busy} className={BTN_PRIMARY}>
           {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
-          Subir
+          Compartir
         </button>
       </div>
     </form>
@@ -119,6 +152,14 @@ function ResourceCard({
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const preview = previewFor(item);
+  const openHref = item.fileUrl ? fileHref(item.fileUrl) : (item.url ?? "#");
+  let host = "enlace";
+  try {
+    host = new URL(item.url ?? "").hostname;
+  } catch {
+    // enlace inválido: se muestra el texto genérico
+  }
 
   async function review(approve: boolean) {
     const note = approve ? undefined : window.prompt("¿Por qué no se publica? El autor verá este motivo.")?.trim();
@@ -166,11 +207,16 @@ function ResourceCard({
         )}
       </div>
       <p className="mt-auto text-xs text-uach-ink/75">
-        {item.author.fullName} · {formatRelative(item.createdAt, now)} · {formatBytes(item.size)}
+        {item.author.fullName} · {formatRelative(item.createdAt, now)} · {item.fileUrl ? formatBytes(item.size ?? 0) : host}
       </p>
       <div className="flex flex-wrap gap-2">
-        <a href={fileHref(item.fileUrl)} target="_blank" rel="noopener" className={BTN_SECONDARY}>
-          <Download className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        {preview && <PreviewButton source={preview} title={item.title} openHref={openHref} />}
+        <a href={openHref} target="_blank" rel="noopener noreferrer" className={BTN_SECONDARY}>
+          {item.fileUrl ? (
+            <Download className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+          ) : (
+            <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+          )}
           Abrir
         </a>
         {view === "review" && (

@@ -14,6 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskUpload } from '../files/disk-upload';
 import { Roles } from '../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import type { UploadedFileData } from '../files/upload';
@@ -41,7 +42,7 @@ export class RepositoryController {
   }
 
   @Post()
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_RESOURCE_BYTES, files: 1 } }))
+  @UseInterceptors(FileInterceptor('file', diskUpload(MAX_RESOURCE_BYTES)))
   upload(
     @Body() dto: UploadResourceDto,
     @UploadedFile() file: UploadedFileData | undefined,

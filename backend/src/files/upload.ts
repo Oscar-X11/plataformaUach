@@ -1,12 +1,19 @@
 import { BadRequestException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { open } from 'node:fs/promises';
 
-/** Forma del archivo que entrega multer (memoria). Evita depender de @types/multer. */
+/**
+ * Forma del archivo que entrega multer. Evita depender de @types/multer.
+ * En producción multer escribe en disco (`path`) para no cargar el archivo en RAM;
+ * `buffer` queda para pruebas y subidas pequeñas en memoria.
+ */
 export interface UploadedFileData {
   originalname: string;
   mimetype: string;
   size: number;
-  buffer: Buffer;
+  path?: string;
+  buffer?: Buffer;
 }
 
 export const MB = 1024 * 1024;
@@ -24,10 +31,61 @@ const startsWith = (head: Buffer, bytes: number[], offset = 0) =>
 const ZIP = (head: Buffer) => startsWith(head, [0x50, 0x4b, 0x03, 0x04]);
 const OLE = (head: Buffer) => startsWith(head, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
 
-/** Texto plano: UTF-8 válido y sin bytes nulos. */
-const isText = (buffer: Buffer) =>
-  !buffer.subarray(0, 8192).includes(0) &&
-  Buffer.from(buffer.toString('utf8'), 'utf8').equals(buffer);
+/** Recorre el contenido en trozos, venga de memoria o de disco. */
+async function* chunks(file: UploadedFileData): AsyncGenerator<Buffer> {
+  if (file.buffer) {
+    yield file.buffer;
+    return;
+  }
+  if (!file.path) throw new BadRequestException('No se recibió el contenido del archivo.');
+  for await (const chunk of createReadStream(file.path, { highWaterMark: 64 * 1024 })) {
+    yield chunk as Buffer;
+  }
+}
+
+/** Primeros bytes del archivo, suficientes para reconocer su tipo. */
+async function readHead(file: UploadedFileData, length = 16) {
+  if (file.buffer) return file.buffer.subarray(0, length);
+  const handle = await open(file.path!, 'r');
+  try {
+    const head = Buffer.alloc(length);
+    const { bytesRead } = await handle.read(head, 0, length, 0);
+    return head.subarray(0, bytesRead);
+  } finally {
+    await handle.close();
+  }
+}
+
+/**
+ * Una sola lectura: calcula el sha256 y, si se pide, comprueba que sea texto
+ * (UTF-8 válido y sin bytes nulos al inicio).
+ */
+async function digest(file: UploadedFileData, checkText: boolean) {
+  const hash = createHash('sha256');
+  const decoder = new TextDecoder('utf-8', { fatal: true });
+  let isText = checkText;
+  let offset = 0;
+  for await (const chunk of chunks(file)) {
+    hash.update(chunk);
+    if (isText) {
+      if (offset < 8192 && chunk.subarray(0, 8192 - offset).includes(0)) isText = false;
+      try {
+        decoder.decode(chunk, { stream: true });
+      } catch {
+        isText = false;
+      }
+    }
+    offset += chunk.length;
+  }
+  if (isText) {
+    try {
+      decoder.decode();
+    } catch {
+      isText = false;
+    }
+  }
+  return { sha256: hash.digest('hex'), isText };
+}
 
 const KINDS: Record<string, FileKind> = {
   pdf: { ext: 'pdf', mime: 'application/pdf', matches: (h) => startsWith(h, [0x25, 0x50, 0x44, 0x46]) },
@@ -81,7 +139,7 @@ export function safeDisplayName(name: string) {
  * Valida tipo (por extensión Y por contenido) y tamaño.
  * Devuelve la extensión normalizada, el MIME y el sha256 del contenido.
  */
-export function inspectUpload(
+export async function inspectUpload(
   file: UploadedFileData,
   allowed: string[],
   maxBytes: number,
@@ -101,8 +159,15 @@ export function inspectUpload(
       `«${name}» pesa más de ${Math.round(maxBytes / MB)} MB.`,
     );
   }
-  const contentOk = TEXT_KINDS.has(ext) ? isText(file.buffer) : kind.matches(file.buffer);
-  if (!contentOk) {
+  const textKind = TEXT_KINDS.has(ext);
+  const head = textKind ? Buffer.alloc(0) : await readHead(file);
+  if (!textKind && !kind.matches(head)) {
+    throw new BadRequestException(
+      `«${name}» no parece un archivo .${ext} válido.`,
+    );
+  }
+  const { sha256, isText } = await digest(file, textKind);
+  if (textKind && !isText) {
     throw new BadRequestException(
       `«${name}» no parece un archivo .${ext} válido.`,
     );
@@ -112,6 +177,6 @@ export function inspectUpload(
     name,
     ext: kind.ext,
     mime: kind.mime,
-    sha256: createHash('sha256').update(file.buffer).digest('hex'),
+    sha256,
   };
 }

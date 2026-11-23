@@ -59,10 +59,12 @@ export interface ResourceItem {
   description: string | null;
   type: ResourceType;
   status: ResourceStatus;
-  fileUrl: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
+  /** Archivo subido o, en su lugar, un enlace (p. ej. Google Drive). */
+  fileUrl: string | null;
+  originalName: string | null;
+  mimeType: string | null;
+  size: number | null;
+  url: string | null;
   reviewNote: string | null;
   createdAt: string;
   subject: { id: string; name: string; code: string };

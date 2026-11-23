@@ -65,7 +65,7 @@ describe('MaterialsService', () => {
   it('guarda el archivo en classroom-drive y avisa a los alumnos', async () => {
     const { service, save, create, notify } = setup('teacher');
     await service.create('c1', { title: 'Guía' }, pdf, teacher);
-    expect(save).toHaveBeenCalledWith('classroom-drive/c1', 'pdf', PDF);
+    expect(save).toHaveBeenCalledWith('classroom-drive/c1', 'pdf', pdf);
     expect(create.mock.calls[0][0].data).toMatchObject({ kind: 'FILE', originalName: 'guia.pdf' });
     expect(notify).toHaveBeenCalledWith(['s1'], expect.objectContaining({ type: 'MATERIAL_CREATED' }));
   });
@@ -89,6 +89,15 @@ describe('RepositoryService', () => {
     const { service } = setup();
     await expect(service.upload(dto, pdf, student)).resolves.toMatchObject({ status: 'PENDING' });
     await expect(service.upload(dto, pdf, teacher)).resolves.toMatchObject({ status: 'APPROVED' });
+  });
+
+  it('acepta un enlace en lugar del archivo, pero no ambos ni ninguno', async () => {
+    const { service } = setup();
+    const drive = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view?usp=sharing';
+    await expect(service.upload({ ...dto, url: drive }, undefined, student)).resolves.toMatchObject({ url: drive, status: 'PENDING' });
+    await expect(service.upload({ ...dto, url: drive }, pdf, student)).rejects.toThrow(/no ambos/);
+    await expect(service.upload(dto, undefined, student)).rejects.toThrow(/archivo o escribe un enlace/);
+    await expect(service.upload({ ...dto, url: 'javascript:alert(1)' }, undefined, student)).rejects.toThrow(/http/);
   });
 
   it('rechazar exige motivo y avisa al autor', async () => {

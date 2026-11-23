@@ -83,8 +83,8 @@ export function createInstitutional(ctx, classwork) {
   const guide = sampleFile("guia-normalizacion.txt", "Guía de normalización (1FN, 2FN, 3FN).", `repository/${SUBJECTS[2].id}`);
   const notes = sampleFile("apuntes-listas.txt", "Apuntes de listas enlazadas.", `repository/${SUBJECTS[1].id}`);
   resources.push(
-    { id: randomUUID(), title: "Guía de normalización", description: "Resumen con ejemplos de 1FN a 3FN.", type: "STUDY_GUIDE", status: "APPROVED", ...guide, mimeType: guide.mime, subjectId: SUBJECTS[2].id, authorId: laura.id, reviewNote: null, createdAt: iso(-15 * DAY) },
-    { id: randomUUID(), title: "Apuntes: listas enlazadas", description: "Mis apuntes de clase.", type: "NOTE", status: "PENDING", ...notes, mimeType: notes.mime, subjectId: SUBJECTS[1].id, authorId: ana.id, reviewNote: null, createdAt: iso(-1 * DAY) },
+    { id: randomUUID(), title: "Guía de normalización", description: "Resumen con ejemplos de 1FN a 3FN.", type: "STUDY_GUIDE", status: "APPROVED", ...guide, mimeType: guide.mime, url: null, subjectId: SUBJECTS[2].id, authorId: laura.id, reviewNote: null, createdAt: iso(-15 * DAY) },
+    { id: randomUUID(), title: "Apuntes: listas enlazadas", description: "Mis apuntes de clase.", type: "NOTE", status: "PENDING", ...notes, mimeType: notes.mime, url: null, subjectId: SUBJECTS[1].id, authorId: ana.id, reviewNote: null, createdAt: iso(-1 * DAY) },
   );
   groups.push(
     { id: randomUUID(), title: "Repaso de SQL para el parcial", description: "Resolvemos ejercicios de consultas y joins antes del examen.", capacity: 6, meetingInfo: "Martes 16:00, biblioteca central", subjectId: SUBJECTS[2].id, creatorId: ana.id, createdAt: iso(-3 * DAY), members: [{ userId: ana.id, joinedAt: iso(-3 * DAY) }, { userId: luis.id, joinedAt: iso(-2 * DAY) }] },
@@ -245,12 +245,22 @@ export function createInstitutional(ctx, classwork) {
       if (!RESOURCE_TYPES.includes(body.type)) errors.push("Elige el tipo de recurso");
       if (!SUBJECTS.some((s) => s.id === body.subjectId)) errors.push("Selecciona una materia");
       if (errors.length) return bad(res, errors);
-      if (!checkFile(res, file, 25)) return;
-      const stored = storeFile(file, `repository/${body.subjectId}`);
+      const url = (body.url ?? "").trim();
+      if (url && file) return bad(res, "Elige un archivo o un enlace, no ambos");
+      let content;
+      if (url) {
+        if (!/^https?:\/\//i.test(url)) return bad(res, "El enlace debe empezar con http:// o https://");
+        content = { fileUrl: null, originalName: null, mimeType: null, size: null, url };
+      } else {
+        if (!file) return bad(res, "Adjunta un archivo o escribe un enlace");
+        if (!checkFile(res, file, 25)) return;
+        const stored = storeFile(file, `repository/${body.subjectId}`);
+        content = { fileUrl: stored.fileUrl, originalName: file.filename, mimeType: stored.mime, size: stored.size, url: null };
+      }
       const auto = user.role !== "STUDENT";
       const resource = {
         id: randomUUID(), title: body.title, description: body.description || null, type: body.type, status: auto ? "APPROVED" : "PENDING",
-        fileUrl: stored.fileUrl, originalName: file.filename, mimeType: stored.mime, size: stored.size,
+        ...content,
         subjectId: body.subjectId, authorId: user.id, reviewNote: null, createdAt: new Date().toISOString(),
       };
       resources.push(resource);

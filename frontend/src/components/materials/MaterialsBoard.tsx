@@ -5,13 +5,15 @@ import { useState } from "react";
 import { ExternalLink, FileText, FolderPlus, LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
+import { PreviewButton } from "@/components/ui/PreviewButton";
 import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
 import { api, ApiError } from "@/lib/api";
 import { SUBMISSION_ACCEPT, fileHref, formatBytes } from "@/lib/classwork";
 import { formatRelative } from "@/lib/dashboard/format";
 import type { Material, MaterialsView, Topic } from "@/lib/institutional";
+import { previewFor } from "@/lib/preview";
 
-const MAX_MB = 50;
+const MAX_MB = 25;
 
 function MaterialForm({ courseId, topics, onDone }: { courseId: string; topics: Topic[]; onDone: () => void }) {
   const router = useRouter();
@@ -88,7 +90,10 @@ function MaterialForm({ courseId, topics, onDone }: { courseId: string; topics: 
       ) : (
         <div>
           <label htmlFor="mat-url" className="mb-1.5 block text-sm font-medium text-uach-ink">Enlace</label>
-          <input id="mat-url" name="url" type="url" placeholder="https://" maxLength={500} className={INPUT} />
+          <input id="mat-url" name="url" type="url" placeholder="https://drive.google.com/…" maxLength={500} className={INPUT} />
+          <p className="mt-1 text-xs text-uach-ink/60">
+            Si es de Google Drive, compártelo como «Cualquier persona con el enlace» para que se vea la vista previa.
+          </p>
         </div>
       )}
       <div>
@@ -113,6 +118,7 @@ function MaterialRow({ material, canManage, now }: { material: Material; canMana
   const [busy, setBusy] = useState(false);
   const href = material.kind === "FILE" && material.fileUrl ? fileHref(material.fileUrl) : (material.url ?? "#");
   const Icon = material.kind === "FILE" ? FileText : ExternalLink;
+  const preview = previewFor(material);
 
   async function remove() {
     if (!window.confirm(`¿Borrar «${material.title}»?`)) return;
@@ -149,6 +155,7 @@ function MaterialRow({ material, canManage, now }: { material: Material; canMana
           {formatRelative(material.createdAt, now)}
         </p>
       </div>
+      {preview && <PreviewButton source={preview} title={material.title} openHref={href} compact />}
       {canManage && (
         <button
           type="button"

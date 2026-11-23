@@ -34,8 +34,8 @@ export class ProfileService {
 
   async setAvatar(userId: string, file: UploadedFileData | undefined) {
     if (!file) throw new BadRequestException('Selecciona una imagen');
-    const info = inspectUpload(file, IMAGE_EXTENSIONS, MAX_AVATAR_BYTES);
-    const avatarUrl = await this.storage.save(`avatars/${userId}`, info.ext, file.buffer);
+    const info = await inspectUpload(file, IMAGE_EXTENSIONS, MAX_AVATAR_BYTES);
+    const avatarUrl = await this.storage.save(`avatars/${userId}`, info.ext, file);
     const previous = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { avatarUrl: true },

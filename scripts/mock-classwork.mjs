@@ -285,7 +285,7 @@ export function createClasswork(ctx) {
       for (const part of parts) {
         const ext = extOf(part.filename);
         if (!SUBMISSION_EXT.includes(ext)) return bad(res, `«${part.filename}»: tipo de archivo no permitido.`);
-        if (part.data.length > 20 * MB) return bad(res, `«${part.filename}» pesa más de 20 MB.`);
+        if (part.data.length > 10 * MB) return bad(res, `«${part.filename}» pesa más de 10 MB.`);
         if (!part.data.length) return bad(res, `«${part.filename}» está vacío.`);
       }
       const row = ensureDraft(res, id, user.id);

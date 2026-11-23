@@ -1,9 +1,20 @@
 # Las credenciales se leen del archivo .env de la raíz (ver .env.example).
+#
+# Límites de memoria pensados para un servidor con 4 GB de RAM: si un servicio se
+# desborda, Docker reinicia solo ese servicio en lugar de dejar sin memoria a todos.
+# Suma de límites ≈ 2.3 GB; el resto queda para Debian, Docker y la caché de disco.
 services:
   mysql:
     image: mysql:8.4
     container_name: uach_mysql
     restart: unless-stopped
+    mem_limit: 1g
+    # Ajustes para poca RAM: caché de InnoDB de 256 MB (los datos de la plataforma
+    # caben de sobra) y sin performance_schema, que reserva ~200 MB por sí solo.
+    command:
+      - --innodb-buffer-pool-size=256M
+      - --performance-schema=OFF
+      - --max-connections=60
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:?Define MYSQL_DATABASE en .env}
       MYSQL_USER: ${MYSQL_USER:?Define MYSQL_USER en .env}
@@ -24,11 +35,12 @@ services:
     image: redis:7-alpine
     container_name: uach_redis
     restart: unless-stopped
+    mem_limit: 160m
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --maxmemory 96mb --maxmemory-policy volatile-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -41,9 +53,12 @@ services:
       dockerfile: backend/Dockerfile
     container_name: uach_backend
     restart: unless-stopped
+    mem_limit: 512m
     env_file: .env
     environment:
       NODE_ENV: production
+      # Que V8 libere memoria antes de llegar al límite del contenedor.
+      NODE_OPTIONS: --max-old-space-size=384
       PORT: 4000
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
       REDIS_URL: redis://redis:6379
@@ -65,8 +80,10 @@ services:
       dockerfile: frontend/Dockerfile
     container_name: uach_frontend
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=384
       PORT: 3000
       HOSTNAME: 0.0.0.0
       API_INTERNAL_URL: http://backend:4000
@@ -79,6 +96,7 @@ services:
     image: nginx:1.27-alpine
     container_name: uach_nginx
     restart: unless-stopped
+    mem_limit: 96m
     ports:
       - "${NGINX_PORT:-80}:80"
     depends_on:

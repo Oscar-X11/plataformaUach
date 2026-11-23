@@ -4,6 +4,7 @@ import { TokenPayload } from '../auth/token.service';
 import { PrismaService } from '../database/prisma.service';
 import { StorageService } from '../files/storage.service';
 import { inspectUpload, MB, SUBMISSION_EXTENSIONS, UploadedFileData } from '../files/upload';
+import { safeUrl } from '../materials/materials.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ListResourcesQuery, ReviewResourceDto, UploadResourceDto } from './repository.dto';
 
@@ -20,6 +21,7 @@ const RESOURCE_SELECT = {
   originalName: true,
   mimeType: true,
   size: true,
+  url: true,
   reviewNote: true,
   createdAt: true,
   subject: { select: { id: true, name: true, code: true } },
@@ -81,12 +83,19 @@ export class RepositoryService {
   }
 
   async upload(dto: UploadResourceDto, file: UploadedFileData | undefined, user: TokenPayload) {
-    if (!file) throw new BadRequestException('Adjunta el archivo');
+    if (!file && !dto.url) throw new BadRequestException('Adjunta un archivo o escribe un enlace');
+    if (file && dto.url) throw new BadRequestException('Elige un archivo o un enlace, no ambos');
     const subject = await this.prisma.subject.findUnique({ where: { id: dto.subjectId }, select: { id: true } });
     if (!subject) throw new BadRequestException('La materia no existe');
 
-    const info = inspectUpload(file, SUBMISSION_EXTENSIONS, MAX_RESOURCE_BYTES);
-    const fileUrl = await this.storage.save(`repository/${dto.subjectId}`, info.ext, file.buffer);
+    let content: Pick<Prisma.ResourceUncheckedCreateInput, 'fileUrl' | 'originalName' | 'mimeType' | 'size' | 'sha256' | 'url'>;
+    if (file) {
+      const info = await inspectUpload(file, SUBMISSION_EXTENSIONS, MAX_RESOURCE_BYTES);
+      const fileUrl = await this.storage.save(`repository/${dto.subjectId}`, info.ext, file);
+      content = { fileUrl, originalName: info.name, mimeType: info.mime, size: file.size, sha256: info.sha256 };
+    } else {
+      content = { url: safeUrl(dto.url!) };
+    }
     const autoApprove = user.role !== 'STUDENT';
     return this.prisma.resource.create({
       data: {
@@ -96,11 +105,7 @@ export class RepositoryService {
         status: autoApprove ? 'APPROVED' : 'PENDING',
         reviewedById: autoApprove ? user.sub : null,
         reviewedAt: autoApprove ? new Date() : null,
-        fileUrl,
-        originalName: info.name,
-        mimeType: info.mime,
-        size: file.size,
-        sha256: info.sha256,
+        ...content,
         subjectId: dto.subjectId,
         authorId: user.sub,
       },

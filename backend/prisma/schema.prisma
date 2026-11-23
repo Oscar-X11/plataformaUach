@@ -271,11 +271,13 @@ model Resource {
   description  String?        @map("descripcion") @db.Text
   type         ResourceType   @map("tipo")
   status       ResourceStatus @default(PENDING) @map("estado")
-  fileUrl      String         @unique @map("ruta_archivo")
-  originalName String         @map("nombre_original")
-  mimeType     String         @map("tipo_mime")
-  size         Int            @map("tamano_bytes")
+  /// Archivo subido (storage/repository/...) o, en su lugar, un enlace (p. ej. Google Drive).
+  fileUrl      String?        @unique @map("ruta_archivo")
+  originalName String?        @map("nombre_original")
+  mimeType     String?        @map("tipo_mime")
+  size         Int?           @map("tamano_bytes")
   sha256       String?        @db.Char(64)
+  url          String?        @db.VarChar(500)
   subjectId    String         @map("materia_id")
   authorId     String         @map("autor_id")
   /// Motivo del rechazo (lo ve el autor).
