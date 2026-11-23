@@ -19,6 +19,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - Al crear un curso, el docente elige primero la materia y solo ve los periodos de su tipo.
   - El seed crea el periodo en curso de cada tipo si no hay uno actual (`2026-C3` y `2026-S2`).
 - «Catálogos» pasó a llamarse **Materias** (`/administracion/materias`).
+- Commit `4e845d2`: catálogo real de la UACH, periodos cuatrimestrales y semestrales, apartado Materias y datos institucionales en el acceso.
 
 ### Decisiones
 - Licenciaturas e ingenierías: cuatrimestrales. Bachillerato: semestral (lo confirmó el usuario).
