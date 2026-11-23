@@ -10,7 +10,7 @@ import { NotificationsService } from './notifications/notifications.service';
 import { ReportsService } from './reports/reports.service';
 import { RepositoryService } from './repository/repository.service';
 
-const as = (sub: string, role: TokenPayload['role']): TokenPayload => ({ sub, role, mustChangePassword: false });
+const as = (sub: string, role: TokenPayload['role']): TokenPayload => ({ sub, role, mustChangePassword: false, sv: 0 });
 const student = as('s1', 'STUDENT');
 const teacher = as('t1', 'TEACHER');
 const admin = as('a1', 'ADMIN');

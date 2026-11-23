@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { SessionStateService } from '../auth/session-state.service';
 import { PrismaService } from '../database/prisma.service';
 import { ImportStudentRowDto } from './dto/users.dto';
 import { prepareStudentRows, studentInitialPassword } from './student-import';
@@ -59,7 +60,7 @@ describe('UsersService.importStudents', () => {
   const service = new UsersService({
     user: { findMany, createMany, updateMany },
     career: { findUnique: findCareer },
-  } as unknown as PrismaService);
+  } as unknown as PrismaService, { forget: jest.fn() } as unknown as SessionStateService);
 
   beforeEach(() => {
     findMany.mockReset().mockResolvedValue([{ username: '500525124' }]);

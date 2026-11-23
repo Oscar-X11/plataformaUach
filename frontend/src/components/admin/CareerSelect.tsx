@@ -3,7 +3,7 @@
 import { INPUT } from "@/components/ui/styles";
 import type { CareerOption } from "@/lib/academic";
 
-/** <select> de carreras agrupadas por facultad. */
+/** <select> de carreras agrupadas por nivel. */
 export function CareerSelect({
   id,
   careers,

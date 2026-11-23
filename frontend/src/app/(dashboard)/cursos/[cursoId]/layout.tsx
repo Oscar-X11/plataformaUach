@@ -1,3 +1,4 @@
+import { CourseMeetingInfo } from "@/components/courses/CourseMeetingInfo";
 import { CourseTabs } from "@/components/courses/CourseTabs";
 import { InvitationCode } from "@/components/courses/InvitationCode";
 import { getCourse } from "@/lib/courses-server";
@@ -23,6 +24,11 @@ export default async function CursoLayout({
             <p className="mt-2 text-sm text-white/80">
               Periodo {course.term} · {course.teacher.fullName}
             </p>
+            <CourseMeetingInfo
+              courseId={course.id}
+              initial={course.meetingInfo ?? null}
+              canEdit={course.myRole !== "student"}
+            />
           </div>
           {course.invitation && (
             <div className="lg:w-80">

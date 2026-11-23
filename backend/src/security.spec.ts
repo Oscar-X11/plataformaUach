@@ -43,13 +43,13 @@ describe('TokenService', () => {
   const tokens = new TokenService(configFor({}));
 
   it('firma y verifica tokens', () => {
-    const { token, expiresAt } = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false });
+    const { token, expiresAt } = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0 });
     expect(expiresAt.getTime()).toBeGreaterThan(Date.now());
-    expect(tokens.verify(token)).toEqual({ sub: 'u1', role: 'STUDENT', mustChangePassword: false });
+    expect(tokens.verify(token)).toEqual({ sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0 });
   });
 
   it('rechaza tokens manipulados', () => {
-    const { token } = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false });
+    const { token } = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0 });
     const [header, , signature] = token.split('.');
     const forged = Buffer.from(
       JSON.stringify({ sub: 'u1', role: 'ADMIN', mustChangePassword: false }),
@@ -73,7 +73,7 @@ describe('FilesService', () => {
     resource: { findUnique: resourceLookup },
   } as unknown as PrismaService;
   const files = new FilesService(prisma, configFor({ STORAGE_PATH: root }));
-  const student = { sub: 's1', role: 'STUDENT' as const, mustChangePassword: false };
+  const student = { sub: 's1', role: 'STUDENT' as const, mustChangePassword: false, sv: 0 };
 
   it('el repositorio entrega lo aprobado a todos y lo pendiente solo a su autor', async () => {
     resourceLookup.mockResolvedValue({ status: 'APPROVED', authorId: 'otro' });

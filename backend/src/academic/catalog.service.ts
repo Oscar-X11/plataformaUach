@@ -31,7 +31,8 @@ function friendly(error: unknown, what: string): never {
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /**
- * Catálogos académicos (facultades → carreras → materias) y periodos.
+ * Catálogo académico (niveles → carreras → materias) y periodos.
+ * En el código el nivel se llama Faculty; en la web nunca se dice «facultad».
  * Solo los administradores los modifican. Borrar algo que ya se usa no se
  * permite: primero hay que mover o borrar lo que depende de ello.
  */
@@ -76,11 +77,11 @@ export class CatalogService {
   // ───────────── Facultades ─────────────
 
   createFaculty(dto: FacultyDto) {
-    return this.prisma.faculty.create({ data: dto }).catch((e) => friendly(e, 'una facultad'));
+    return this.prisma.faculty.create({ data: dto }).catch((e) => friendly(e, 'un nivel'));
   }
 
   updateFaculty(id: string, dto: FacultyDto) {
-    return this.prisma.faculty.update({ where: { id }, data: dto }).catch((e) => friendly(e, 'una facultad'));
+    return this.prisma.faculty.update({ where: { id }, data: dto }).catch((e) => friendly(e, 'un nivel'));
   }
 
   async deleteFaculty(id: string) {
@@ -88,24 +89,24 @@ export class CatalogService {
       where: { id },
       select: { _count: { select: { careers: true } } },
     });
-    if (!faculty) throw new NotFoundException('No se encontró la facultad');
+    if (!faculty) throw new NotFoundException('No se encontró el nivel');
     if (faculty._count.careers > 0) {
       throw new ConflictException(
-        `La facultad tiene ${plural(faculty._count.careers, 'carrera', 'carreras')}; bórralas o muévelas primero`,
+        `El nivel tiene ${plural(faculty._count.careers, 'carrera', 'carreras')}; bórralas o muévelas primero`,
       );
     }
-    await this.prisma.faculty.delete({ where: { id } }).catch((e) => friendly(e, 'La facultad'));
+    await this.prisma.faculty.delete({ where: { id } }).catch((e) => friendly(e, 'El nivel'));
   }
 
   // ───────────── Carreras ─────────────
 
   async createCareer(dto: CareerDto) {
-    await this.assertExists('faculty', dto.facultyId, 'La facultad no existe');
+    await this.assertExists('faculty', dto.facultyId, 'El nivel no existe');
     return this.prisma.career.create({ data: dto }).catch((e) => friendly(e, 'una carrera'));
   }
 
   async updateCareer(id: string, dto: CareerDto) {
-    await this.assertExists('faculty', dto.facultyId, 'La facultad no existe');
+    await this.assertExists('faculty', dto.facultyId, 'El nivel no existe');
     const career = await this.prisma.career
       .update({ where: { id }, data: dto })
       .catch((e) => friendly(e, 'una carrera'));

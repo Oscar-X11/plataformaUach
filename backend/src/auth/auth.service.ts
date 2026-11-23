@@ -10,6 +10,7 @@ import { PrismaService } from '../database/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SessionStateService } from './session-state.service';
 import { TokenService } from './token.service';
 
 export const BCRYPT_ROUNDS = 12;
@@ -28,6 +29,9 @@ const SESSION_USER_SELECT = {
 
 type SessionUser = Prisma.UserGetPayload<{ select: typeof SESSION_USER_SELECT }>;
 
+/** Datos del usuario + la versión de sesión, que va en el token pero no se devuelve al cliente. */
+const SESSION_SELECT = { ...SESSION_USER_SELECT, sessionVersion: true } satisfies Prisma.UserSelect;
+
 // Hash usado para igualar el tiempo de respuesta cuando el usuario no existe.
 const DUMMY_HASH = bcrypt.hashSync('uach-timing-equalizer', BCRYPT_ROUNDS);
 
@@ -36,6 +40,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokenService,
+    private readonly sessions: SessionStateService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -59,7 +64,7 @@ export class AuthService {
           facultyId: dto.facultyId,
           careerId: dto.careerId,
         },
-        select: SESSION_USER_SELECT,
+        select: SESSION_SELECT,
       });
       return this.createSession(user);
     } catch (error) {
@@ -77,7 +82,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { username: dto.username },
-      select: { ...SESSION_USER_SELECT, passwordHash: true },
+      select: { ...SESSION_SELECT, passwordHash: true },
     });
 
     const passwordMatches = await bcrypt.compare(
@@ -110,7 +115,10 @@ export class AuthService {
     return user;
   }
 
-  /** Cambia la contraseña propia y emite una sesión nueva sin la marca de temporal. */
+  /**
+   * Cambia la contraseña propia y emite una sesión nueva sin la marca de temporal.
+   * Las demás sesiones abiertas (otros dispositivos) dejan de valer.
+   */
   async changePassword(userId: string, dto: ChangePasswordDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -134,17 +142,20 @@ export class AuthService {
       data: {
         passwordHash: await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS),
         mustChangePassword: false,
+        sessionVersion: { increment: 1 },
       },
-      select: SESSION_USER_SELECT,
+      select: SESSION_SELECT,
     });
+    this.sessions.forget(userId);
     return this.createSession(updated);
   }
 
-  private createSession(user: SessionUser) {
+  private createSession({ sessionVersion, ...user }: SessionUser & { sessionVersion: number }) {
     const { token, expiresAt } = this.tokens.sign({
       sub: user.id,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
+      sv: sessionVersion,
     });
     return { user, accessToken: token, expiresAt };
   }
@@ -156,7 +167,7 @@ export class AuthService {
           where: { id: facultyId },
           select: { id: true },
         });
-        if (!faculty) throw new BadRequestException('La facultad no existe');
+        if (!faculty) throw new BadRequestException('El nivel no existe');
       }
       return;
     }
@@ -171,7 +182,7 @@ export class AuthService {
     }
     if (facultyId && career.facultyId !== facultyId) {
       throw new BadRequestException(
-        'La carrera no pertenece a la facultad seleccionada',
+        'La carrera no pertenece al nivel seleccionado',
       );
     }
   }

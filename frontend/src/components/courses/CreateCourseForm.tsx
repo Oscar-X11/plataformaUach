@@ -58,7 +58,12 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
     try {
       const course = await api<CourseSummary>("/courses", {
         method: "POST",
-        body: { name: form.get("name"), term: form.get("term"), subjectId: form.get("subjectId") },
+        body: {
+          name: form.get("name"),
+          term: form.get("term"),
+          subjectId: form.get("subjectId"),
+          meetingInfo: form.get("meetingInfo"),
+        },
       });
       router.push(`/cursos/${course.id}`);
       router.refresh();
@@ -143,6 +148,14 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
           </optgroup>
         ))}
       </SelectField>
+
+      <TextField
+        label="Lugar y horario (opcional)"
+        name="meetingInfo"
+        placeholder="Lun y mié 8:00, salón 12 · o enlace de Meet"
+        maxLength={200}
+        hint="Lo ven tus alumnos en el curso. Los enlaces se pueden abrir con un clic."
+      />
 
       <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
         <button

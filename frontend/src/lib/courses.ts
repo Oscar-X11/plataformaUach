@@ -10,6 +10,8 @@ export interface CourseSummary {
   term: string;
   subject: { id: string; name: string; code: string; semester: number };
   teacher: { id: string; fullName: string };
+  /** Salón y horario, o enlace de la reunión (texto libre del docente). */
+  meetingInfo: string | null;
   studentCount: number;
   createdAt: string;
   myRole: CourseRole;

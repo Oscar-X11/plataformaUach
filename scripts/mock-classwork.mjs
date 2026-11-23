@@ -629,7 +629,7 @@ export function createClasswork(ctx) {
   }
 
   function profileView(user) {
-    const faculty = user.facultyId ? { id: user.facultyId, name: "Facultad de Ingeniería" } : null;
+    const faculty = user.facultyId ? { id: user.facultyId, name: "Ingenierías" } : null;
     const career = user.careerId ? { id: user.careerId, name: "Ingeniería en Sistemas Computacionales" } : null;
     const courseCount = user.role === "STUDENT"
       ? courses.filter((c) => c.enrollments.some((e) => e.studentId === user.id)).length

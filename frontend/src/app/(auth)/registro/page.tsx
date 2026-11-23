@@ -85,7 +85,7 @@ export default function RegistroPage() {
         {faculties.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
-              label="Facultad"
+              label="Nivel"
               name="facultyId"
               value={facultyId}
               onChange={(event) => setFacultyId(event.target.value)}

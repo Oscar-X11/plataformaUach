@@ -50,11 +50,11 @@ describe('CatalogService', () => {
       new Prisma.PrismaClientKnownRequestError('dup', { code: 'P2002', clientVersion: 'test' }),
     );
     await expect(service.createFaculty({ name: 'Ingeniería', code: 'FING' })).rejects.toThrow(
-      new ConflictException('Ya existe una facultad con esa clave'),
+      new ConflictException('Ya existe un nivel con esa clave'),
     );
   });
 
-  it('si una carrera cambia de facultad, sus alumnos también', async () => {
+  it('si una carrera cambia de nivel, sus alumnos también', async () => {
     const { service, prisma } = setup();
     prisma.faculty.findUnique.mockResolvedValue({ id: 'f2' });
     prisma.career.update.mockResolvedValue({ id: 'c1' });

@@ -11,13 +11,14 @@ import { PrismaService } from '../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CourseAccessService } from './course-access.service';
 import { CoursesService, generateInvitationCode } from './courses.service';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { CreateCourseDto, UpdateMeetingInfoDto } from './dto/create-course.dto';
 import { JoinCourseDto } from './dto/join-course.dto';
 
 const as = (sub: string, role: TokenPayload['role']): TokenPayload => ({
   sub,
   role,
   mustChangePassword: false,
+  sv: 0,
 });
 const admin = as('a1', 'ADMIN');
 const teacher = as('t1', 'TEACHER');
@@ -33,6 +34,7 @@ function courseRow(overrides: Record<string, unknown> = {}) {
     name: 'Bases de Datos',
     term: '2026-2',
     invitation: 'ABC2345',
+    meetingInfo: null,
     teacherId: 't1',
     createdAt: new Date('2026-08-01'),
     subject: { id: 'sub', name: 'Bases de Datos', code: 'ISC-301', semester: 3 },
@@ -257,5 +259,27 @@ describe('DTOs y códigos', () => {
       'subjectId',
       'term',
     ]);
+  });
+});
+
+describe('Lugar y horario del curso', () => {
+  it('solo el docente del curso (o un admin) lo cambia', async () => {
+    const { service, prisma, membership } = setup();
+    membership(['s1']);
+    prisma.course.update.mockResolvedValue(courseRow({ meetingInfo: 'Lunes 8:00, salón 12' }));
+    await expect(service.updateMeetingInfo(COURSE_ID, { meetingInfo: 'x' }, student)).rejects.toThrow(/docente/);
+    await expect(service.updateMeetingInfo(COURSE_ID, { meetingInfo: 'x' }, otherTeacher)).rejects.toThrow();
+    await expect(
+      service.updateMeetingInfo(COURSE_ID, { meetingInfo: 'Lunes 8:00, salón 12' }, teacher),
+    ).resolves.toMatchObject({ meetingInfo: 'Lunes 8:00, salón 12' });
+    expect(prisma.course.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('el texto vacío lo borra y se limita a 200 caracteres', () => {
+    const empty = plainToInstance(UpdateMeetingInfoDto, { meetingInfo: '   ' });
+    expect(empty.meetingInfo).toBeNull();
+    expect(validateSync(empty)).toHaveLength(0);
+    const long = plainToInstance(UpdateMeetingInfoDto, { meetingInfo: 'a'.repeat(201) });
+    expect(validateSync(long).map((error) => error.property)).toEqual(['meetingInfo']);
   });
 });

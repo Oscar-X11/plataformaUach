@@ -71,6 +71,13 @@ services:
         condition: service_healthy
     expose:
       - "4000"
+    # GET /health: 200 si MySQL y storage/ responden. Sin curl en la imagen: se usa Node.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     volumes:
       - ./storage:/app/storage
 

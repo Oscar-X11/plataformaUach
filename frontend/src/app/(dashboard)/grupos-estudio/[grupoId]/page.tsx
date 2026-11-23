@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MeetingInfo } from "@/components/ui/MeetingInfo";
 import { ArrowLeft, MapPin, UsersRound } from "lucide-react";
 import { GroupActions } from "@/components/groups/GroupActions";
 import { CARD } from "@/components/dashboard/tone";
@@ -28,9 +29,9 @@ export default async function GrupoPage({ params }: { params: { grupoId: string 
           <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/90">{group.description}</p>
           <div className="mt-4 space-y-1.5 text-sm text-white/80">
             {group.meetingInfo && (
-              <p className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                {group.meetingInfo}
+              <p className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+                <MeetingInfo text={group.meetingInfo} linkClassName="text-white hover:text-white/80" />
               </p>
             )}
             <p className="flex items-center gap-2 tabular-nums">

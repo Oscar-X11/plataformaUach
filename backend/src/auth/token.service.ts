@@ -11,6 +11,8 @@ export interface TokenPayload {
   role: UserRole;
   /** Contraseña temporal pendiente de cambiar: solo se permiten rutas de cuenta. */
   mustChangePassword: boolean;
+  /** Versión de sesión del usuario al emitir el token (User.sessionVersion). */
+  sv: number;
 }
 
 @Injectable()
@@ -42,6 +44,8 @@ export class TokenService {
         sub: payload.sub,
         role: payload.role as UserRole,
         mustChangePassword: payload.mustChangePassword === true,
+        // Los tokens anteriores a este campo equivalen a la versión 0.
+        sv: typeof payload.sv === 'number' ? payload.sv : 0,
       };
     } catch {
       return null;

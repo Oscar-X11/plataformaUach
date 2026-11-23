@@ -130,6 +130,7 @@ function courseSummary(course, role) {
     term: course.term,
     subject: { id: subject.id, name: subject.name, code: subject.code, semester: subject.semester },
     teacher: { id: teacher.id, fullName: teacher.fullName },
+    meetingInfo: course.meetingInfo ?? null,
     studentCount: course.enrollments.length,
     createdAt: course.createdAt,
     myRole: role,
@@ -177,6 +178,7 @@ async function courseRoutes(req, res, path) {
       name,
       term,
       invitation: newCode(),
+      meetingInfo: String(body.meetingInfo ?? "").trim().slice(0, 200) || null,
       subjectId: body.subjectId,
       teacherId: user.id,
       createdAt: new Date().toISOString(),
@@ -202,6 +204,12 @@ async function courseRoutes(req, res, path) {
   if (!course || !role) return notFoundCourse(res), true;
 
   if (!sub && req.method === "GET") return send(res, 200, courseSummary(course, role)), true;
+
+  if (sub === "meeting" && req.method === "PATCH") {
+    if (role === "student") return forbidden(res, "Solo el docente del curso puede hacer esto"), true;
+    course.meetingInfo = String((await readJson(req)).meetingInfo ?? "").trim().slice(0, 200) || null;
+    return send(res, 200, courseSummary(course, role)), true;
+  }
 
   if (sub === "people" && req.method === "GET") {
     const teacher = findUser(course.teacherId);

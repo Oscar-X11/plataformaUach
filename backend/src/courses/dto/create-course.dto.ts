@@ -1,8 +1,16 @@
 import { Transform } from 'class-transformer';
-import { IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value;
+/** Vacío = sin dato (se guarda null). */
+const trimToNull = ({ value }: { value: unknown }) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string') return value;
+  const text = value.trim().replace(/\s+/g, ' ');
+  return text === '' ? null : text;
+};
+const MEETING_MESSAGE = 'El lugar y horario no puede exceder 200 caracteres';
 
 export class CreateCourseDto {
   /** Nombre visible, p. ej. "Bases de Datos — Grupo A". */
@@ -24,4 +32,20 @@ export class CreateCourseDto {
 
   @IsUUID('all', { message: 'Selecciona una materia' })
   subjectId!: string;
+
+  /** Salón y horario, o enlace de la reunión en línea. Opcional. */
+  @IsOptional()
+  @Transform(trimToNull)
+  @IsString()
+  @MaxLength(200, { message: MEETING_MESSAGE })
+  meetingInfo?: string | null;
+}
+
+export class UpdateMeetingInfoDto {
+  /** Texto vacío o null lo borra. */
+  @IsOptional()
+  @Transform(trimToNull)
+  @IsString()
+  @MaxLength(200, { message: MEETING_MESSAGE })
+  meetingInfo!: string | null;
 }

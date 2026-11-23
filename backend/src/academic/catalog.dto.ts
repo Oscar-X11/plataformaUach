@@ -44,14 +44,14 @@ class NamedWithCode {
 const SCHEME_MESSAGE = 'El tipo de periodo debe ser cuatrimestral o semestral';
 
 export class FacultyDto extends NamedWithCode {
-  /** Si se omite, la facultad queda cuatrimestral (o conserva el que tenía). */
+  /** Si se omite, el nivel queda cuatrimestral (o conserva el que tenía). */
   @IsOptional()
   @IsEnum(TermScheme, { message: SCHEME_MESSAGE })
   scheme?: TermScheme;
 }
 
 export class CareerDto extends NamedWithCode {
-  @IsUUID('all', { message: 'Selecciona una facultad' })
+  @IsUUID('all', { message: 'Selecciona un nivel' })
   facultyId!: string;
 }
 

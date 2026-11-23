@@ -8,6 +8,7 @@ import { AcademicStatus, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'node:crypto';
 import { BCRYPT_ROUNDS } from '../auth/auth.service';
+import { SessionStateService } from '../auth/session-state.service';
 import { PrismaService } from '../database/prisma.service';
 import {
   AssignCareerDto,
@@ -45,7 +46,10 @@ const isNotFound = (error: unknown) =>
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sessions: SessionStateService,
+  ) {}
 
   async list(query: ListUsersQuery) {
     const page = query.page ?? 1;
@@ -180,17 +184,25 @@ export class UsersService {
     if (userId === adminId && status !== 'ACTIVE') {
       throw new BadRequestException('No puedes desactivar tu propia cuenta');
     }
-    return this.prisma.user
-      .update({ where: { id: userId }, data: { status }, select: USER_LIST_SELECT })
+    // Desactivar (baja, egreso, suspensión…) cierra todas sus sesiones abiertas.
+    const user = await this.prisma.user
+      .update({
+        where: { id: userId },
+        data: { status, ...(status !== 'ACTIVE' && { sessionVersion: { increment: 1 } }) },
+        select: USER_LIST_SELECT,
+      })
       .catch((error: unknown) => {
         if (isNotFound(error)) throw new NotFoundException('El usuario no existe');
         throw error;
       });
+    this.sessions.forget(userId);
+    return user;
   }
 
   /**
    * Restablecimiento hecho por un administrador (no hay correo para recuperar).
    * Devuelve la contraseña temporal UNA sola vez; el usuario debe cambiarla al entrar.
+   * Cierra todas sus sesiones abiertas.
    */
   async resetPassword(userId: string) {
     const temporaryPassword = generateTemporaryPassword();
@@ -200,6 +212,7 @@ export class UsersService {
         data: {
           passwordHash: await bcrypt.hash(temporaryPassword, BCRYPT_ROUNDS),
           mustChangePassword: true,
+          sessionVersion: { increment: 1 },
         },
         select: { id: true, username: true, fullName: true },
       })
@@ -207,6 +220,7 @@ export class UsersService {
         if (isNotFound(error)) throw new NotFoundException('El usuario no existe');
         throw error;
       });
+    this.sessions.forget(userId);
 
     return { user, temporaryPassword };
   }

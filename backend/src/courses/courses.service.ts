@@ -10,7 +10,7 @@ import { TokenPayload } from '../auth/token.service';
 import { PrismaService } from '../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CourseAccessService, CourseRole } from './course-access.service';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { CreateCourseDto, UpdateMeetingInfoDto } from './dto/create-course.dto';
 
 // Sin caracteres que se confunden al dictarlos o copiarlos del pizarrón (0/O, 1/I/L).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -28,6 +28,7 @@ const COURSE_SELECT = {
   name: true,
   term: true,
   invitation: true,
+  meetingInfo: true,
   teacherId: true,
   createdAt: true,
   subject: { select: { id: true, name: true, code: true, semester: true } },
@@ -98,6 +99,7 @@ export class CoursesService {
         data: {
           name: dto.name,
           term: term.code,
+          meetingInfo: dto.meetingInfo ?? null,
           invitation,
           subjectId: dto.subjectId,
           teacherId: user.sub,
@@ -203,6 +205,17 @@ export class CoursesService {
     return { invitation };
   }
 
+  /** El docente (o un admin) escribe dónde y cuándo se reúne el curso. */
+  async updateMeetingInfo(courseId: string, dto: UpdateMeetingInfoDto, user: TokenPayload) {
+    const role = await this.access.assertCanManage(courseId, user);
+    const row = await this.prisma.course.update({
+      where: { id: courseId },
+      data: { meetingInfo: dto.meetingInfo ?? null },
+      select: COURSE_SELECT,
+    });
+    return this.toSummary(row, role);
+  }
+
   async removeStudent(courseId: string, studentId: string, user: TokenPayload) {
     await this.access.assertCanManage(courseId, user);
     const { count } = await this.prisma.enrollment.deleteMany({
@@ -235,6 +248,7 @@ export class CoursesService {
       term: row.term,
       subject: row.subject,
       teacher: row.teacher,
+      meetingInfo: row.meetingInfo,
       studentCount: row._count.enrollments,
       createdAt: row.createdAt,
       myRole: role,

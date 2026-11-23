@@ -116,7 +116,10 @@ model User {
   passwordHash       String             @map("contrasena_hash")
   /// true tras un restablecimiento hecho por un administrador: debe cambiarla al entrar.
   mustChangePassword Boolean            @default(false) @map("debe_cambiar_contrasena")
-  fullName           String             @map("nombre_completo")
+  /// Va en cada token de sesión. Al subirla (desactivar cuenta, restablecer o cambiar
+  /// contraseña) todas las sesiones abiertas dejan de valer.
+  sessionVersion     Int                @default(0) @map("version_sesion")
+  fullName          String             @map("nombre_completo")
   /// Ruta relativa dentro de storage/ (avatars/...).
   avatarUrl          String?            @map("ruta_avatar")
   role               UserRole           @map("rol")
@@ -170,6 +173,8 @@ model Course {
   term         String           @map("periodo")
   academicTerm AcademicTerm     @relation(fields: [term], references: [code], onDelete: Restrict, onUpdate: Cascade)
   invitation   String           @unique @map("codigo_invitacion")
+  /// Texto libre del docente: salón y horario, o enlace de la reunión en línea.
+  meetingInfo  String?          @map("lugar_horario") @db.VarChar(200)
   subjectId    String           @map("materia_id")
   teacherId    String           @map("docente_id")
   subject      Subject          @relation(fields: [subjectId], references: [id], onDelete: Restrict)

@@ -14,7 +14,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Roles } from '../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import { CoursesService } from './courses.service';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { CreateCourseDto, UpdateMeetingInfoDto } from './dto/create-course.dto';
 import { JoinCourseDto } from './dto/join-course.dto';
 import { ReassignTeacherDto } from './dto/reassign-teacher.dto';
 
@@ -60,6 +60,16 @@ export class CoursesController {
     @Req() { user }: AuthenticatedRequest,
   ) {
     return this.courses.regenerateInvitation(id, user);
+  }
+
+  @Roles('TEACHER', 'ADMIN')
+  @Patch(':id/meeting')
+  updateMeetingInfo(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateMeetingInfoDto,
+    @Req() { user }: AuthenticatedRequest,
+  ) {
+    return this.courses.updateMeetingInfo(id, dto, user);
   }
 
   @Roles('ADMIN')

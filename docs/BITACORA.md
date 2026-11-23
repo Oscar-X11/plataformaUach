@@ -20,14 +20,24 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - El seed crea el periodo en curso de cada tipo si no hay uno actual (`2026-C3` y `2026-S2`).
 - «Catálogos» pasó a llamarse **Materias** (`/administracion/materias`).
 - Commit `4e845d2`: catálogo real de la UACH, periodos cuatrimestrales y semestrales, apartado Materias y datos institucionales en el acceso.
+- **Sesiones invalidables** (migración `20261123180000_version_de_sesion`): cada token lleva `sv` (`User.sessionVersion`). El guard comprueba en la BD, con caché de 30 s por usuario (`SessionStateService`), que la cuenta siga activa y que la versión coincida.
+  - Desactivar una cuenta, restablecer su contraseña o cambiarla uno mismo sube la versión: las demás sesiones reciben 401 al instante.
+  - El rol y la contraseña temporal pendiente se leen de la BD, no del token.
+- **`GET /health`** (público, sin límite de peticiones): 200 si MySQL y `storage/` responden, 503 si no. Reemplaza el «Hello World!». Healthcheck del backend en `docker-compose.yml`.
+- «Materias» pasó a llamarse **Carreras** (`/administracion/carreras`). En la web ya no aparece la palabra «facultad»: se dice **nivel** (registro, perfil, administración y mensajes del backend).
+- Probado de punta a punta con la BD real: cambio de contraseña, restablecimiento y desactivación cierran las otras sesiones. 84 pruebas unitarias.
+- **Lugar y horario del curso** (migración `20261123200000_lugar_horario_cursos`): texto libre de hasta 200 caracteres que el docente escribe al crear el curso o edita desde el encabezado (`PATCH /courses/:id/meeting`). Los enlaces (Meet, Zoom…) se abren con un clic, también en los grupos de estudio (componente `MeetingInfo`).
+- Probado con un curso real (guardar, enlace clicable, límite de 200, vaciar). 86 pruebas unitarias.
+- Reporte del día en `docs/REPORTE_2026-11-23.md`.
 
 ### Decisiones
+- **No se implementan videollamadas.** Las reuniones en línea se resuelven pegando el enlace en «Lugar y horario».
 - Licenciaturas e ingenierías: cuatrimestrales. Bachillerato: semestral (lo confirmó el usuario).
 - El sitio no publica facultades. Se agrupa como él: «Licenciaturas» (`LIC`), «Ingenierías» (`ING`) y «Preparatoria Rosario Castellanos» (`PREP`).
 - Las facultades de ejemplo `FING` y `FCA` se integraron en `ING` y `LIC` con sus usuarios y carreras.
 - Siglas de Arquitectura, Gastronomía y Turismo: `LA`, `LG` y `LT` (las indicó el usuario; el seed renombra las claves anteriores).
 - Áreas de bachillerato con claves propias: `BEA`, `BFM`, `BQB`, `BSH`. El significado de «BPProfesional» no aparece en el sitio.
-- Las materias se capturan desde Administración → Materias; no se cargaron posgrados.
+- Las materias se capturan desde Administración → Carreras; no se cargaron posgrados.
 - La migración se generó con `prisma migrate diff`: el usuario de MySQL no puede crear la base temporal de `migrate dev`.
 
 ### Importante

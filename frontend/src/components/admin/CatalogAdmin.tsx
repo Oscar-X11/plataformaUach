@@ -11,15 +11,19 @@ import { api, ApiError } from "@/lib/api";
 
 type Kind = "faculty" | "career" | "subject";
 
-const LABELS: Record<Kind, { one: string; endpoint: string; namePlaceholder: string; codePlaceholder: string }> = {
-  faculty: { one: "facultad", endpoint: "/academic/faculties", namePlaceholder: "Ingenierías", codePlaceholder: "ING" },
-  career: { one: "carrera", endpoint: "/academic/careers", namePlaceholder: "Ingeniería en Sistemas Computacionales", codePlaceholder: "ISC" },
-  subject: { one: "materia", endpoint: "/academic/subjects", namePlaceholder: "Bases de Datos", codePlaceholder: "ISC-301" },
+// En la API el nivel se llama faculty; en la web nunca se dice «facultad».
+const LABELS: Record<
+  Kind,
+  { one: string; the: string; newOne: string; endpoint: string; namePlaceholder: string; codePlaceholder: string }
+> = {
+  faculty: { one: "nivel", the: "el nivel", newOne: "Nuevo nivel", endpoint: "/academic/faculties", namePlaceholder: "Ingenierías", codePlaceholder: "ING" },
+  career: { one: "carrera", the: "la carrera", newOne: "Nueva carrera", endpoint: "/academic/careers", namePlaceholder: "Ingeniería en Sistemas Computacionales", codePlaceholder: "ISC" },
+  subject: { one: "materia", the: "la materia", newOne: "Nueva materia", endpoint: "/academic/subjects", namePlaceholder: "Bases de Datos", codePlaceholder: "ISC-301" },
 };
 
 /**
- * Formulario en línea para crear o editar una facultad, carrera o materia.
- * `parent` es el id de la facultad (carrera) o de la carrera (materia).
+ * Formulario en línea para crear o editar un nivel, carrera o materia.
+ * `parent` es el id del nivel (carrera) o de la carrera (materia).
  */
 function EntityForm({
   kind,
@@ -33,7 +37,7 @@ function EntityForm({
   item?: { id: string; name: string; code: string; semester?: number; scheme?: TermScheme };
   parent?: string;
   faculties?: CatalogFaculty[];
-  /** Tipo de periodo de la facultad: nombra el campo «Cuatrimestre» o «Semestre». */
+  /** Tipo de periodo del nivel: nombra el campo «Cuatrimestre» o «Semestre». */
   scheme?: TermScheme;
   onDone: () => void;
 }) {
@@ -60,14 +64,14 @@ function EntityForm({
       onDone();
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : `No se pudo guardar la ${meta.one}.`);
+      setError(caught instanceof ApiError ? caught.message : `No se pudo guardar ${meta.the}.`);
       setBusy(false);
     }
   }
 
   return (
     <form onSubmit={submit} noValidate className="space-y-3 rounded-xl bg-uach-canvas p-4">
-      <p className="text-sm font-semibold text-uach-ink">{item ? `Editar ${meta.one}` : `Nueva ${meta.one}`}</p>
+      <p className="text-sm font-semibold text-uach-ink">{item ? `Editar ${meta.one}` : meta.newOne}</p>
       {error && <FormAlert message={error} />}
       <div className={`grid grid-cols-1 gap-3 ${kind === "subject" ? "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_6rem]" : "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"}`}>
         <div>
@@ -108,7 +112,7 @@ function EntityForm({
         )}
         {kind === "career" && item && faculties && (
           <div className="sm:col-span-2">
-            <label htmlFor={`${prefix}-faculty`} className="mb-1 block text-xs font-medium text-uach-ink/75">Facultad</label>
+            <label htmlFor={`${prefix}-faculty`} className="mb-1 block text-xs font-medium text-uach-ink/75">Nivel</label>
             <select id={`${prefix}-faculty`} name="facultyId" defaultValue={parent} className={INPUT}>
               {faculties.map((faculty) => (
                 <option key={faculty.id} value={faculty.id}>{faculty.code} · {faculty.name}</option>
@@ -147,7 +151,7 @@ function RowActions({
   const meta = LABELS[kind];
 
   async function remove() {
-    if (!window.confirm(`¿Borrar la ${meta.one} «${item.name}»?`)) return;
+    if (!window.confirm(`¿Borrar ${meta.the} «${item.name}»?`)) return;
     setBusy(true);
     try {
       await api(`${meta.endpoint}/${item.id}`, { method: "DELETE" });
@@ -348,12 +352,12 @@ export function CatalogAdmin({ catalog }: { catalog: CatalogFaculty[] }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2 text-sm text-uach-ink/75">
           <BookOpen className="h-4 w-4 text-uach-teal" strokeWidth={1.75} aria-hidden />
-          {catalog.length} {catalog.length === 1 ? "facultad" : "facultades"} · {careers} carreras · {subjects} materias
+          {catalog.length} {catalog.length === 1 ? "nivel" : "niveles"} · {careers} carreras · {subjects} materias
         </p>
         {!adding && (
           <button type="button" onClick={() => setAdding(true)} className={BTN_PRIMARY}>
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Nueva facultad
+            Nuevo nivel
           </button>
         )}
       </div>

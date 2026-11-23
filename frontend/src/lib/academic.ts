@@ -1,4 +1,7 @@
-/** Facultades, carreras, materias y periodos (vistas de administración y formularios). */
+/**
+ * Niveles, carreras, materias y periodos (vistas de administración y formularios).
+ * En la API el nivel se llama faculty; en la web nunca se dice «facultad».
+ */
 
 /** Licenciaturas e ingenierías: cuatrimestres. Bachillerato: semestres. */
 export type TermScheme = "CUATRIMESTRAL" | "SEMESTRAL";
@@ -52,7 +55,7 @@ export interface CatalogFaculty {
   careers: CatalogCareer[];
 }
 
-/** Lista plana de carreras para un <select>, agrupable por facultad. */
+/** Lista plana de carreras para un <select>, agrupable por nivel. */
 export interface CareerOption {
   id: string;
   name: string;

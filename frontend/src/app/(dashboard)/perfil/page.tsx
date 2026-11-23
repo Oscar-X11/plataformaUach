@@ -39,7 +39,7 @@ export default async function PerfilPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-uach-petrol">Mi perfil</h1>
         <p className="mt-1 text-sm text-uach-ink/75">
-          Tus datos institucionales. Si algo es incorrecto, acude a la administración de tu facultad.
+          Tus datos institucionales. Si algo es incorrecto, acude a la administración escolar.
         </p>
       </header>
 
@@ -54,7 +54,7 @@ export default async function PerfilPage() {
           <Field label={student ? "Matrícula" : "Número de empleado"} value={profile.username} />
           <Field label="Rol" value={ROLE_LABELS[profile.role]} />
           <Field label="Estado de la cuenta" value={STATUS_LABELS[profile.status]} />
-          {student && <Field label="Facultad" value={profile.faculty?.name ?? "Sin registrar"} />}
+          {student && <Field label="Nivel" value={profile.faculty?.name ?? "Sin registrar"} />}
           {student && <Field label="Carrera" value={profile.career?.name ?? "Sin registrar"} />}
           <Field
             label={student ? "Cursos inscritos" : "Cursos que impartes"}

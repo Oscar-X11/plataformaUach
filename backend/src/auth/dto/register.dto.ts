@@ -30,7 +30,7 @@ export class RegisterDto {
   fullName!: string;
 
   @IsOptional()
-  @IsUUID('all', { message: 'Facultad inválida' })
+  @IsUUID('all', { message: 'Nivel inválido' })
   facultyId?: string;
 
   @IsOptional()

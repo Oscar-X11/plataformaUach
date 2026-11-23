@@ -40,6 +40,9 @@
 | 2026-11-19 | ✅ Se inicia sesión con **matrícula** (alumnos) o **número de empleado** (docentes y administradores), guardados en el campo `User.username`. |
 | 2026-11-19 | ✅ La contraseña olvidada la restablece un **administrador** con una contraseña temporal que el usuario debe cambiar al entrar. |
 | 2026-11-19 | ✅ Privacidad en cursos: los alumnos no ven las matrículas de sus compañeros ni el código de invitación. |
+| 2026-11-23 | ✅ No se implementan videollamadas ni videoclases. Para reuniones en línea, el docente o el grupo de estudio pega el enlace en «Lugar y horario». |
+| 2026-11-23 | ✅ Licenciaturas e ingenierías son **cuatrimestrales**; el bachillerato, **semestral**. |
+| 2026-11-23 | ✅ En la web no se usa la palabra «facultad»: los grupos de carreras se llaman **nivel** (Licenciaturas, Ingenierías, Preparatoria). |
 | — | ❓ Cómo impedir que alguien se registre con la matrícula de otro alumno: cargar la lista oficial de matrículas o que un administrador apruebe cada cuenta nueva. |
 
 ---
@@ -110,9 +113,10 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 - ✅ Repositorio institucional con búsqueda y moderación (`/repositorio`); archivo subido o enlace de Google Drive.
 - ✅ Vista previa de PDF, imágenes y enlaces de Drive en material y repositorio.
 - ✅ Grupos de estudio con miembros y cupo (`/grupos-estudio`).
+- ✅ Lugar y horario del curso: texto libre del docente (salón, horario o enlace de reunión) en el encabezado del curso; los enlaces se abren con un clic. También en los grupos de estudio.
 - ✅ Reportes por curso con exportación CSV (`/administracion/reportes`).
 - ✅ Administración: usuarios, panel con métricas y reportes.
-- ✅ Materias (`/administracion/materias`, antes «Catálogos»): facultades → carreras → materias, con alta, edición y borrado (solo de lo que no se usa).
+- ✅ Carreras (`/administracion/carreras`, antes «Catálogos»): niveles → carreras → materias, con alta, edición y borrado (solo de lo que no se usa). En la web no se usa la palabra «facultad».
 - ✅ Periodos (`/administracion/periodos`): alta con fechas, periodo actual, cerrar y reabrir. Los cursos solo se crean en periodos abiertos.
 - ✅ Cursos (`/administracion/cursos`): búsqueda, filtro por periodo y cambiar el docente (con aviso al nuevo docente).
 - ✅ Carrera de los alumnos: al importar el Excel o en bloque desde la lista de usuarios (filtro «sin carrera»).
@@ -132,7 +136,7 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 | 7 | **Grupos dentro del curso** | Equipos/secciones, tareas por equipo (una entrega por equipo), material visible por grupo. | Ligero. |
 | 8 | **Finalización y progreso** | Marcar actividades como completadas, barra de progreso del curso, condiciones (ver material, entregar, aprobar con X). | Ligero. |
 | 9 | **Acceso condicional** | Mostrar una actividad solo después de una fecha, de completar otra o de alcanzar una calificación. | Depende de #8. |
-| 10 | **Videoclases** | Enlace a Meet, Zoom o Jitsi público en la sesión del curso y en el calendario. | **No** hospedar Jitsi en este servidor. |
+| 10 | ~~**Videoclases**~~ | **No se implementa** (decisión del 2026-11-23). Los cursos y grupos de estudio tienen un campo libre de lugar y horario donde se puede pegar un enlace de Meet o Zoom. | — |
 | 11 | **Bitácora de actividad** | Quién vio o hizo qué (accesos, entregas, cambios de calificación) para docentes y administradores. | Purgar registros viejos para no llenar el disco. |
 
 ## Fase 4 — Actividades y herramientas complementarias de Moodle ⬜
@@ -146,7 +150,7 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 | **Seguimiento** | Informes de participación por curso, alumnos en riesgo (faltas y entregas atrasadas), detección de entregas duplicadas (mismo `sha256`). |
 | **Experiencia** | Búsqueda global (cursos, recursos y personas), calendario con eventos propios, instalación como app (PWA), centro de ayuda / preguntas frecuentes y aviso de privacidad. |
 
-Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo institucional) y el rol `SECURITY`.
+Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo institucional), el rol `SECURITY` y las videollamadas.
 
 ---
 
@@ -154,9 +158,9 @@ Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo 
 
 - ⬜ Crear la base de datos MySQL, aplicar la migración (`npm run prisma:deploy`), cargar el seed y probar el backend real.
 - ⬜ Reemplazar el catálogo de ejemplo del seed por las facultades, carreras y materias oficiales.
-- ⬜ Reemplazar `GET /` ("Hello World!") por un endpoint `/health` real.
+- ✅ Endpoint `GET /health` (BD y storage) y healthcheck del backend en Docker.
 - ⬜ Refresh token para sesiones largas.
-- ⬜ Invalidar las sesiones abiertas cuando un administrador desactiva una cuenta o restablece su contraseña.
+- ✅ Invalidar las sesiones abiertas al desactivar una cuenta o restablecer o cambiar su contraseña (`sessionVersion`).
 - ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
 - ⬜ Swap y respaldos automáticos en el servidor Debian.
 - 🔄 Pruebas automatizadas: unitarias de todos los módulos (77); faltan pruebas e2e con base de datos.

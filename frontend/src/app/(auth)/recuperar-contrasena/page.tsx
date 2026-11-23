@@ -10,7 +10,7 @@ export default function RecuperarContrasenaPage() {
       </p>
       <ol className="mt-6 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-uach-ink">
         <li>
-          Acude con la administración de tu facultad con tu credencial y tu matrícula (o número de
+          Acude a la administración escolar con tu credencial y tu matrícula (o número de
           empleado).
         </li>
         <li>Te entregarán una contraseña temporal.</li>

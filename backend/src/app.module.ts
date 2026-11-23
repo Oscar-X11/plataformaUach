@@ -6,7 +6,6 @@ import { createObserveModule } from '@nestjs/observe';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AcademicModule } from './academic/academic.module';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ClassworkModule } from './classwork/classwork.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -63,7 +62,6 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
   ],
   controllers: [AppController],
   providers: [
-    AppService,
     // El orden importa: límite de peticiones → autenticación → roles.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
