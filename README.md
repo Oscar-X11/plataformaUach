@@ -18,8 +18,9 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | --- | --- | --- |
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
 | Fase 1 | MVP tipo Classroom (cursos, tareas, entregas, calificaciones, tablón, notificaciones, perfil) | ✅ Completa con backend simulado |
-| Fase 2 | Valor institucional (calendario, material del curso, repositorio, grupos de estudio, reportes) | 🔄 Casi completa — faltan catálogos y periodos en administración |
-| Fase 3 | Funciones tipo Moodle (cuestionarios, asistencia, foros…) | ⬜ Pendiente |
+| Fase 2 | Valor institucional (calendario, material del curso, repositorio, grupos de estudio, reportes, catálogos y periodos) | ✅ Completa |
+| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, asistencia, rúbricas, foros…) | ⬜ Pendiente |
+| Fase 4 | Actividades complementarias de Moodle (taller, wiki, insignias, reutilizar cursos…) | ⬜ Pendiente |
 
 > Base de datos local de pruebas: MySQL 8.4 en Docker (`docker compose up -d mysql redis`, puerto del host en `MYSQL_HOST_PORT`). Se crea con `npm run prisma:deploy` y `npm run prisma:seed`. Las tablas y columnas están en español (`@@map`/`@map` en `schema.prisma`); el código sigue usando los nombres de los modelos en inglés.
 
@@ -111,7 +112,7 @@ Ventanas funcionales:
 | `(auth)` | `/login`, `/registro`, `/recuperar-contrasena` |
 | `(cuenta)` | `/cambiar-contrasena` |
 | `(dashboard)` | `/dashboard` (alumno y docente), `/cursos`, `/cursos/[cursoId]` (tablón), `/cursos/[cursoId]/tareas`, `/cursos/[cursoId]/tareas/[tareaId]`, `/cursos/[cursoId]/recursos`, `/cursos/[cursoId]/personas`, `/cursos/[cursoId]/calificaciones`, `/entregas`, `/calendario`, `/repositorio`, `/grupos-estudio`, `/grupos-estudio/[grupoId]`, `/notificaciones`, `/perfil` |
-| `(admin)` | `/administracion` (panel), `/administracion/usuarios`, `/administracion/cursos`, `/administracion/reportes` |
+| `(admin)` | `/administracion` (panel), `/administracion/usuarios`, `/administracion/cursos`, `/administracion/catalogos`, `/administracion/periodos`, `/administracion/reportes` |
 
 | Rol | Página de inicio |
 | --- | --- |
@@ -242,8 +243,8 @@ Plataforma_UACH/
 
 ## Siguientes pasos
 
-- **Cerrar la Fase 2:** catálogos (facultades, carreras y materias), periodos y reasignar docentes en administración.
-- **Base de datos real:** crear MySQL, aplicar las migraciones, cargar el seed y repetir las pruebas con el backend real.
+- **Instalar en el servidor Debian** (4 GB): swap, respaldos de la BD y de `storage/`, imágenes construidas fuera del servidor.
+- **Cargar el catálogo oficial** desde `/administracion/catalogos` y dar de alta los periodos en `/administracion/periodos`.
 - **Pendientes técnicos:** invalidar sesiones al desactivar cuentas o restablecer contraseñas, endpoint `/health`, refresh token y pruebas e2e.
 - **Por decidir:** cómo evitar registros con la matrícula de otro alumno.
-- **Fase 3:** cuestionarios, asistencia, foros, rúbricas y videoclases.
+- **Fase 3:** cuestionarios, asistencia, rúbricas, libro de calificaciones avanzado y foros (detalle en [`docs/AVANCE.md`](docs/AVANCE.md)).

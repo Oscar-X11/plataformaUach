@@ -24,18 +24,36 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Repositorio con enlaces:** además de subir archivo, se puede compartir un enlace de Drive. Migración `20261122120000_repositorio_enlaces` (columna `url`; los datos del archivo pasan a ser opcionales), aplicada en la BD local. Backend simulado actualizado.
 - Tests del backend: 67 (2 nuevos: validación desde disco y enlaces en el repositorio).
 - Commit `105536e`: subidas a disco, ajustes para 4 GB, enlaces de Drive y pantallas de carga.
+- **Plan:** las funciones de Moodle quedaron en dos fases en `AVANCE.md`. La **Fase 3** (evaluación y seguimiento) tiene 11 funciones ordenadas por prioridad: cuestionarios, asistencia, rúbricas, libro de calificaciones avanzado, foros, mensajería, grupos dentro del curso, finalización y progreso, acceso condicional, videoclases (enlace externo) y bitácora de actividad. La **Fase 4** agrupa las actividades complementarias: taller, wiki, glosario, lección, libro, consulta, encuesta, H5P/SCORM, insignias, competencias, reutilizar y archivar cursos, informes, búsqueda global, PWA y ayuda.
+- **Fase 2 completa:**
+  - **Periodos** (`/administracion/periodos`): modelo `AcademicTerm` (tabla `periodos`) ligado a `Course.term` por su clave, con llave foránea. Tiene alta con fechas, «hacer actual» (solo uno a la vez), cerrar y reabrir; solo se borra un periodo sin cursos. Los docentes eligen el periodo de una lista (antes era texto libre) y solo se crean cursos en periodos abiertos.
+  - **Catálogos** (`/administracion/catalogos`): árbol facultades → carreras → materias con alta, edición y borrado. No se borra lo que está en uso y el mensaje dice por qué. Las claves se guardan en mayúsculas. Si una carrera cambia de facultad, sus alumnos también.
+  - **Cambiar docente** (`/administracion/cursos`): buscador de docentes activos; el nuevo docente recibe el aviso `COURSE_ASSIGNED`. La página ahora tiene búsqueda y filtro por periodo.
+  - **Carrera de los alumnos:** se puede elegir al importar el Excel (para todos los nuevos) o asignar en bloque desde Usuarios (casillas, filtro por carrera y «Alumnos sin carrera»). Endpoint `PATCH /users/career`; solo afecta a alumnos.
+  - Migración `20261122180000_periodos`: da de alta como periodo cada valor de `cursos.periodo` que ya existía, para no romper la llave foránea. El seed crea el semestre en curso si no hay ninguno.
+  - Backend simulado: periodos y catálogo en modo lectura.
+  - Tests del backend: 77 (10 nuevos). Prueba de punta a punta con la BD real: 31 comprobaciones correctas. Los datos de prueba se borraron.
+- **Regresión completa con los tres roles** (sistema real, servidores en modo producción): 46 comprobaciones correctas. Incluye cuentas y cambio obligatorio de contraseña, cursos, tablón, material con PDF y Drive, tareas, entrega con archivo, calificación, CSV, avisos, calendario, repositorio, grupos, reportes, catálogo, asignar carrera, permisos y 44 páginas (HTML y navegación). Se revisó el log del frontend petición por petición. Errores encontrados y corregidos:
+  - **La página de avisos fallaba** con «Element type is invalid» cuando había avisos de material nuevo, de recurso revisado o de curso asignado: el mapa de íconos solo tenía 4 de los 7 tipos. El error venía de la Fase 2 y no se veía con el backend simulado. Afectaba también a la campana del menú. Ahora están los 7 tipos y hay un ícono de respaldo (`notificationIcon`) para tipos futuros. Se comprobó que los demás enums del backend sí están completos en el frontend.
+  - **Un id mal formado en la URL** (por ejemplo `/cursos/abc`) mostraba «Algo salió mal». Ahora `serverApi` trata el 400 de una consulta como «Página no encontrada».
 
 ### Decisiones
+- **Periodos:** la clave (`2026-2`) no se puede cambiar después de crearla. Cerrar un periodo solo impide crear cursos nuevos; los cursos existentes siguen igual. Dejarlos en solo lectura queda para la Fase 4 («archivar cursos»).
+- **Catálogos:** nada se borra en cascada. Para borrar una facultad o una carrera, primero hay que vaciarla.
 - **Archivos:** las entregas de tareas se siguen subiendo al servidor (quedan fijas y con `sha256`). En material y repositorio se puede subir archivo o compartir un enlace de Drive. Un enlace de Drive lo puede cambiar o borrar su dueño en cualquier momento, y para verse debe estar compartido como «Cualquier persona con el enlace».
 - Servidor de producción: PC con Debian, 4 GB de RAM DDR4 y disco de 256 GB.
 
 ### Importante
+- Con las pantallas de carga, una página inexistente responde HTTP 200 (muestra «Página no encontrada» y lleva `noindex`). Es el comportamiento de Next.js al enviar la página por partes.
+- El inicio de sesión admite 5 intentos por minuto por IP: las pruebas automáticas deben reutilizar sesiones.
 - Para probar la velocidad real usar `npm run preview:frontend`, no `npm run dev:frontend`.
 - No compilar las imágenes en el servidor (`next build` puede usar más de 1.5 GB): construirlas en otra máquina y llevarlas.
 - 256 GB de disco: vigilar el crecimiento de `storage/` y respaldarlo junto con la BD.
 - Al recrear el contenedor de MySQL con `docker compose up -d mysql` se conservan los datos (volumen `mysql_data`).
 
 ### Pendiente
+- El periodo `2026-2` se creó automáticamente desde los cursos existentes: falta ponerle nombre y fechas y marcarlo como actual en `/administracion/periodos`.
+- La cuenta de prueba `PRUEBA-DOC` sigue desactivada (por eso no se le pueden asignar cursos).
 - Activar swap (2–4 GB) en el servidor Debian.
 - Respaldos automáticos de la BD y de `storage/` a otro disco.
 - Mandar `Content-Disposition` con el nombre original al descargar (hoy se baja con el nombre UUID).

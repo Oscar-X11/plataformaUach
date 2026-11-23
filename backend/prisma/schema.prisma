@@ -36,6 +36,7 @@ enum NotificationType {
   COMMENT_CREATED
   MATERIAL_CREATED
   RESOURCE_REVIEWED
+  COURSE_ASSIGNED
 }
 
 enum ResourceType {
@@ -134,24 +135,44 @@ model User {
   @@map("usuarios")
 }
 
+/// Periodo académico (semestre). Los cursos se ligan por la clave ("2026-2").
+model AcademicTerm {
+  id        String    @id @default(uuid())
+  code      String    @unique @map("clave")
+  name      String    @map("nombre")
+  startsAt  DateTime? @map("inicia_en") @db.Date
+  endsAt    DateTime? @map("termina_en") @db.Date
+  /// Periodo que se propone por omisión al crear cursos. Solo uno a la vez.
+  isCurrent Boolean   @default(false) @map("actual")
+  /// Cerrado: ya no se crean cursos en él.
+  closed    Boolean   @default(false) @map("cerrado")
+  courses   Course[]
+  createdAt DateTime  @default(now()) @map("creado_en")
+
+  @@map("periodos")
+}
+
 model Course {
-  id          String           @id @default(uuid())
-  name        String           @map("nombre")
-  term        String           @map("periodo")
-  invitation  String           @unique @map("codigo_invitacion")
-  subjectId   String           @map("materia_id")
-  teacherId   String           @map("docente_id")
-  subject     Subject          @relation(fields: [subjectId], references: [id], onDelete: Restrict)
-  teacher     User             @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
-  enrollments Enrollment[]
-  posts       Post[]
-  assignments Assignment[]
-  topics      CourseTopic[]
-  materials   CourseMaterial[]
-  createdAt   DateTime         @default(now()) @map("creado_en")
+  id           String           @id @default(uuid())
+  name         String           @map("nombre")
+  /// Clave del periodo (AcademicTerm.code). Si se renombra la clave, se actualiza aquí.
+  term         String           @map("periodo")
+  academicTerm AcademicTerm     @relation(fields: [term], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  invitation   String           @unique @map("codigo_invitacion")
+  subjectId    String           @map("materia_id")
+  teacherId    String           @map("docente_id")
+  subject      Subject          @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  teacher      User             @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  enrollments  Enrollment[]
+  posts        Post[]
+  assignments  Assignment[]
+  topics       CourseTopic[]
+  materials    CourseMaterial[]
+  createdAt    DateTime         @default(now()) @map("creado_en")
 
   @@index([teacherId])
   @@index([subjectId])
+  @@index([term])
   @@map("cursos")
 }
 

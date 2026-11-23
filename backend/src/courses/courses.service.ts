@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { randomInt } from 'node:crypto';
 import { TokenPayload } from '../auth/token.service';
 import { PrismaService } from '../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CourseAccessService, CourseRole } from './course-access.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 
@@ -44,6 +45,7 @@ export class CoursesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: CourseAccessService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Cursos del usuario: los que imparte, en los que está inscrito o todos (admin). */
@@ -78,12 +80,19 @@ export class CoursesService {
       select: { id: true },
     });
     if (!subject) throw new BadRequestException('La materia no existe');
+    const term = await this.prisma.academicTerm.findUnique({
+      where: { code: dto.term },
+      select: { code: true, closed: true },
+    });
+    if (!term || term.closed) {
+      throw new BadRequestException('Elige un periodo abierto (los da de alta la administración)');
+    }
 
     const row = await this.withFreshCode((invitation) =>
       this.prisma.course.create({
         data: {
           name: dto.name,
-          term: dto.term,
+          term: term.code,
           invitation,
           subjectId: dto.subjectId,
           teacherId: user.sub,
@@ -92,6 +101,38 @@ export class CoursesService {
       }),
     );
     return this.toSummary(row, 'teacher');
+  }
+
+  /**
+   * El administrador cambia el docente de un curso (por ejemplo, si un profesor
+   * deja el grupo). El nuevo docente recibe un aviso.
+   */
+  async reassignTeacher(courseId: string, teacherId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { teacherId: true, name: true },
+    });
+    if (!course) throw new NotFoundException('El curso no existe');
+    const teacher = await this.prisma.user.findUnique({
+      where: { id: teacherId },
+      select: { role: true, status: true },
+    });
+    if (!teacher || teacher.role !== 'TEACHER') throw new BadRequestException('Selecciona un docente');
+    if (teacher.status !== 'ACTIVE') throw new BadRequestException('La cuenta del docente no está activa');
+
+    const row = await this.prisma.course.update({
+      where: { id: courseId },
+      data: { teacherId },
+      select: COURSE_SELECT,
+    });
+    if (course.teacherId !== teacherId) {
+      await this.notifications.notify([teacherId], {
+        type: 'COURSE_ASSIGNED',
+        title: `Te asignaron el curso «${course.name}»`,
+        link: `/cursos/${courseId}`,
+      });
+    }
+    return this.toSummary(row, 'admin');
   }
 
   /** El alumno se une con el código. Repetir la operación no falla. */

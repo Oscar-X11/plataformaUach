@@ -12,7 +12,8 @@ const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? "http://localhost:4000"
 
 /**
  * GET a la API desde el servidor con el token de la cookie. Si la sesión no
- * es válida la cierra y envía al login; un 404 muestra la página "no encontrado".
+ * es válida la cierra y envía al login; un 404 (o un 400 por id inválido) muestra
+ * la página "no encontrado".
  */
 export async function serverApi<T>(path: string): Promise<T> {
   const token = cookies().get(SESSION_COOKIE)?.value;
@@ -32,7 +33,9 @@ export async function serverApi<T>(path: string): Promise<T> {
     // Un route handler borra la cookie; desde un layout no se puede.
     redirect("/cerrar-sesion?motivo=expirada");
   }
-  if (response.status === 404) notFound();
+  // 400 en una consulta GET = identificador mal formado en la URL (p. ej. /cursos/abc):
+  // para quien navega es lo mismo que una página que no existe.
+  if (response.status === 404 || response.status === 400) notFound();
   if (!response.ok) {
     throw new Error(`Error al consultar ${path} (${response.status}).`);
   }

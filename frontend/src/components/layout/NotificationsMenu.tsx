@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell } from "lucide-react";
-import { NOTIFICATION_ICON } from "@/components/notifications/notification-meta";
+import { notificationIcon } from "@/components/notifications/notification-meta";
 import { api } from "@/lib/api";
 import type { NotificationList, NotificationView } from "@/lib/classwork";
 import { formatRelative } from "@/lib/dashboard/format";
@@ -115,7 +115,7 @@ export function NotificationsMenu() {
             ) : (
               <ul>
                 {items.map((item) => {
-                  const Icon = NOTIFICATION_ICON[item.type];
+                  const Icon = notificationIcon(item.type);
                   return (
                     <li key={item.id}>
                       <Link

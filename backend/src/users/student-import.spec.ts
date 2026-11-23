@@ -54,7 +54,12 @@ describe('prepareStudentRows', () => {
 describe('UsersService.importStudents', () => {
   const findMany = jest.fn();
   const createMany = jest.fn();
-  const service = new UsersService({ user: { findMany, createMany } } as unknown as PrismaService);
+  const updateMany = jest.fn();
+  const findCareer = jest.fn().mockResolvedValue({ id: 'isc', facultyId: 'fing' });
+  const service = new UsersService({
+    user: { findMany, createMany, updateMany },
+    career: { findUnique: findCareer },
+  } as unknown as PrismaService);
 
   beforeEach(() => {
     findMany.mockReset().mockResolvedValue([{ username: '500525124' }]);
@@ -81,10 +86,28 @@ describe('UsersService.importStudents', () => {
           role: 'STUDENT',
           passwordHash: 'hash:123oscar',
           mustChangePassword: true,
+          careerId: null,
+          facultyId: null,
         },
       ],
       skipDuplicates: true,
     });
+  });
+
+  it('asigna a los nuevos la carrera elegida (y su facultad)', async () => {
+    await service.importStudents({ rows: [row(2, '500525123')], careerId: 'isc' });
+    expect(createMany.mock.calls[0][0].data[0]).toMatchObject({ careerId: 'isc', facultyId: 'fing' });
+  });
+
+  it('asigna la carrera solo a alumnos', async () => {
+    updateMany.mockResolvedValueOnce({ count: 2 });
+    await expect(service.assignCareer({ userIds: ['a', 'b', 'd'], careerId: 'isc' })).resolves.toEqual({ updated: 2 });
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['a', 'b', 'd'] }, role: 'STUDENT' },
+      data: { careerId: 'isc', facultyId: 'fing' },
+    });
+    updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(service.assignCareer({ userIds: ['d'], careerId: null })).rejects.toThrow(/alumnos/);
   });
 
   it('rechaza crear demasiadas cuentas en una sola petición', async () => {

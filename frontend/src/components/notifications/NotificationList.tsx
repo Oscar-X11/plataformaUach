@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
-import { NOTIFICATION_ICON } from "@/components/notifications/notification-meta";
+import { notificationIcon } from "@/components/notifications/notification-meta";
 import { CARD } from "@/components/dashboard/tone";
 import { BTN_GHOST } from "@/components/ui/styles";
 import { api } from "@/lib/api";
@@ -56,7 +56,7 @@ export function NotificationList({ initial, nowIso }: { initial: Data; nowIso: s
       </div>
       <ul className="divide-y divide-uach-ink/[0.06]">
         {items.map((item) => {
-          const Icon = NOTIFICATION_ICON[item.type];
+          const Icon = notificationIcon(item.type);
           const body = (
             <>
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-uach-teal/10 text-uach-teal">

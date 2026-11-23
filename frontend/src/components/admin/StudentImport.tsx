@@ -3,8 +3,10 @@
 import { useRef, useState } from "react";
 import { CircleCheck, Download, FileSpreadsheet, LoaderCircle, Upload, X } from "lucide-react";
 import { CARD } from "@/components/dashboard/tone";
+import { CareerSelect } from "@/components/admin/CareerSelect";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY } from "@/components/ui/styles";
+import type { CareerOption } from "@/lib/academic";
 import { api, ApiError } from "@/lib/api";
 
 /** Fila que se manda al backend (POST /users/import-students). */
@@ -106,7 +108,15 @@ function Stat({ value, label, tone }: { value: number; label: string; tone: stri
   );
 }
 
-export function StudentImport({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
+export function StudentImport({
+  careers,
+  onClose,
+  onImported,
+}: {
+  careers: CareerOption[];
+  onClose: () => void;
+  onImported: () => void;
+}) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [inputs, setInputs] = useState<ImportInput[]>([]);
@@ -114,6 +124,7 @@ export function StudentImport({ onClose, onImported }: { onClose: () => void; on
   const [created, setCreated] = useState<ImportRow[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [careerId, setCareerId] = useState("");
 
   async function pick(file: File | undefined) {
     if (!file) return;
@@ -151,7 +162,7 @@ export function StudentImport({ onClose, onImported }: { onClose: () => void; on
         setBusy(`Creando cuentas… ${start} de ${rows.length}`);
         const result = await api<ImportResult>("/users/import-students", {
           method: "POST",
-          body: { rows: rows.slice(start, start + CHUNK) },
+          body: { rows: rows.slice(start, start + CHUNK), careerId: careerId || undefined },
         });
         done.push(...result.rows.filter((row) => row.status === "created"));
       }
@@ -177,8 +188,8 @@ export function StudentImport({ onClose, onImported }: { onClose: () => void; on
         <div>
           <h2 className="text-base font-semibold text-uach-ink">Importar alumnos desde Excel</h2>
           <p className="mt-1 text-sm text-uach-ink/75">
-            Columnas: <span className="font-mono text-xs">matricula, nombre, ap_pat, ap_mat</span>. La carrera se puede
-            asignar después.
+            Columnas: <span className="font-mono text-xs">matricula, nombre, ap_pat, ap_mat</span>. Si todo el archivo es de
+            una carrera, elígela al confirmar; si no, asígnala después desde la lista.
           </p>
         </div>
         <button
@@ -263,6 +274,15 @@ export function StudentImport({ onClose, onImported }: { onClose: () => void; on
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {preview.summary.new > 0 && (
+            <div className="sm:max-w-md">
+              <label htmlFor="import-career" className="mb-1.5 block text-sm font-medium text-uach-ink">
+                Carrera de los alumnos nuevos <span className="font-normal text-uach-ink/60">(opcional)</span>
+              </label>
+              <CareerSelect id="import-career" careers={careers} value={careerId} onChange={setCareerId} placeholder="Asignar después" />
             </div>
           )}
 

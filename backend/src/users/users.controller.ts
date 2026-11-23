@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { Roles } from '../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
-import { CreateStaffDto, ImportStudentsDto, ListUsersQuery, UpdateStatusDto } from './dto/users.dto';
+import { AssignCareerDto, CreateStaffDto, ImportStudentsDto, ListUsersQuery, UpdateStatusDto } from './dto/users.dto';
 import { UsersService } from './users.service';
 
 /** Administración de cuentas (solo ADMIN). */
@@ -25,6 +25,12 @@ export class UsersController {
   @Post('import-students')
   importStudents(@Body() dto: ImportStudentsDto) {
     return this.users.importStudents(dto);
+  }
+
+  /** Asigna la carrera a varios alumnos (p. ej. los importados del Excel). */
+  @Patch('career')
+  assignCareer(@Body() dto: AssignCareerDto) {
+    return this.users.assignCareer(dto);
   }
 
   @Patch(':id/status')

@@ -8,6 +8,7 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { TokenPayload } from '../auth/token.service';
 import { PrismaService } from '../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CourseAccessService } from './course-access.service';
 import { CoursesService, generateInvitationCode } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -51,10 +52,15 @@ function setup() {
       update: jest.fn(),
     },
     subject: { findUnique: jest.fn() },
+    academicTerm: { findUnique: jest.fn().mockResolvedValue({ code: '2026-2', closed: false }) },
+    user: { findUnique: jest.fn() },
     enrollment: { upsert: jest.fn(), deleteMany: jest.fn() },
   };
   const access = new CourseAccessService(prisma as unknown as PrismaService);
-  const service = new CoursesService(prisma as unknown as PrismaService, access);
+  const notify = jest.fn();
+  const service = new CoursesService(prisma as unknown as PrismaService, access, {
+    notify,
+  } as unknown as NotificationsService);
   /** Simula la consulta de pertenencia de CourseAccessService. */
   const membership = (enrolled: string[]) =>
     prisma.course.findUnique.mockImplementation(({ where }: { where: { id?: string } }) =>
@@ -64,7 +70,7 @@ function setup() {
           : null,
       ),
     );
-  return { prisma, access, service, membership };
+  return { prisma, access, service, membership, notify };
 }
 
 describe('CourseAccessService', () => {
@@ -161,6 +167,32 @@ describe('CoursesService', () => {
     prisma.course.create.mockRejectedValueOnce(duplicate).mockResolvedValueOnce(courseRow());
     await expect(service.create(dto, teacher)).resolves.toMatchObject({ myRole: 'teacher' });
     expect(prisma.course.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('solo se crean cursos en periodos dados de alta y abiertos', async () => {
+    const { service, prisma } = setup();
+    const dto = { name: 'Bases de Datos', term: '2026-2', subjectId: 'sub' };
+    prisma.subject.findUnique.mockResolvedValue({ id: 'sub' });
+    prisma.academicTerm.findUnique.mockResolvedValueOnce(null);
+    await expect(service.create(dto, teacher)).rejects.toThrow(/periodo abierto/);
+    prisma.academicTerm.findUnique.mockResolvedValueOnce({ code: '2026-2', closed: true });
+    await expect(service.create(dto, teacher)).rejects.toThrow(/periodo abierto/);
+    expect(prisma.course.create).not.toHaveBeenCalled();
+  });
+
+  it('el admin reasigna el curso a otro docente activo y se le avisa', async () => {
+    const { service, prisma, notify } = setup();
+    prisma.course.findUnique.mockResolvedValue({ teacherId: 't1', name: 'BD' });
+    prisma.user.findUnique.mockResolvedValueOnce({ role: 'STUDENT', status: 'ACTIVE' });
+    await expect(service.reassignTeacher(COURSE_ID, 's1')).rejects.toThrow(/docente/);
+    prisma.user.findUnique.mockResolvedValueOnce({ role: 'TEACHER', status: 'INACTIVE' });
+    await expect(service.reassignTeacher(COURSE_ID, 't9')).rejects.toThrow(/no está activa/);
+
+    prisma.user.findUnique.mockResolvedValueOnce({ role: 'TEACHER', status: 'ACTIVE' });
+    prisma.course.update.mockResolvedValue(courseRow({ teacherId: 't2' }));
+    await expect(service.reassignTeacher(COURSE_ID, 't2')).resolves.toMatchObject({ myRole: 'admin' });
+    expect(prisma.course.update).toHaveBeenCalledWith(expect.objectContaining({ data: { teacherId: 't2' } }));
+    expect(notify).toHaveBeenCalledWith(['t2'], expect.objectContaining({ type: 'COURSE_ASSIGNED' }));
   });
 
   it('los alumnos no ven las matrículas de sus compañeros', async () => {

@@ -1,0 +1,57 @@
+/** Catálogos académicos y periodos (vistas de administración y formularios). */
+
+export interface AcademicTerm {
+  id: string;
+  code: string;
+  name: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  isCurrent: boolean;
+  closed: boolean;
+  _count: { courses: number };
+}
+
+export interface CatalogSubject {
+  id: string;
+  name: string;
+  code: string;
+  semester: number;
+  _count: { courses: number; resources: number };
+}
+
+export interface CatalogCareer {
+  id: string;
+  name: string;
+  code: string;
+  _count: { users: number };
+  subjects: CatalogSubject[];
+}
+
+export interface CatalogFaculty {
+  id: string;
+  name: string;
+  code: string;
+  _count: { users: number };
+  careers: CatalogCareer[];
+}
+
+/** Lista plana de carreras para un <select>, agrupable por facultad. */
+export interface CareerOption {
+  id: string;
+  name: string;
+  code: string;
+  faculty: string;
+}
+
+export function careerOptions(catalog: CatalogFaculty[]): CareerOption[] {
+  return catalog.flatMap((faculty) =>
+    faculty.careers.map((career) => ({ id: career.id, name: career.name, code: career.code, faculty: faculty.name })),
+  );
+}
+
+/** "2026-08-01" → "1 ago 2026" (las fechas de periodo son días, sin hora). */
+export function formatTermDate(value: string | null) {
+  if (!value) return null;
+  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
+  return date.toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+}

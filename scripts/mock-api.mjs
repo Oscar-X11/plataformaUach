@@ -46,6 +46,12 @@ const FACULTIES = [
   },
 ];
 
+/** Periodos de demostración (solo lectura en el mock). */
+const TERMS = [
+  { id: "term-2026-2", code: "2026-2", name: "Agosto – Diciembre 2026", startsAt: "2026-08-01", endsAt: "2026-12-20", isCurrent: true, closed: false },
+  { id: "term-2026-1", code: "2026-1", name: "Enero – Junio 2026", startsAt: "2026-01-15", endsAt: "2026-06-30", isCurrent: false, closed: true },
+];
+
 /** Cuentas de demostración: una por rol y un alumno con contraseña temporal. */
 const users = new Map(
   [
@@ -151,7 +157,9 @@ async function courseRoutes(req, res, path) {
     const term = String(body.term ?? "").trim();
     const errors = [];
     if (name.length < 3) errors.push("El nombre del curso debe tener al menos 3 caracteres");
-    if (term.length < 3) errors.push("Indica el periodo (por ejemplo 2026-2)");
+    if (!TERMS.some((item) => item.code === term && !item.closed)) {
+      errors.push("Elige un periodo abierto (los da de alta la administración)");
+    }
     if (!SUBJECTS.some((item) => item.id === body.subjectId)) errors.push("Selecciona una materia");
     if (errors.length) return send(res, 400, { statusCode: 400, message: errors }), true;
     const course = {
@@ -350,6 +358,34 @@ const routes = {
   },
 
   "GET /academic/faculties": (_req, res) => send(res, 200, FACULTIES),
+
+  "GET /academic/terms": (req, res) => {
+    if (!entryFromToken(readToken(req) ?? "")) return unauthorized(res);
+    send(res, 200, TERMS.map((term) => ({ ...term, _count: { courses: courses.filter((c) => c.term === term.code).length } })));
+  },
+
+  // Catálogo completo (vista de administración). En el mock es de solo lectura.
+  "GET /academic/catalog": (req, res) => {
+    const entry = entryFromToken(readToken(req) ?? "");
+    if (!entry) return unauthorized(res);
+    if (entry.user.role !== "ADMIN") return send(res, 403, { message: "Acceso denegado", statusCode: 403 });
+    send(
+      res,
+      200,
+      FACULTIES.map((faculty) => ({
+        ...faculty,
+        _count: { users: 0 },
+        careers: faculty.careers.map((career) => ({
+          ...career,
+          _count: { users: 0 },
+          subjects: SUBJECTS.filter((subject) => subject.career === career.id).map(({ career: _c, ...subject }) => ({
+            ...subject,
+            _count: { courses: courses.filter((c) => c.subjectId === subject.id).length, resources: 0 },
+          })),
+        })),
+      })),
+    );
+  },
 
   "GET /academic/subjects": (req, res) => {
     const entry = entryFromToken(readToken(req) ?? "");

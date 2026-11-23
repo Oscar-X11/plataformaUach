@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Copy, FileSpreadsheet, KeyRound, LoaderCircle, Search, UserPlus, X } from "lucide-react";
+import { Copy, FileSpreadsheet, GraduationCap, KeyRound, LoaderCircle, Search, UserPlus, X } from "lucide-react";
+import { CareerSelect } from "@/components/admin/CareerSelect";
 import { StudentImport } from "@/components/admin/StudentImport";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
+import { careerOptions, type CareerOption, type CatalogFaculty } from "@/lib/academic";
 import { api, ApiError } from "@/lib/api";
 import type { AdminUserPage, AdminUserRow } from "@/lib/classwork";
 import { ROLE_LABELS, type UserRole } from "@/lib/session";
@@ -124,18 +126,67 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
   const [importing, setImporting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [secret, setSecret] = useState<{ user: { fullName: string; username: string }; password: string } | null>(null);
+  const [careers, setCareers] = useState<CareerOption[]>([]);
+  const [careerFilter, setCareerFilter] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [assignTo, setAssignTo] = useState("");
+  const [assigning, setAssigning] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    api<CatalogFaculty[]>("/academic/catalog")
+      .then((catalog) => setCareers(careerOptions(catalog)))
+      .catch(() => setCareers([]));
+  }, []);
 
   const load = useCallback(() => {
     const params = new URLSearchParams({ page: String(page) });
     if (search.trim()) params.set("search", search.trim());
     if (role) params.set("role", role);
+    if (careerFilter) params.set("careerId", careerFilter);
     api<AdminUserPage>(`/users?${params}`)
       .then((result) => {
         setData(result);
         setError(null);
       })
       .catch((caught) => setError(caught instanceof ApiError ? caught.message : "No se pudo cargar la lista."));
-  }, [page, role, search]);
+  }, [page, role, search, careerFilter]);
+
+  // Al cambiar de página o de filtro se limpia la selección.
+  useEffect(() => setSelected(new Set()), [page, role, search, careerFilter]);
+
+  function toggle(id: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function assignCareer() {
+    const label = careers.find((career) => career.id === assignTo);
+    const count = selected.size;
+    if (!assignTo && !window.confirm(`¿Quitar la carrera a ${count} ${count === 1 ? "alumno" : "alumnos"}?`)) return;
+    setAssigning(true);
+    try {
+      const result = await api<{ updated: number }>("/users/career", {
+        method: "PATCH",
+        body: { userIds: Array.from(selected), careerId: assignTo || null },
+      });
+      setNotice(
+        label
+          ? `${result.updated} ${result.updated === 1 ? "alumno quedó" : "alumnos quedaron"} en ${label.code} · ${label.name}.`
+          : `Se quitó la carrera a ${result.updated} ${result.updated === 1 ? "alumno" : "alumnos"}.`,
+      );
+      setSelected(new Set());
+      load();
+    } catch (caught) {
+      window.alert(caught instanceof ApiError ? caught.message : "No se pudo asignar la carrera.");
+    } finally {
+      setAssigning(false);
+    }
+  }
 
   // Búsqueda con una pequeña espera para no consultar en cada tecla.
   useEffect(() => {
@@ -181,7 +232,7 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
       {secret && <TemporaryPassword user={secret.user} password={secret.password} onClose={() => setSecret(null)} />}
 
       {importing ? (
-        <StudentImport onClose={() => setImporting(false)} onImported={load} />
+        <StudentImport careers={careers} onClose={() => setImporting(false)} onImported={load} />
       ) : creating ? (
         <CreateStaffForm
           onCancel={() => setCreating(false)}
@@ -222,6 +273,19 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
             <option value="TEACHER">Docentes</option>
             <option value="ADMIN">Administradores</option>
           </select>
+          <label htmlFor="user-career" className="sr-only">Filtrar por carrera</label>
+          <CareerSelect
+            id="user-career"
+            careers={careers}
+            value={careerFilter}
+            onChange={(value) => {
+              setCareerFilter(value);
+              setPage(1);
+            }}
+            placeholder="Todas las carreras"
+            extraOptions={[{ value: "none", label: "Alumnos sin carrera" }]}
+            className="h-11 sm:w-56"
+          />
           <button type="button" onClick={() => setImporting(true)} className={BTN_SECONDARY}>
             <FileSpreadsheet className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             Importar alumnos
@@ -234,6 +298,32 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
       )}
 
       {error && <FormAlert message={error} />}
+      {notice && <FormAlert tone="info" message={notice} />}
+
+      {selected.size > 0 && (
+        <div className={`${CARD} sticky top-2 z-10 flex flex-col gap-3 p-3 sm:flex-row sm:items-center`}>
+          <p className="flex items-center gap-2 text-sm font-medium text-uach-ink">
+            <GraduationCap className="h-4 w-4 text-uach-teal" strokeWidth={1.75} aria-hidden />
+            {selected.size} {selected.size === 1 ? "alumno seleccionado" : "alumnos seleccionados"}
+          </p>
+          <label htmlFor="assign-career" className="sr-only">Carrera a asignar</label>
+          <CareerSelect
+            id="assign-career"
+            careers={careers}
+            value={assignTo}
+            onChange={setAssignTo}
+            placeholder="Quitar carrera"
+            className="h-11 sm:flex-1"
+          />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setSelected(new Set())} className={BTN_GHOST}>Cancelar</button>
+            <button type="button" disabled={assigning} onClick={assignCareer} className={BTN_PRIMARY}>
+              {assigning && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
+              Asignar carrera
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className={`${CARD} p-2 sm:p-3`}>
         {!data ? (
@@ -246,13 +336,27 @@ export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
           <ul className="divide-y divide-uach-ink/[0.06]">
             {data.items.map((row) => (
               <li key={row.id} className="flex flex-col gap-3 px-2 py-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                {row.role === "STUDENT" ? (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(row.id)}
+                    onChange={() => toggle(row.id)}
+                    aria-label={`Seleccionar a ${row.fullName}`}
+                    className="h-5 w-5 shrink-0 rounded border-uach-ink/30 text-uach-teal focus:ring-uach-teal/40"
+                  />
+                ) : (
+                  <span className="w-5 shrink-0" aria-hidden />
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-uach-ink">{row.fullName}</p>
                   <p className="truncate text-xs tabular-nums text-uach-ink/75">
                     {row.username} · {ROLE_LABELS[row.role]}
                     {row.career ? ` · ${row.career.code}` : ""}
+                    {row.role === "STUDENT" && !row.career ? " · sin carrera" : ""}
                     {row.mustChangePassword ? " · contraseña temporal" : ""}
                   </p>
+                </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS[row.status].chip}`}>

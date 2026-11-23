@@ -1,5 +1,4 @@
-import { CourseGrid } from "@/components/courses/CourseGrid";
-import { CARD } from "@/components/dashboard/tone";
+import { AdminCoursesTable } from "@/components/admin/AdminCoursesTable";
 import type { CourseSummary } from "@/lib/courses";
 import { serverApi } from "@/lib/server-session";
 
@@ -14,17 +13,11 @@ export default async function AdministracionCursosPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-uach-petrol">Cursos</h1>
         <p className="mt-1 text-sm text-uach-ink/75">
-          {courses.length} cursos · {students} inscripciones. Entra a cualquiera para ver su trabajo y
-          calificaciones.
+          {courses.length} cursos · {students} inscripciones. Entra a cualquiera para ver su trabajo y calificaciones, o
+          cambia el docente que lo imparte.
         </p>
       </header>
-      {courses.length > 0 ? (
-        <CourseGrid courses={courses} />
-      ) : (
-        <p className={`${CARD} px-6 py-12 text-center text-sm text-uach-ink/75`}>
-          Todavía no hay cursos. Aparecerán cuando los docentes los creen.
-        </p>
-      )}
+      <AdminCoursesTable initialCourses={courses} />
     </section>
   );
 }

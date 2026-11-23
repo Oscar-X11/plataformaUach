@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert, SelectField, SubmitButton, TextField } from "@/components/ui/form";
 import { api, ApiError } from "@/lib/api";
+import type { AcademicTerm } from "@/lib/academic";
 import type { CourseSummary, SubjectOption } from "@/lib/courses";
 
 /** Docente: crea un curso ligado a una materia del catálogo. */
@@ -13,18 +14,25 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
   const router = useRouter();
   const [open, setOpen] = useState(startOpen);
   const [subjects, setSubjects] = useState<SubjectOption[] | null>(null);
+  const [terms, setTerms] = useState<AcademicTerm[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open || subjects) return;
-    api<SubjectOption[]>("/academic/subjects")
-      .then(setSubjects)
+    Promise.all([api<SubjectOption[]>("/academic/subjects"), api<AcademicTerm[]>("/academic/terms")])
+      .then(([subjectList, termList]) => {
+        setSubjects(subjectList);
+        setTerms(termList.filter((term) => !term.closed));
+      })
       .catch(() => {
         setSubjects([]);
-        setError("No se pudo cargar el catálogo de materias.");
+        setTerms([]);
+        setError("No se pudo cargar el catálogo de materias y periodos.");
       });
   }, [open, subjects]);
+
+  const currentTerm = terms?.find((term) => term.isCurrent)?.code ?? terms?.[0]?.code ?? "";
 
   // Agrupa las materias por carrera para el <select>.
   const byCareer = useMemo(() => {
@@ -72,6 +80,9 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
     <form onSubmit={handleSubmit} noValidate className={`${CARD} w-full space-y-4 p-5 text-uach-ink sm:p-6`}>
       <h2 className="text-base font-semibold">Nuevo curso</h2>
       {error && <FormAlert message={error} />}
+      {terms?.length === 0 && (
+        <FormAlert tone="info" message="La administración todavía no abre ningún periodo. Pídele que dé de alta el semestre." />
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <TextField
@@ -83,7 +94,23 @@ export function CreateCourseForm({ startOpen = false }: { startOpen?: boolean })
           maxLength={120}
           autoFocus
         />
-        <TextField label="Periodo" name="term" placeholder="Ej. 2026-2" required maxLength={30} />
+        <SelectField
+          key={currentTerm}
+          label="Periodo"
+          name="term"
+          required
+          defaultValue={currentTerm}
+          disabled={!terms?.length}
+        >
+          {terms === null && <option value="">Cargando…</option>}
+          {terms?.length === 0 && <option value="">No hay periodos abiertos</option>}
+          {terms?.map((term) => (
+            <option key={term.id} value={term.code}>
+              {term.code}
+              {term.name !== term.code ? ` · ${term.name}` : ""}
+            </option>
+          ))}
+        </SelectField>
       </div>
 
       <SelectField label="Materia" name="subjectId" required defaultValue="" disabled={!subjects?.length}>

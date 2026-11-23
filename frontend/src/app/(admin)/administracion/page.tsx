@@ -78,7 +78,9 @@ export default async function AdministracionPage() {
           <ul className="mt-2 space-y-1">
             {[
               { href: "/administracion/usuarios", label: "Alta de docentes y restablecer contraseñas" },
-              { href: "/administracion/cursos", label: "Revisar todos los cursos" },
+              { href: "/administracion/periodos", label: "Abrir o cerrar periodos" },
+              { href: "/administracion/catalogos", label: "Facultades, carreras y materias" },
+              { href: "/administracion/cursos", label: "Revisar cursos y cambiar docentes" },
               { href: "/cursos", label: "Entrar a un curso como administrador" },
             ].map((item) => (
               <li key={item.href}>

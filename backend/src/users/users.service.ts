@@ -9,7 +9,13 @@ import * as bcrypt from 'bcrypt';
 import { randomInt } from 'node:crypto';
 import { BCRYPT_ROUNDS } from '../auth/auth.service';
 import { PrismaService } from '../database/prisma.service';
-import { CreateStaffDto, IMPORT_CREATE_MAX, ImportStudentsDto, ListUsersQuery } from './dto/users.dto';
+import {
+  AssignCareerDto,
+  CreateStaffDto,
+  IMPORT_CREATE_MAX,
+  ImportStudentsDto,
+  ListUsersQuery,
+} from './dto/users.dto';
 import { prepareStudentRows, studentInitialPassword, summarize } from './student-import';
 
 // Sin caracteres que se confunden al dictarlos (0/o, 1/l/i).
@@ -31,7 +37,7 @@ const USER_LIST_SELECT = {
   status: true,
   mustChangePassword: true,
   createdAt: true,
-  career: { select: { name: true, code: true } },
+  career: { select: { id: true, name: true, code: true } },
 } satisfies Prisma.UserSelect;
 
 const isNotFound = (error: unknown) =>
@@ -44,9 +50,16 @@ export class UsersService {
   async list(query: ListUsersQuery) {
     const page = query.page ?? 1;
     const search = query.search?.trim();
+    const careerFilter: Prisma.UserWhereInput =
+      query.careerId === 'none'
+        ? { role: 'STUDENT', careerId: null }
+        : query.careerId
+          ? { careerId: query.careerId }
+          : {};
     const where: Prisma.UserWhereInput = {
       role: query.role,
       status: query.status,
+      ...careerFilter,
       ...(search
         ? {
             OR: [
@@ -99,6 +112,7 @@ export class UsersService {
    */
   async importStudents(dto: ImportStudentsDto) {
     const rows = prepareStudentRows(dto.rows);
+    const career = dto.careerId ? await this.findCareer(dto.careerId) : null;
 
     const candidates = rows.filter((row) => row.status === 'new').map((row) => row.username);
     if (candidates.length) {
@@ -130,6 +144,8 @@ export class UsersService {
           role: 'STUDENT' as const,
           passwordHash: await bcrypt.hash(row.initialPassword, BCRYPT_ROUNDS),
           mustChangePassword: true,
+          careerId: career?.id ?? null,
+          facultyId: career?.facultyId ?? null,
         };
       }),
     );
@@ -138,6 +154,26 @@ export class UsersService {
     for (const row of toCreate) row.status = 'created';
 
     return { rows, summary: summarize(rows) };
+  }
+
+  /** Carrera (y con ella la facultad) de varios alumnos. Solo aplica a alumnos. */
+  async assignCareer(dto: AssignCareerDto) {
+    const career = dto.careerId ? await this.findCareer(dto.careerId) : null;
+    const { count } = await this.prisma.user.updateMany({
+      where: { id: { in: dto.userIds }, role: 'STUDENT' },
+      data: { careerId: career?.id ?? null, facultyId: career?.facultyId ?? null },
+    });
+    if (count === 0) throw new BadRequestException('Solo los alumnos tienen carrera');
+    return { updated: count };
+  }
+
+  private async findCareer(careerId: string) {
+    const career = await this.prisma.career.findUnique({
+      where: { id: careerId },
+      select: { id: true, facultyId: true },
+    });
+    if (!career) throw new BadRequestException('La carrera no existe');
+    return career;
   }
 
   async setStatus(userId: string, status: AcademicStatus, adminId: string) {

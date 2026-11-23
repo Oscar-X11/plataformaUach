@@ -329,8 +329,13 @@ Faltan módulos: `users`, `courses`, `enrollments`, `posts`, `assignments`, `sub
 - Grupos de estudio con miembros.
 - Administración: usuarios, catálogos, periodos, cursos, reportes.
 
-### Fase 3 — Funciones tipo Moodle (según prioridad)
-- Cuestionarios/exámenes, asistencia, foros, rúbricas, mensajería, videoclases, notificaciones por correo, control de accesos (rol `SECURITY`), auditoría.
+### Fase 3 — Evaluación y seguimiento tipo Moodle (según prioridad)
+- Cuestionarios/exámenes, asistencia, rúbricas, libro de calificaciones avanzado, foros, mensajería, grupos dentro del curso, finalización y progreso, acceso condicional, videoclases (enlace externo), bitácora de actividad.
+- Detalle y orden en [`AVANCE.md`](AVANCE.md) › Fase 3.
+
+### Fase 4 — Actividades y herramientas complementarias de Moodle
+- Taller, wiki, glosario, lección, libro, consulta, encuesta, H5P/SCORM, insignias, competencias, reutilizar y archivar cursos, informes de participación, búsqueda global, PWA, ayuda.
+- Ya no aplican (decisión del 2026-11-19): notificaciones por correo y rol `SECURITY`.
 
 ---
 

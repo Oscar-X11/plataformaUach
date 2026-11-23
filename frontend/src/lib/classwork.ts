@@ -121,7 +121,14 @@ export interface StreamView {
   posts: PostView[];
 }
 
-export type NotificationType = "ASSIGNMENT_CREATED" | "SUBMISSION_RETURNED" | "POST_CREATED" | "COMMENT_CREATED";
+export type NotificationType =
+  | "ASSIGNMENT_CREATED"
+  | "SUBMISSION_RETURNED"
+  | "POST_CREATED"
+  | "COMMENT_CREATED"
+  | "MATERIAL_CREATED"
+  | "RESOURCE_REVIEWED"
+  | "COURSE_ASSIGNED";
 
 export interface NotificationView {
   id: string;
@@ -158,7 +165,7 @@ export interface AdminUserRow {
   status: "ACTIVE" | "INACTIVE" | "GRADUATED";
   mustChangePassword: boolean;
   createdAt: string;
-  career: { name: string; code: string } | null;
+  career: { id: string; name: string; code: string } | null;
 }
 
 export interface AdminUserPage {

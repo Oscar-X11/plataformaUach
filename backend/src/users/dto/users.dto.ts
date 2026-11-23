@@ -9,6 +9,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -33,11 +34,31 @@ export class ListUsersQuery {
   @IsIn(['ACTIVE', 'INACTIVE', 'GRADUATED'])
   status?: AcademicStatus;
 
+  /** "none" = alumnos sin carrera asignada; un id = alumnos de esa carrera. */
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(40)
+  careerId?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number;
+}
+
+/** Asignar (o quitar, con null) la carrera a varios alumnos a la vez. */
+export class AssignCareerDto {
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Selecciona al menos un alumno' })
+  @ArrayMaxSize(100, { message: 'Asigna como máximo 100 alumnos a la vez' })
+  @IsUUID('all', { each: true })
+  userIds!: string[];
+
+  @IsOptional()
+  @IsUUID('all', { message: 'Selecciona una carrera' })
+  careerId!: string | null;
 }
 
 /** Alta de personal. Los alumnos se registran solos con su matrícula. */
@@ -97,6 +118,11 @@ export class ImportStudentsDto {
   @IsOptional()
   @IsBoolean()
   dryRun?: boolean;
+
+  /** Carrera para todos los alumnos nuevos del archivo (el Excel no la trae). */
+  @IsOptional()
+  @IsUUID('all', { message: 'Selecciona una carrera' })
+  careerId?: string;
 }
 
 export class UpdateStatusDto {

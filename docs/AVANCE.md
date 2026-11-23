@@ -14,10 +14,11 @@
 | --- | --- | --- |
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
 | Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa y probada con la base de datos real |
-| Fase 2 | Valor institucional (calendario, repositorio, administración) | 🔄 Casi completa con backend simulado — faltan catálogos y periodos |
-| Fase 3 | Funciones tipo Moodle (cuestionarios, asistencia, foros…) | ⬜ Pendiente |
+| Fase 2 | Valor institucional (calendario, repositorio, administración) | ✅ Completa y probada con la base de datos real |
+| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, asistencia, rúbricas, foros…) | ⬜ Pendiente |
+| Fase 4 | Actividades y herramientas complementarias de Moodle (taller, wiki, insignias, reutilizar cursos…) | ⬜ Pendiente |
 
-**Siguiente paso:** cerrar la Fase 2 (catálogos y periodos) y, cuando exista la base de datos, probar todo con el backend real.
+**Siguiente paso:** instalar en el servidor Debian y empezar la Fase 3 por cuestionarios y asistencia.
 
 ### Estado del entorno
 
@@ -25,7 +26,7 @@
 | --- | --- |
 | Base de datos MySQL | ✅ Local en Docker (puerto 3307), migraciones aplicadas. Probada de punta a punta el 2026-11-20. |
 | Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer toda la plataforma sin base de datos. |
-| Pruebas del backend | ✅ 67 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón, usuarios, material, repositorio, grupos y reportes). |
+| Pruebas del backend | ✅ 77 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón, usuarios, material, repositorio, grupos y reportes). |
 | Despliegue (Docker / servidor) | 🔄 Compose ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado). Falta instalarlo en el servidor Debian. |
 
 ---
@@ -102,7 +103,7 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 
 ---
 
-## Fase 2 — Valor institucional 🔄
+## Fase 2 — Valor institucional ✅
 
 - ✅ Calendario de entregas (`/calendario`): mes en cuadrícula y agenda en móvil.
 - ✅ Temas/unidades y material del curso (`/cursos/[cursoId]/recursos`): archivos y enlaces, solo para miembros.
@@ -110,15 +111,42 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 - ✅ Vista previa de PDF, imágenes y enlaces de Drive en material y repositorio.
 - ✅ Grupos de estudio con miembros y cupo (`/grupos-estudio`).
 - ✅ Reportes por curso con exportación CSV (`/administracion/reportes`).
-- 🔄 Administración: ✅ usuarios, ✅ listado de cursos, ✅ panel con métricas, ✅ reportes; ⬜ catálogos (facultades, carreras, materias), periodos y reasignar docentes.
+- ✅ Administración: usuarios, panel con métricas y reportes.
+- ✅ Catálogos (`/administracion/catalogos`): facultades → carreras → materias, con alta, edición y borrado (solo de lo que no se usa).
+- ✅ Periodos (`/administracion/periodos`): alta con fechas, periodo actual, cerrar y reabrir. Los cursos solo se crean en periodos abiertos.
+- ✅ Cursos (`/administracion/cursos`): búsqueda, filtro por periodo y cambiar el docente (con aviso al nuevo docente).
+- ✅ Carrera de los alumnos: al importar el Excel o en bloque desde la lista de usuarios (filtro «sin carrera»).
 
-## Fase 3 — Funciones tipo Moodle ⬜
+## Fase 3 — Evaluación y seguimiento tipo Moodle ⬜
 
-- ⬜ Cuestionarios / exámenes.
-- ⬜ Asistencia.
-- ⬜ Foros y mensajería.
-- ⬜ Rúbricas.
-- ⬜ Videoclases.
+Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
+
+| # | Funcionalidad | Qué incluye | Notas para el servidor de 4 GB |
+| --- | --- | --- | --- |
+| 1 | **Cuestionarios / exámenes** | Banco de preguntas por curso (opción múltiple, verdadero/falso, respuesta corta, numérica, relacionar, ensayo); intentos, tiempo límite, ventana de fechas, orden aleatorio, calificación automática y revisión manual del ensayo. | Calificar en el backend; sin cálculos pesados. |
+| 2 | **Asistencia** | Sesiones por curso, pase de lista (presente, retardo, falta, justificada), código o QR que el alumno captura en clase, porcentaje por alumno y exportación CSV. | Ligero. |
+| 3 | **Rúbricas y guías de evaluación** | Criterios con niveles y puntos; el docente califica una tarea marcando niveles; el alumno ve la rúbrica antes y después. | Ligero. |
+| 4 | **Libro de calificaciones avanzado** | Categorías con ponderación (tareas 40 %, exámenes 60 %…), escalas y letras, calificación final del periodo, ocultar/bloquear notas. | Amplía lo que ya existe. |
+| 5 | **Foros por curso** | Foros con temas e hilos, suscripción, foro de preguntas y respuestas, calificar participación. | Más estructurado que el tablón. |
+| 6 | **Mensajería directa** | Conversaciones docente ↔ alumno y entre compañeros del curso, avisos de mensaje nuevo. | Consultas periódicas (como la campana), sin WebSockets al principio. |
+| 7 | **Grupos dentro del curso** | Equipos/secciones, tareas por equipo (una entrega por equipo), material visible por grupo. | Ligero. |
+| 8 | **Finalización y progreso** | Marcar actividades como completadas, barra de progreso del curso, condiciones (ver material, entregar, aprobar con X). | Ligero. |
+| 9 | **Acceso condicional** | Mostrar una actividad solo después de una fecha, de completar otra o de alcanzar una calificación. | Depende de #8. |
+| 10 | **Videoclases** | Enlace a Meet, Zoom o Jitsi público en la sesión del curso y en el calendario. | **No** hospedar Jitsi en este servidor. |
+| 11 | **Bitácora de actividad** | Quién vio o hizo qué (accesos, entregas, cambios de calificación) para docentes y administradores. | Purgar registros viejos para no llenar el disco. |
+
+## Fase 4 — Actividades y herramientas complementarias de Moodle ⬜
+
+| Grupo | Funcionalidades |
+| --- | --- |
+| **Actividades** | Taller (evaluación entre pares), wiki colaborativa, glosario del curso, lección con ramificaciones, libro (páginas de contenido), consulta (votación rápida), encuesta / retroalimentación anónima, base de datos de registros. |
+| **Contenido interactivo** | H5P (contenido interactivo) y paquetes SCORM / IMS. Valorar el costo en disco y RAM antes de incluirlos. |
+| **Reconocimiento** | Insignias por logros y competencias / resultados de aprendizaje ligados a actividades. |
+| **Gestión de cursos** | Reutilizar un curso en un periodo nuevo (copiar temas, material y tareas sin alumnos), plantillas de curso, archivar cursos de periodos cerrados, respaldo y restauración de un curso. |
+| **Seguimiento** | Informes de participación por curso, alumnos en riesgo (faltas y entregas atrasadas), detección de entregas duplicadas (mismo `sha256`). |
+| **Experiencia** | Búsqueda global (cursos, recursos y personas), calendario con eventos propios, instalación como app (PWA), centro de ayuda / preguntas frecuentes y aviso de privacidad. |
+
+Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo institucional) y el rol `SECURITY`.
 
 ---
 
@@ -131,4 +159,4 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 - ⬜ Invalidar las sesiones abiertas cuando un administrador desactiva una cuenta o restablece su contraseña.
 - ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
 - ⬜ Swap y respaldos automáticos en el servidor Debian.
-- 🔄 Pruebas automatizadas: unitarias de todos los módulos (67); faltan pruebas e2e con base de datos.
+- 🔄 Pruebas automatizadas: unitarias de todos los módulos (77); faltan pruebas e2e con base de datos.

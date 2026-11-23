@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   Req,
@@ -15,6 +16,7 @@ import type { AuthenticatedRequest } from '../common/types/auth-request';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { JoinCourseDto } from './dto/join-course.dto';
+import { ReassignTeacherDto } from './dto/reassign-teacher.dto';
 
 @Controller('courses')
 export class CoursesController {
@@ -58,6 +60,12 @@ export class CoursesController {
     @Req() { user }: AuthenticatedRequest,
   ) {
     return this.courses.regenerateInvitation(id, user);
+  }
+
+  @Roles('ADMIN')
+  @Patch(':id/teacher')
+  reassignTeacher(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ReassignTeacherDto) {
+    return this.courses.reassignTeacher(id, dto.teacherId);
   }
 
   @Roles('TEACHER', 'ADMIN')

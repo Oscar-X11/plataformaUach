@@ -5,6 +5,8 @@
  *
  * - Crea/actualiza el catálogo académico (facultades, carreras y materias).
  *   ⚠️ Los datos de CATALOG son de EJEMPLO: reemplázalos por el catálogo oficial.
+ * - Si no hay ningún periodo académico, crea el semestre en curso y lo marca como actual
+ *   (enero–junio = AAAA-1, agosto–diciembre = AAAA-2). Los demás los da de alta un admin.
  * - Crea el usuario administrador inicial con SEED_ADMIN_USERNAME (número de empleado) /
  *   SEED_ADMIN_PASSWORD.
  *   Si el administrador ya existe, NO se modifica su contraseña.
@@ -103,6 +105,29 @@ async function seedCatalog() {
   console.log(`✔ Catálogo académico: ${CATALOG.length} facultades`);
 }
 
+async function seedTerm() {
+  if ((await prisma.academicTerm.count()) > 0) {
+    console.log('✔ Periodos existentes conservados');
+    return;
+  }
+  const now = new Date();
+  const year = now.getFullYear();
+  const second = now.getMonth() >= 6; // julio en adelante → segundo semestre
+  const term = second
+    ? { code: `${year}-2`, name: `Agosto – Diciembre ${year}`, startsAt: `${year}-08-01`, endsAt: `${year}-12-20` }
+    : { code: `${year}-1`, name: `Enero – Junio ${year}`, startsAt: `${year}-01-15`, endsAt: `${year}-06-30` };
+  await prisma.academicTerm.create({
+    data: {
+      code: term.code,
+      name: term.name,
+      startsAt: new Date(`${term.startsAt}T00:00:00Z`),
+      endsAt: new Date(`${term.endsAt}T00:00:00Z`),
+      isCurrent: true,
+    },
+  });
+  console.log(`✔ Periodo actual creado: ${term.code}`);
+}
+
 async function seedAdmin() {
   const username = process.env.SEED_ADMIN_USERNAME?.trim().toUpperCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
@@ -143,6 +168,7 @@ async function seedAdmin() {
 
 async function main() {
   await seedCatalog();
+  await seedTerm();
   await seedAdmin();
 }
 
