@@ -29,6 +29,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Lugar y horario del curso** (migración `20261123200000_lugar_horario_cursos`): texto libre de hasta 200 caracteres que el docente escribe al crear el curso o edita desde el encabezado (`PATCH /courses/:id/meeting`). Los enlaces (Meet, Zoom…) se abren con un clic, también en los grupos de estudio (componente `MeetingInfo`).
 - Probado con un curso real (guardar, enlace clicable, límite de 200, vaciar). 86 pruebas unitarias.
 - Reporte del día en `docs/REPORTE_2026-11-23.md`.
+- Commit `fb3654e`: sesiones invalidables, `/health`, «Carreras» y «nivel», lugar y horario en cursos y reporte del día.
 
 ### Decisiones
 - **No se implementan videollamadas.** Las reuniones en línea se resuelven pegando el enlace en «Lugar y horario».
