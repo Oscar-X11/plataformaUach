@@ -23,6 +23,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Vista previa** (botón «Vista previa» con diálogo) para PDF e imágenes subidos y para enlaces de Google Drive/Docs, en el material del curso y en el repositorio.
 - **Repositorio con enlaces:** además de subir archivo, se puede compartir un enlace de Drive. Migración `20261122120000_repositorio_enlaces` (columna `url`; los datos del archivo pasan a ser opcionales), aplicada en la BD local. Backend simulado actualizado.
 - Tests del backend: 67 (2 nuevos: validación desde disco y enlaces en el repositorio).
+- Commit `105536e`: subidas a disco, ajustes para 4 GB, enlaces de Drive y pantallas de carga.
 
 ### Decisiones
 - **Archivos:** las entregas de tareas se siguen subiendo al servidor (quedan fijas y con `sha256`). En material y repositorio se puede subir archivo o compartir un enlace de Drive. Un enlace de Drive lo puede cambiar o borrar su dueño en cualquier momento, y para verse debe estar compartido como «Cualquier persona con el enlace».
