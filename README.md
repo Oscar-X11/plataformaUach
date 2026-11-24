@@ -19,8 +19,8 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
 | Fase 1 | MVP tipo Classroom (cursos, tareas, entregas, calificaciones, tablón, notificaciones, perfil) | ✅ Completa con backend simulado |
 | Fase 2 | Valor institucional (calendario, material del curso, repositorio, grupos de estudio, reportes, catálogos y periodos) | ✅ Completa |
-| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, asistencia, rúbricas, foros…) | ⬜ Pendiente |
-| Fase 4 | Actividades complementarias de Moodle (taller, wiki, insignias, reutilizar cursos…) | ⬜ Pendiente |
+| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, rúbricas, libro de calificaciones, progreso…) | 🔄 En proceso: cuestionarios y encuestas listos |
+| Fase 4 | Herramientas complementarias (reutilizar cursos, seguimiento, búsqueda, PWA…) | ⬜ Pendiente |
 
 > Base de datos local de pruebas: MySQL 8.4 en Docker (`docker compose up -d mysql redis`, puerto del host en `MYSQL_HOST_PORT`). Se crea con `npm run prisma:deploy` y `npm run prisma:seed`. Las tablas y columnas están en español (`@@map`/`@map` en `schema.prisma`); el código sigue usando los nombres de los modelos en inglés.
 
@@ -262,4 +262,4 @@ Plataforma_UACH/
 
 - **Instalar en el servidor Debian** (4 GB): swap, respaldos de la BD y de `storage/`, imágenes construidas fuera del servidor.
 - **Cargar el catálogo oficial** desde `/administracion/carreras` y dar de alta los periodos en `/administracion/periodos`.
-- **Fase 3:** cuestionarios, asistencia, rúbricas, libro de calificaciones avanzado y foros (detalle en [`docs/AVANCE.md`](docs/AVANCE.md)).
+- **Fase 3:** rúbricas, libro de calificaciones avanzado, finalización y progreso, acceso condicional y bitácora de actividad (detalle y lo que quedó fuera del alcance en [`docs/AVANCE.md`](docs/AVANCE.md)).

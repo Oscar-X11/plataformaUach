@@ -15,10 +15,10 @@
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
 | Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa y probada con la base de datos real |
 | Fase 2 | Valor institucional (calendario, repositorio, administración) | ✅ Completa y probada con la base de datos real |
-| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, asistencia, rúbricas, foros…) | 🔄 En proceso: cuestionarios y encuestas listos |
-| Fase 4 | Actividades y herramientas complementarias de Moodle (taller, wiki, insignias, reutilizar cursos…) | ⬜ Pendiente |
+| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, rúbricas, libro de calificaciones, progreso…) | 🔄 En proceso: cuestionarios y encuestas listos |
+| Fase 4 | Herramientas complementarias (reutilizar cursos, seguimiento, búsqueda, PWA…) | ⬜ Pendiente |
 
-**Siguiente paso:** seguir la Fase 3 con rúbricas y foros; instalar en el servidor Debian cuando se quiera usar con personas reales.
+**Siguiente paso:** seguir la Fase 3 con rúbricas y el libro de calificaciones avanzado; instalar en el servidor Debian cuando se quiera usar con personas reales.
 
 ### Estado del entorno
 
@@ -41,6 +41,7 @@
 | 2026-11-19 | ✅ La contraseña olvidada la restablece un **administrador** con una contraseña temporal que el usuario debe cambiar al entrar. |
 | 2026-11-19 | ✅ Privacidad en cursos: los alumnos no ven las matrículas de sus compañeros ni el código de invitación. |
 | 2026-11-23 | ✅ No se implementa asistencia (pase de lista). |
+| 2026-11-23 | ✅ No se implementan foros, mensajería directa, grupos dentro del curso, las actividades extra de Moodle (taller, wiki, glosario, lección, libro, consulta, retroalimentación anónima, base de datos), H5P/SCORM ni insignias/competencias. |
 | 2026-11-23 | ✅ No se implementan videollamadas ni videoclases. Para reuniones en línea, el docente o el grupo de estudio pega el enlace en «Lugar y horario». |
 | 2026-11-23 | ✅ Licenciaturas e ingenierías son **cuatrimestrales**; el bachillerato, **semestral**. |
 | 2026-11-23 | ✅ En la web no se usa la palabra «facultad»: los grupos de carreras se llaman **nivel** (Licenciaturas, Ingenierías, Preparatoria). |
@@ -133,9 +134,9 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 | 2 | ~~**Asistencia**~~ | **No se implementa** (decisión del 2026-11-23). | — |
 | 3 | **Rúbricas y guías de evaluación** | Criterios con niveles y puntos; el docente califica una tarea marcando niveles; el alumno ve la rúbrica antes y después. | Ligero. |
 | 4 | **Libro de calificaciones avanzado** | Categorías con ponderación (tareas 40 %, exámenes 60 %…), escalas y letras, calificación final del periodo, ocultar/bloquear notas. | Amplía lo que ya existe. |
-| 5 | **Foros por curso** | Foros con temas e hilos, suscripción, foro de preguntas y respuestas, calificar participación. | Más estructurado que el tablón. |
-| 6 | **Mensajería directa** | Conversaciones docente ↔ alumno y entre compañeros del curso, avisos de mensaje nuevo. | Consultas periódicas (como la campana), sin WebSockets al principio. |
-| 7 | **Grupos dentro del curso** | Equipos/secciones, tareas por equipo (una entrega por equipo), material visible por grupo. | Ligero. |
+| 5 | ~~**Foros por curso**~~ | **No se implementa** (decisión del 2026-11-23). ~~Foros con temas e hilos, suscripción, foro de preguntas y respuestas, calificar participación.~~ | — |
+| 6 | ~~**Mensajería directa**~~ | **No se implementa** (decisión del 2026-11-23). ~~Conversaciones docente ↔ alumno y entre compañeros del curso, avisos de mensaje nuevo.~~ | — |
+| 7 | ~~**Grupos dentro del curso**~~ | **No se implementa** (decisión del 2026-11-23). ~~Equipos/secciones, tareas por equipo (una entrega por equipo), material visible por grupo.~~ | — |
 | 8 | **Finalización y progreso** | Marcar actividades como completadas, barra de progreso del curso, condiciones (ver material, entregar, aprobar con X). | Ligero. |
 | 9 | **Acceso condicional** | Mostrar una actividad solo después de una fecha, de completar otra o de alcanzar una calificación. | Depende de #8. |
 | 10 | ~~**Videoclases**~~ | **No se implementa** (decisión del 2026-11-23). Los cursos y grupos de estudio tienen un campo libre de lugar y horario donde se puede pegar un enlace de Meet o Zoom. | — |
@@ -145,14 +146,14 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 
 | Grupo | Funcionalidades |
 | --- | --- |
-| **Actividades** | Taller (evaluación entre pares), wiki colaborativa, glosario del curso, lección con ramificaciones, libro (páginas de contenido), consulta (votación rápida), encuesta / retroalimentación anónima, base de datos de registros. |
-| **Contenido interactivo** | H5P (contenido interactivo) y paquetes SCORM / IMS. Valorar el costo en disco y RAM antes de incluirlos. |
-| **Reconocimiento** | Insignias por logros y competencias / resultados de aprendizaje ligados a actividades. |
+| ~~**Actividades**~~ | **No se implementa** (decisión del 2026-11-23). ~~Taller (evaluación entre pares), wiki colaborativa, glosario del curso, lección con ramificaciones, libro (páginas de contenido), consulta (votación rápida), encuesta / retroalimentación anónima, base de datos de registros.~~ |
+| ~~**Contenido interactivo**~~ | **No se implementa** (decisión del 2026-11-23). ~~H5P (contenido interactivo) y paquetes SCORM / IMS.~~ |
+| ~~**Reconocimiento**~~ | **No se implementa** (decisión del 2026-11-23). ~~Insignias por logros y competencias / resultados de aprendizaje ligados a actividades.~~ |
 | **Gestión de cursos** | Reutilizar un curso en un periodo nuevo (copiar temas, material y tareas sin alumnos), plantillas de curso, archivar cursos de periodos cerrados, respaldo y restauración de un curso. |
 | **Seguimiento** | Informes de participación por curso, alumnos en riesgo (faltas y entregas atrasadas), detección de entregas duplicadas (mismo `sha256`). |
 | **Experiencia** | Búsqueda global (cursos, recursos y personas), calendario con eventos propios, instalación como app (PWA), centro de ayuda / preguntas frecuentes y aviso de privacidad. |
 
-Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo institucional), el rol `SECURITY` y las videollamadas.
+Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo institucional), el rol `SECURITY`, videollamadas, asistencia, foros, mensajería directa, grupos dentro del curso, las actividades extra de Moodle (taller, wiki, glosario, lección, libro, consulta, retroalimentación, base de datos), H5P/SCORM e insignias/competencias.
 
 ---
 

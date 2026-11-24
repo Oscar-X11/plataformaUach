@@ -72,6 +72,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Commit `e300bb2`: cuestionarios en «Lo que sigue» y calendario, descripción editable, sesión deslizante, pruebas e2e y revisión completa.
 
 ### Decisiones
+- **Fuera del alcance (fases 3 y 4):** foros por curso, mensajería directa, grupos dentro del curso, actividades extra de Moodle (taller, wiki, glosario, lección, libro, consulta, retroalimentación anónima, base de datos), H5P/SCORM e insignias/competencias. Quedan tachados en `docs/AVANCE.md`.
 - **No se implementa asistencia** (decisión del usuario).
 - Sin emojis en toda la interfaz; íconos de lucide solo donde aporten (decisión del usuario).
 - El panel del inicio muestra solo avisos y cuestionarios; las tareas ya aparecen en «Lo que sigue» y en la semana.
