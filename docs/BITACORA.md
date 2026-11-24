@@ -84,6 +84,8 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Centro de ayuda** (`/ayuda`) y **aviso de privacidad** (`/privacidad`, borrador con los datos reales de la UACH, pendiente de revisión jurídica). Se ven con o sin sesión; enlaces en el menú del usuario y en el acceso.
 - Pruebas: 110 unitarias (4 nuevas de acceso condicional) y 23 e2e (14 nuevas en `test/progress.e2e-spec.ts`: rúbricas, condiciones, duplicados, pesos y final, progreso y riesgo, aprobatoria, reutilizar, periodo cerrado, bitácora y búsqueda). Recorrido de pantallas con docente, alumno y administración contra la base de desarrollo; datos de prueba borrados.
 - Commit `d221613`: rúbricas, libro con pesos y final, acceso condicional, seguimiento, bitácora, búsqueda global, app instalable, ayuda y aviso de privacidad.
+- **Documentación al día:** README reescrito (funciones, todas las rutas del backend, pantallas, variables, pruebas y estructura); `AVANCE.md` con la nueva sección **«Lo que falta»** (antes de producción, datos, mejoras técnicas y funciones opcionales); `PRODUCT.md` y `DESIGN.md` actualizados (componentes de actividad bloqueada, rúbrica, situación, diálogos y búsqueda); el análisis inicial quedó marcado como documento histórico.
+- La barra de progreso nueva se cambió por la que ya existía en `dashboard/primitives.tsx` (había quedado duplicada).
 
 ### Decisiones
 - **Fuera del alcance (fases 3 y 4):** foros por curso, mensajería directa, grupos dentro del curso, actividades extra de Moodle (taller, wiki, glosario, lección, libro, consulta, retroalimentación anónima, base de datos), H5P/SCORM e insignias/competencias. Quedan tachados en `docs/AVANCE.md`.

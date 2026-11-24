@@ -1,10 +1,10 @@
 # Avance del proyecto — Plataforma UACH
 
-> Última actualización: 2026-11-22
+> Última actualización: 2026-11-23
 >
 > Leyenda: ✅ Hecho · 🔄 En proceso · ⬜ Pendiente · ❓ Por decidir
 >
-> Hoja de ruta completa y justificación: [`ANALISIS_VENTANAS_Y_PROPUESTA.md`](ANALISIS_VENTANAS_Y_PROPUESTA.md) (anterior a las decisiones del 2026-11-19: aún menciona el rol `SECURITY` y el correo).
+> Hoja de ruta completa y justificación: [`ANALISIS_VENTANAS_Y_PROPUESTA.md`](ANALISIS_VENTANAS_Y_PROPUESTA.md) (análisis inicial del 2026-11-18, conservado como referencia histórica: aún menciona el rol `SECURITY`, el correo y el registro abierto, que se descartaron).
 >
 > Historial día por día (qué se hizo, decisiones y pendientes): [`BITACORA.md`](BITACORA.md)
 
@@ -18,15 +18,15 @@
 | Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, rúbricas, libro de calificaciones, progreso…) | ✅ Completa y probada (2026-11-23) |
 | Fase 4 | Herramientas complementarias (reutilizar cursos, seguimiento, búsqueda, PWA…) | 🔄 Lo principal listo: reutilizar clase, seguimiento, búsqueda, app instalable, ayuda y privacidad |
 
-**Siguiente paso:** revisar con el área jurídica el borrador del aviso de privacidad e instalar en el servidor Debian cuando se quiera usar con personas reales.
+**Siguiente paso:** revisar a mano lo nuevo de las fases 3 y 4 e instalar en el servidor Debian. Todo lo pendiente está en [Lo que falta](#lo-que-falta).
 
 ### Estado del entorno
 
 | Elemento | Estado |
 | --- | --- |
-| Base de datos MySQL | ✅ Local en Docker (puerto 3307), migraciones aplicadas. Probada de punta a punta el 2026-11-20. |
-| Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer toda la plataforma sin base de datos. |
-| Pruebas del backend | ✅ 77 tests (autenticación, cursos, tareas, entregas, archivos, calificaciones, tablón, usuarios, material, repositorio, grupos y reportes). |
+| Base de datos MySQL | ✅ Local en Docker (puerto 3307), las 10 migraciones aplicadas (la última, `20261124160000_rubricas_progreso_bitacora`). Probada de punta a punta el 2026-11-23. |
+| Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer las fases 1 y 2 sin base de datos. No incluye cuestionarios ni lo de las fases 3 y 4. |
+| Pruebas del backend | ✅ 110 unitarias y 23 e2e contra una base de pruebas aparte (cuentas, sesiones, clases, tareas, rúbricas, condiciones, cuestionarios, calificaciones, progreso, reutilizar, bitácora y búsqueda). |
 | Despliegue (Docker / servidor) | 🔄 Compose ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado). Falta instalarlo en el servidor Debian. |
 
 ---
@@ -46,7 +46,12 @@
 | 2026-11-23 | ✅ Licenciaturas e ingenierías son **cuatrimestrales**; el bachillerato, **semestral**. |
 | 2026-11-23 | ✅ En la web no se usa la palabra «facultad»: los grupos de carreras se llaman **nivel** (Licenciaturas, Ingenierías, Preparatoria). |
 | 2026-11-23 | ✅ **No hay registro abierto.** Las cuentas de alumnos solo se crean al importar el Excel oficial; así nadie puede usar la matrícula de otro. |
-| 2026-11-23 | ✅ Cuestionarios estilo Google Forms: exámenes calificados y encuestas, un solo intento, y sus calificaciones van **aparte** de las de las tareas. |
+| 2026-11-23 | ✅ Cuestionarios estilo Google Forms: exámenes calificados y encuestas, un solo intento. Desde el mismo día cuentan en el libro de calificaciones como categoría propia (las encuestas no). |
+| 2026-11-23 | ✅ Calificación aprobatoria por nivel: **7** en licenciaturas e ingenierías y **6** en preparatoria (editable en Carreras). La final pondera tareas y cuestionarios (60/40 por omisión, cambiable por clase). |
+| 2026-11-23 | ✅ Con el periodo cerrado, las calificaciones ya no se pueden cambiar. |
+| 2026-11-23 | ✅ La app instalable **no funciona sin conexión**: sin service worker ni caché, para no gastar RAM ni disco del servidor. |
+| 2026-11-23 | ✅ El aviso de privacidad es un **borrador** con los datos reales de la UACH; la versión oficial la da la universidad. |
+| 2026-11-23 | ✅ Una tarea devuelta con calificación cuenta como completada para el acceso condicional, aunque el alumno no la haya entregado. |
 
 ---
 
@@ -65,11 +70,11 @@
 ### Backend (NestJS + Prisma)
 - ✅ Modelo de datos en `schema.prisma`: Faculty, Career, Subject, User, Course, Enrollment, Post, Comment, Assignment, Submission, SubmissionFile, Notification, Resource, CourseTopic, CourseMaterial, StudyGroup, StudyGroupMember.
 - ✅ Migración inicial única `20261120120000_init` (sustituye a las tres anteriores), con tablas y columnas en español.
-- ✅ Seed con catálogos académicos de ejemplo y el administrador inicial (`SEED_ADMIN_USERNAME`).
+- ✅ Seed con el catálogo real de la UACH (niveles y carreras), los periodos actuales y el administrador inicial (`SEED_ADMIN_USERNAME`). Faltan las materias.
 - ✅ Login, logout y `GET /auth/me`. (El registro abierto se retiró el 2026-11-23: las cuentas se crean al importar el Excel.)
 - ✅ Cambio de contraseña (`POST /auth/change-password`) y restablecimiento por un administrador (`POST /users/:id/reset-password`).
 - ✅ Contraseña temporal: el backend bloquea con 403 todo excepto las rutas de cuenta hasta que se cambie.
-- ✅ Catálogo público de facultades y carreras.
+- ✅ Catálogo de niveles y carreras (ya no es público: el registro abierto se retiró).
 - ✅ Descarga protegida de archivos de `storage/` con permisos (`X-Accel-Redirect`).
 - ✅ Seguridad: validación de variables de entorno al arrancar, cookie `httpOnly`, guards globales (throttler → JWT → roles), CORS restringido.
 
@@ -87,13 +92,13 @@
 ## Fase 1 — MVP tipo Classroom ✅
 
 ### Preparación ✅
-- ✅ Migración inicial de Prisma versionada. Se aplicará con `npm run prisma:deploy` cuando exista la base de datos.
+- ✅ Migración inicial de Prisma versionada y aplicada.
 - ✅ Alcance definido: sin rol `SECURITY` y sin correo (ver *Decisiones de alcance*).
 
 ### Entregables
 | # | Entregable | Backend | Frontend | Estado |
 | --- | --- | --- | --- | --- |
-| 1 | **Cursos**: crear (docente), listar, código de invitación, unirse por código, personas | ✅ módulo `courses` | ✅ `/cursos`, `/cursos/[cursoId]`, `/cursos/[cursoId]/personas` | ✅ (falta probar con BD real) |
+| 1 | **Cursos**: crear (docente), listar, código de invitación, unirse por código, personas | ✅ módulo `courses` | ✅ `/cursos`, `/cursos/[cursoId]`, `/cursos/[cursoId]/personas` | ✅ |
 | 2 | **Validación de pertenencia al curso** en el backend (no solo rol global) | ✅ `CourseAccessService` | — | ✅ |
 | 3 | **Tablón** con publicaciones y comentarios | ✅ módulo `stream` | ✅ `/cursos/[cursoId]` | ✅ |
 | 4 | **Tareas**: crear, editar, fecha de entrega | ✅ módulo `classwork` | ✅ `/cursos/[cursoId]/tareas` | ✅ |
@@ -105,7 +110,7 @@
 | 10 | **Perfil** (datos y avatar) | ✅ módulo `profile` | ✅ `/perfil` | ✅ |
 | 11 | **Recuperar contraseña** (restablece un administrador) | ✅ | ✅ `/recuperar-contrasena`, `/cambiar-contrasena`, `/administracion/usuarios` | ✅ |
 
-Todos los entregables se probaron con el backend simulado; falta repetir las pruebas con la base de datos real.
+Todos los entregables se probaron con el backend simulado y después con la base de datos real (2026-11-20 y revisión completa del 2026-11-23).
 
 ---
 
@@ -124,9 +129,9 @@ Todos los entregables se probaron con el backend simulado; falta repetir las pru
 - ✅ Cursos (`/administracion/cursos`): búsqueda, filtro por periodo y cambiar el docente (con aviso al nuevo docente).
 - ✅ Carrera de los alumnos: al importar el Excel o en bloque desde la lista de usuarios (filtro «sin carrera»).
 
-## Fase 3 — Evaluación y seguimiento tipo Moodle ⬜
+## Fase 3 — Evaluación y seguimiento tipo Moodle ✅
 
-Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
+Lo que más usan docentes y alumnos en Moodle. Todo lo que se decidió implementar está hecho y probado:
 
 | # | Funcionalidad | Qué incluye | Notas para el servidor de 4 GB |
 | --- | --- | --- | --- |
@@ -142,7 +147,7 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 | 10 | ~~**Videoclases**~~ | **No se implementa** (decisión del 2026-11-23). Los cursos y grupos de estudio tienen un campo libre de lugar y horario donde se puede pegar un enlace de Meet o Zoom. | — |
 | 11 | ✅ **Bitácora de actividad** | Hecho: inicios de sesión, cuentas, importaciones, clases, entregas, calificaciones, publicaciones, material, pesos y periodos. Página en administración (filtros y búsqueda) y por clase en «Seguimiento». | Se purgan solos los registros de más de 180 días. |
 
-## Fase 4 — Actividades y herramientas complementarias de Moodle ⬜
+## Fase 4 — Actividades y herramientas complementarias de Moodle 🔄
 
 | Grupo | Funcionalidades |
 | --- | --- |
@@ -157,13 +162,49 @@ Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo 
 
 ---
 
-## Mejoras técnicas pendientes
+## Mejoras técnicas
 
-- ⬜ Crear la base de datos MySQL, aplicar la migración (`npm run prisma:deploy`), cargar el seed y probar el backend real.
-- ⬜ Reemplazar el catálogo de ejemplo del seed por las facultades, carreras y materias oficiales.
+Las que siguen abiertas también están en [Lo que falta](#lo-que-falta).
+
+- ✅ Base de datos MySQL creada, migraciones aplicadas, seed cargado y backend real probado.
+- 🔄 Catálogo oficial: niveles y carreras cargados; faltan las materias de cada carrera.
 - ✅ Endpoint `GET /health` (BD y storage) y healthcheck del backend en Docker.
 - ✅ Sesión deslizante: la cookie se renueva sola mientras el usuario está activo (cada token dura 8 h; límite absoluto `SESSION_MAX_DAYS`, 14 días). Respeta la revocación por `sessionVersion`.
 - ✅ Invalidar las sesiones abiertas al desactivar una cuenta o restablecer o cambiar su contraseña (`sessionVersion`).
 - ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
 - ⬜ Swap y respaldos automáticos en el servidor Debian.
-- ✅ Pruebas automatizadas: 102 unitarias y 9 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
+- ✅ Pruebas automatizadas: 110 unitarias y 23 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
+
+---
+
+## Lo que falta
+
+Revisado el 2026-11-23. Orden sugerido: primero lo que impide usarla con personas reales.
+
+### 1. Antes de usarla con personas reales
+- ⬜ **Revisión a mano** de lo nuevo de las fases 3 y 4 como docente y como alumno: rúbricas, condiciones, pesos, Seguimiento, Reutilizar clase, búsqueda y app instalable.
+- ⬜ **Instalar en el servidor Debian** (4 GB): Docker Compose con Nginx, imágenes construidas fuera del servidor, HTTPS con `COOKIE_SECURE=true` y `CORS_ORIGINS` del dominio real.
+- ⬜ **Swap** de 2 a 4 GB en el servidor.
+- ⬜ **Respaldos automáticos** de la base de datos y de `storage/` a otro disco, y probar una restauración.
+- ⬜ **Probar desde otra computadora y desde un celular**, incluida la instalación como app (Android e iPhone).
+
+### 2. Datos y contenido
+- ⬜ Capturar las **materias reales** de cada carrera (hoy hay 6 de ejemplo para 19 carreras).
+- ⬜ **Revisión jurídica** del aviso de privacidad (`/privacidad`, hoy borrador).
+- ⬜ Ponerle nombre y fechas al periodo `2026-2` (se creó automáticamente y está cerrado) o dejarlo así si ya no se usa.
+- ⬜ Decidir qué hacer con la cuenta de prueba `PRUEBA-DOC` (desactivada) y con `DOCENTE-PRUEBA` antes de abrir la plataforma.
+- ⬜ Importar los alumnos reales desde el Excel oficial y dar de alta al personal.
+
+### 3. Mejoras técnicas pendientes
+- ⬜ Descargas con el **nombre original** del archivo (`Content-Disposition`); hoy se bajan con el nombre aleatorio.
+- ⬜ Borrar o archivar los archivos de periodos cerrados para no llenar el disco.
+- ⬜ Aviso a los alumnos cuando se abre una tarea con «Visible desde» futura (hoy no se avisa: no hay tareas programadas en el servidor).
+- ⬜ Mostrar en Reportes cuántos alumnos en riesgo tiene cada clase (`ProgressService.atRiskByCourse` ya existe, pero calcula clase por clase; optimizarlo antes de usarlo con muchas clases).
+- ⬜ Agregar a `npm run dev:demo` (backend simulado) los cuestionarios y lo de las fases 3 y 4, si se quiere seguir usando para demostraciones.
+
+### 4. Funciones opcionales (solo si se necesitan)
+- ⬜ Libro de calificaciones: escalas con letras y ocultar calificaciones al alumno.
+- ⬜ Acceso condicional por calificación mínima («aprobar la tarea X con 7»).
+- ⬜ Gestión de clases: plantillas, archivar clases de periodos cerrados, respaldo y restauración de una clase.
+- ⬜ Calendario con eventos propios (no solo tareas y cuestionarios).
+- ⬜ Buscar recursos del repositorio y grupos de estudio desde la búsqueda global.

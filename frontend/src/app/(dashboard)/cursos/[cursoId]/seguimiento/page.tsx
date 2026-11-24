@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { ActivityFeed } from "@/components/activity/ActivityFeed";
-import { ProgressBar } from "@/components/classwork/ProgressBar";
+import { ProgressBar } from "@/components/dashboard/primitives";
 import { CARD } from "@/components/dashboard/tone";
 import type { CourseTracking } from "@/lib/classwork";
 import { canManage } from "@/lib/courses";
@@ -123,10 +123,9 @@ export default async function SeguimientoPage({
                         <span>{row.percent} %</span>
                       </span>
                       <ProgressBar
-                        size="sm"
-                        percent={row.percent}
+                        value={row.percent / 100}
                         label={`Avance de ${row.student.fullName}`}
-                        tone={row.risk.length ? "red" : "teal"}
+                        tone={row.risk.length ? "ink" : "teal"}
                       />
                     </td>
                     <td className={`${cell} text-right tabular-nums ${row.overdue ? "text-red-700" : "text-uach-ink/75"}`}>

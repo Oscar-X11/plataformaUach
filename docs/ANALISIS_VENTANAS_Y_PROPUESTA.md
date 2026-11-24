@@ -1,5 +1,7 @@
 # Plataforma UACH — Análisis de ventanas y evaluación de la propuesta
 
+> **Documento histórico.** Describe el proyecto como estaba el 2026-11-18. Muchas propuestas ya se implementaron y otras se descartaron (rol `SECURITY`, correo, registro abierto, foros, mensajería, asistencia, videollamadas). El estado actual está en [`AVANCE.md`](AVANCE.md) y el README.
+
 > Fecha del análisis: 2026-11-18
 > Alcance: revisión de `frontend/src/app`, `backend/src`, `backend/prisma/schema.prisma`, `docker-compose.yml`, `nginx/nginx.conf`, `noREADME.md` y `reporte.txt` (este último movido a `docs/REPORTE_CONFIGURACION_INICIAL.txt`; `noREADME.md` fue eliminado).
 > Objetivo del sistema: plataforma académica tipo Moodle / Google Classroom donde docentes y alumnos interactúan, imparten clases, publican material, asignan y entregan tareas y consultan calificaciones.

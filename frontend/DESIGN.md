@@ -197,7 +197,12 @@ Constantes en `src/components/dashboard/tone.ts`; reutilízalas en lugar de copi
 - **Ficha de curso:** `<CourseTile name tone size />`.
 - **Foco:** `FOCUS_RING` = `focus-visible:ring-[3px] ring-uach-teal/40` con offset. Nunca quitar el foco sin reemplazo.
 - **Estados vacíos:** con personalidad y una salida ("Todo leído" con ícono de palomita, "Tu ciclo escolar empieza aquí" + botón). Nunca solo "No hay datos".
-- **Datos de ejemplo:** mientras no haya backend, muestra el chip "Datos de ejemplo".
+- **Datos de ejemplo:** solo con el backend simulado se muestra el chip "Datos de ejemplo".
+- **Actividad bloqueada (acceso condicional):** fila sin enlace en `text-uach-ink/60` con ícono `Lock` en una ficha `bg-uach-canvas` y la razón debajo («Entrega «…» primero»). Nunca ocultar la actividad en su propia lista: el alumno debe saber qué le falta.
+- **Rúbrica:** cada criterio en `rounded-xl border border-uach-ink/10 p-3`; el nivel elegido en `bg-uach-teal/10 ring-1 ring-uach-teal/40`. Al calificar, los niveles son radios con aspecto de chip (`min-h-[40px]`).
+- **Situación:** chip `bg-uach-emerald/10 text-uach-emerald` (Aprobado) o `bg-red-50 text-red-700` (No aprobado). En riesgo: texto `text-red-700` con `AlertTriangle` y la razón.
+- **Cuadros de diálogo:** `<dialog>` nativo con `showModal()` (foco atrapado y Esc gratis), `rounded-2xl bg-uach-surface shadow-xl backdrop:bg-uach-ink/40`; clic fuera cierra. Se usa en «Reutilizar clase» y en la búsqueda global.
+- **Búsqueda global:** botón en la barra superior con `Ctrl K` visible; combobox accesible (`aria-activedescendant`, flechas y Enter).
 - **Áreas táctiles:** mínimo 44px en móvil (`h-11`, `min-h-[44px]`).
 
 ## Motion

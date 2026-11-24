@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, CheckCircle2 } from "lucide-react";
-import { ProgressBar } from "@/components/classwork/ProgressBar";
+import { ProgressBar } from "@/components/dashboard/primitives";
 import { StreamBoard } from "@/components/stream/StreamBoard";
 import { CARD } from "@/components/dashboard/tone";
 import type { AssignmentView, MyProgress, StreamView } from "@/lib/classwork";
@@ -44,7 +44,7 @@ export default async function CursoTablonPage({ params }: { params: { cursoId: s
               <span className="text-sm font-semibold tabular-nums text-uach-ink">{progress.percent} %</span>
             </div>
             <div className="mt-2">
-              <ProgressBar percent={progress.percent} label="Progreso en la clase" />
+              <ProgressBar value={progress.percent / 100} label="Progreso en la clase" />
             </div>
             <p className="mt-2 text-xs text-uach-ink/75">
               {progress.completed} de {progress.total} actividades completadas
