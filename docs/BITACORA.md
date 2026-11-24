@@ -83,6 +83,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **App instalable:** `manifest.webmanifest`, íconos en `frontend/public/icons/` (generados con `frontend/scripts/generate-icons.mjs`) y color de tema. Sin modo sin conexión (decisión del usuario). El `Dockerfile` del frontend ahora copia `public/`.
 - **Centro de ayuda** (`/ayuda`) y **aviso de privacidad** (`/privacidad`, borrador con los datos reales de la UACH, pendiente de revisión jurídica). Se ven con o sin sesión; enlaces en el menú del usuario y en el acceso.
 - Pruebas: 110 unitarias (4 nuevas de acceso condicional) y 23 e2e (14 nuevas en `test/progress.e2e-spec.ts`: rúbricas, condiciones, duplicados, pesos y final, progreso y riesgo, aprobatoria, reutilizar, periodo cerrado, bitácora y búsqueda). Recorrido de pantallas con docente, alumno y administración contra la base de desarrollo; datos de prueba borrados.
+- Commit `d221613`: rúbricas, libro con pesos y final, acceso condicional, seguimiento, bitácora, búsqueda global, app instalable, ayuda y aviso de privacidad.
 
 ### Decisiones
 - **Fuera del alcance (fases 3 y 4):** foros por curso, mensajería directa, grupos dentro del curso, actividades extra de Moodle (taller, wiki, glosario, lección, libro, consulta, retroalimentación anónima, base de datos), H5P/SCORM e insignias/competencias. Quedan tachados en `docs/AVANCE.md`.
