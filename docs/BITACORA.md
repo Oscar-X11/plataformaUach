@@ -39,6 +39,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - Encuestas: sin puntos ni respuestas correctas; conteo por opción. Borrador hasta publicar; al publicar se avisa a los alumnos (`QUIZ_PUBLISHED`).
   - Con respuestas, las preguntas quedan fijas. Calificaciones aparte del libro de tareas.
 - Probado de punta a punta con la BD real: 21/21 comprobaciones de la API y 11/11 de pantallas (docente y alumno). Datos de prueba borrados. 96 pruebas unitarias.
+- Commit `862df71`: cuestionarios y encuestas estilo Google Forms y registro abierto retirado.
 
 ### Decisiones
 - **Solo alumnos importados:** no hay registro abierto; evita que alguien use la matrícula de otro.
