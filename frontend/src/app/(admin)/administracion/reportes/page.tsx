@@ -72,7 +72,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: { p
                 <tr key={row.id} className="border-t border-uach-ink/[0.06] hover:bg-uach-canvas">
                   <th scope="row" className="px-3 py-2.5 text-left font-normal">
                     <Link href={`/cursos/${row.id}`} className="font-medium text-uach-ink hover:text-uach-tealDark">{row.name}</Link>
-                    <span className="block text-xs text-uach-ink/75">{row.subject.code} · {row.term}</span>
+                    <span className="block text-xs text-uach-ink/75">{row.label} · {row.term}</span>
                   </th>
                   <td className="px-3 py-2.5 text-uach-ink">{row.teacherName}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-uach-ink">{row.students}</td>

@@ -1,5 +1,5 @@
-import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value;
@@ -37,8 +37,20 @@ export class CreateCourseDto {
   })
   term!: string;
 
-  @IsUUID('all', { message: 'Selecciona una materia' })
-  subjectId!: string;
+  @IsUUID('all', { message: 'Selecciona la carrera' })
+  careerId!: string;
+
+  /** Número de cuatrimestre o semestre (el máximo depende del nivel). */
+  @Type(() => Number)
+  @IsInt({ message: 'Elige el cuatrimestre o semestre' })
+  @Min(1, { message: 'Elige el cuatrimestre o semestre' })
+  @Max(12, { message: 'El cuatrimestre o semestre va de 1 a 12' })
+  grade!: number;
+
+  /** Materia del catálogo (opcional). Debe ser de la misma carrera. */
+  @IsOptional()
+  @IsUUID('all', { message: 'Materia inválida' })
+  subjectId?: string;
 
   /** Descripción de la clase. Opcional. */
   @IsOptional()

@@ -168,7 +168,7 @@ describe('ReportsService', () => {
       .fn()
       .mockResolvedValueOnce([
         {
-          id: 'c1', name: 'BD', term: '2026-2', subject: { code: 'ISC-301', name: 'Bases de Datos' },
+          id: 'c1', name: 'BD', term: '2026-2', grade: 3, career: { code: 'ISC', name: 'Ingeniería en Sistemas Computacionales', faculty: { scheme: 'CUATRIMESTRAL' } },
           teacher: { fullName: 'Laura' }, _count: { enrollments: 2 },
           assignments: [
             {

@@ -124,11 +124,15 @@ function courseRole(course, user) {
 function courseSummary(course, role) {
   const subject = SUBJECTS.find((item) => item.id === course.subjectId);
   const teacher = findUser(course.teacherId);
+  const faculty = FACULTIES.find((item) => item.careers.some((career) => career.id === (course.careerId ?? subject?.career)));
+  const career = faculty?.careers.find((item) => item.id === (course.careerId ?? subject?.career));
   return {
     id: course.id,
     name: course.name,
     term: course.term,
-    subject: { id: subject.id, name: subject.name, code: subject.code, semester: subject.semester },
+    career: { ...career, faculty: { name: faculty.name, scheme: faculty.scheme } },
+    grade: course.grade ?? subject?.semester ?? 1,
+    subject: subject ? { id: subject.id, name: subject.name, code: subject.code, semester: subject.semester } : null,
     teacher: { id: teacher.id, fullName: teacher.fullName },
     description: course.description ?? null,
     meetingInfo: course.meetingInfo ?? null,

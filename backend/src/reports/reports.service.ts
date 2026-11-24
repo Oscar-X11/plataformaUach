@@ -1,3 +1,4 @@
+import { courseLabel } from '../courses/courses.service';
 import { Injectable } from '@nestjs/common';
 import { average, decimalToNumber, submissionState } from '../classwork/submission-state';
 import { csvCell } from '../classwork/grades.service';
@@ -17,7 +18,8 @@ export class ReportsService {
         id: true,
         name: true,
         term: true,
-        subject: { select: { code: true, name: true } },
+        grade: true,
+        career: { select: { code: true, name: true, faculty: { select: { scheme: true } } } },
         teacher: { select: { fullName: true } },
         _count: { select: { enrollments: true } },
         assignments: {
@@ -54,7 +56,8 @@ export class ReportsService {
         id: course.id,
         name: course.name,
         term: course.term,
-        subject: course.subject,
+        career: { code: course.career.code, name: course.career.name },
+        label: courseLabel(course),
         teacherName: course.teacher.fullName,
         students,
         assignments: course.assignments.length,
@@ -71,11 +74,11 @@ export class ReportsService {
 
   async coursesCsv(term?: string) {
     const { rows } = await this.courses(term);
-    const header = ['Periodo', 'Curso', 'Materia', 'Docente', 'Alumnos', 'Tareas', 'Entregas a tiempo', '% entrega', 'Promedio (0-10)'];
+    const header = ['Periodo', 'Clase', 'Carrera', 'Docente', 'Alumnos', 'Tareas', 'Entregas a tiempo', '% entrega', 'Promedio (0-10)'];
     const lines = rows.map((row) => [
       row.term,
       row.name,
-      `${row.subject.code} ${row.subject.name}`,
+      `${row.label} — ${row.career.name}`,
       row.teacherName,
       row.students,
       row.assignments,

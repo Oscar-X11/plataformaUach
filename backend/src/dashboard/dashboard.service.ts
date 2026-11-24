@@ -1,3 +1,4 @@
+import { courseLabel } from '../courses/courses.service';
 import { Injectable } from '@nestjs/common';
 import { TokenPayload } from '../auth/token.service';
 import { average, decimalToNumber, submissionState } from '../classwork/submission-state';
@@ -44,7 +45,8 @@ export class DashboardService {
           id: true,
           name: true,
           term: true,
-          subject: { select: { code: true } },
+          grade: true,
+          career: { select: { code: true, faculty: { select: { scheme: true } } } },
           teacher: { select: { fullName: true } },
           assignments: {
             select: {
@@ -139,7 +141,7 @@ export class DashboardService {
       return {
         id: course.id,
         name: course.name,
-        subjectCode: course.subject.code,
+        subjectCode: courseLabel(course),
         term: course.term,
         teacherName: course.teacher.fullName,
         submittedCount: courseSubmitted,
@@ -198,7 +200,8 @@ export class DashboardService {
         id: true,
         name: true,
         term: true,
-        subject: { select: { code: true } },
+        grade: true,
+        career: { select: { code: true, faculty: { select: { scheme: true } } } },
         _count: { select: { enrollments: true } },
         assignments: {
           select: {
@@ -247,7 +250,7 @@ export class DashboardService {
         id: course.id,
         name: course.name,
         term: course.term,
-        subjectCode: course.subject.code,
+        subjectCode: courseLabel(course),
         studentCount: course._count.enrollments,
         assignmentCount: course.assignments.length,
         toReview: course.assignments.reduce(

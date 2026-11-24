@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { courseLabel } from "@/lib/courses";
 import { useEffect, useMemo, useState } from "react";
 import { LoaderCircle, Search, UserCog, X } from "lucide-react";
 import { CARD } from "@/components/dashboard/tone";
@@ -114,7 +115,7 @@ export function AdminCoursesTable({ initialCourses }: { initialCourses: CourseSu
     (course) =>
       (!term || course.term === term) &&
       (!query ||
-        [course.name, course.subject.name, course.subject.code, course.teacher.fullName].some((text) =>
+        [course.name, course.career.name, course.career.code, course.subject?.name ?? "", course.teacher.fullName].some((text) =>
           text.toLowerCase().includes(query),
         )),
   );
@@ -158,7 +159,7 @@ export function AdminCoursesTable({ initialCourses }: { initialCourses: CourseSu
                     {course.name}
                   </Link>
                   <p className="mt-0.5 truncate text-xs tabular-nums text-uach-ink/75">
-                    {course.subject.code} · {course.subject.name} · {course.term} · {course.studentCount}{" "}
+                    {courseLabel(course)} · {course.career.name} · {course.term} · {course.studentCount}{" "}
                     {course.studentCount === 1 ? "alumno" : "alumnos"}
                   </p>
                   <p className="mt-0.5 truncate text-sm text-uach-ink/75">Docente: {course.teacher.fullName}</p>

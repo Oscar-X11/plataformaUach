@@ -87,6 +87,7 @@ model Career {
   faculty   Faculty   @relation(fields: [facultyId], references: [id], onDelete: Restrict)
   subjects  Subject[]
   users     User[]
+  courses   Course[]
   createdAt DateTime  @default(now()) @map("creado_en")
 
   @@index([facultyId])
@@ -179,9 +180,15 @@ model Course {
   description  String?          @map("descripcion") @db.Text
   /// Aula: salón y horario, o enlace de la reunión en línea (texto libre del docente).
   meetingInfo  String?          @map("lugar_horario") @db.VarChar(200)
-  subjectId    String           @map("materia_id")
+  /// Carrera de la clase (como en Classroom: nivel → carrera → cuatrimestre o semestre).
+  careerId     String           @map("carrera_id")
+  career       Career           @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  /// Número de cuatrimestre o semestre (según el tipo de periodo del nivel).
+  grade        Int              @map("grado")
+  /// Materia del catálogo. Opcional: la clase puede existir sin materia.
+  subjectId    String?          @map("materia_id")
   teacherId    String           @map("docente_id")
-  subject      Subject          @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  subject      Subject?         @relation(fields: [subjectId], references: [id], onDelete: Restrict)
   teacher      User             @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
   enrollments  Enrollment[]
   posts        Post[]

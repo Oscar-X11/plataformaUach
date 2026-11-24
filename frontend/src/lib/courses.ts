@@ -8,7 +8,11 @@ export interface CourseSummary {
   id: string;
   name: string;
   term: string;
-  subject: { id: string; name: string; code: string; semester: number };
+  /** Carrera y número de cuatrimestre o semestre de la clase. */
+  career: { id: string; name: string; code: string; faculty: { name: string; scheme: TermScheme } };
+  grade: number;
+  /** Materia del catálogo (opcional). */
+  subject: { id: string; name: string; code: string; semester: number } | null;
   teacher: { id: string; fullName: string };
   /** Descripción de la clase (como en Classroom). */
   description: string | null;
@@ -39,6 +43,17 @@ export interface SubjectOption {
   semester: number;
   /** faculty = nivel (Licenciaturas, Ingenierías, Preparatoria). */
   career: { id: string; name: string; code: string; faculty?: { id: string; name: string; scheme: TermScheme } };
+}
+
+/** "ISC · 4.º cuat" — etiqueta corta de la clase. */
+export function courseLabel(course: Pick<CourseSummary, "career" | "grade">) {
+  const unit = course.career.faculty.scheme === "SEMESTRAL" ? "sem" : "cuat";
+  return `${course.career.code} · ${course.grade}.º ${unit}`;
+}
+
+/** "4.º cuatrimestre" */
+export function gradeText(course: Pick<CourseSummary, "career" | "grade">) {
+  return `${course.grade}.º ${course.career.faculty.scheme === "SEMESTRAL" ? "semestre" : "cuatrimestre"}`;
 }
 
 export const canManage = (course: Pick<CourseSummary, "myRole">) => course.myRole !== "student";

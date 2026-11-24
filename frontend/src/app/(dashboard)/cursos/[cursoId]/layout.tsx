@@ -1,6 +1,7 @@
 import { CourseMeetingInfo } from "@/components/courses/CourseMeetingInfo";
 import { CourseTabs } from "@/components/courses/CourseTabs";
 import { InvitationCode } from "@/components/courses/InvitationCode";
+import { gradeText } from "@/lib/courses";
 import { getCourse } from "@/lib/courses-server";
 
 export default async function CursoLayout({
@@ -18,7 +19,8 @@ export default async function CursoLayout({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <p className="text-sm text-white/80">
-              {course.subject.code} · {course.subject.name}
+              {course.career.name} · {gradeText(course)}
+              {course.subject && ` · ${course.subject.name}`}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{course.name}</h1>
             {course.description && (

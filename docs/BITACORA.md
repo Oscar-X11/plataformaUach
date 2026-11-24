@@ -46,7 +46,14 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Docente de prueba en la BD real: `DOCENTE-PRUEBA` (contraseña fija, sin cambio obligatorio).
 - Commit `8f5d3e2`: «Crear clase» como en Classroom (nivel, materia, descripción y aula).
 
+- **La clase se define por carrera y cuatrimestre/semestre** (migración `20261124140000_carrera_y_grado_cursos`): «Crear clase» pide nivel, **carrera** (las que ofrece el nivel) y debajo el **cuatrimestre o semestre** (1–12 cuatrimestres, 1–6 semestres). La materia del catálogo pasa a ser opcional, así que ya se pueden crear clases de cualquier carrera aunque no tenga materias.
+  - Los cursos existentes tomaron la carrera y el grado de su materia (la migración rellena antes de volver obligatorias las columnas).
+  - Encabezado, lista de clases, panel, administración de cursos, reportes y su CSV muestran «ISC · 4.º cuat».
+  - Probado de punta a punta con una clase de bachillerato (BFM, 2.º semestre). 98 pruebas unitarias.
+- Detener el backend dejaba vivos los procesos `nest start --watch` (había 16 acumulados y bloqueaban el motor de Prisma). Se cerraron todos.
+
 ### Decisiones
+- La clase la define la **carrera** y el número de cuatrimestre o semestre; la materia es opcional (lo pidió el usuario).
 - **Solo alumnos importados:** no hay registro abierto; evita que alguien use la matrícula de otro.
 - Cuestionarios: exámenes y encuestas; fechas, tiempo límite y visibilidad del resultado; un intento; calificaciones aparte (decisiones del usuario).
 - **No se implementan videollamadas.** Las reuniones en línea se resuelven pegando el enlace en «Lugar y horario».

@@ -39,6 +39,8 @@ function courseRow(overrides: Record<string, unknown> = {}) {
     teacherId: 't1',
     createdAt: new Date('2026-08-01'),
     subject: { id: 'sub', name: 'Bases de Datos', code: 'ISC-301', semester: 3 },
+    grade: 3,
+    career: { id: 'isc', name: 'Ingeniería en Sistemas Computacionales', code: 'ISC', faculty: { name: 'Ingenierías', scheme: 'CUATRIMESTRAL' } },
     teacher: { id: 't1', fullName: 'Laura Gómez' },
     _count: { enrollments: 2 },
     ...overrides,
@@ -55,6 +57,7 @@ function setup() {
       update: jest.fn(),
     },
     subject: { findUnique: jest.fn() },
+    career: { findUnique: jest.fn() },
     academicTerm: { findUnique: jest.fn().mockResolvedValue({ code: '2026-2', closed: false, scheme: 'CUATRIMESTRAL' }) },
     user: { findUnique: jest.fn() },
     enrollment: { upsert: jest.fn(), deleteMany: jest.fn() },
@@ -156,13 +159,15 @@ describe('CoursesService', () => {
     expect(prisma.enrollment.upsert).not.toHaveBeenCalled();
   });
 
-  it('crear exige una materia existente y reintenta si el código choca', async () => {
-    const { service, prisma } = setup();
-    prisma.subject.findUnique.mockResolvedValueOnce(null);
-    const dto = { name: 'Bases de Datos', term: '2026-2', subjectId: 'sub' };
-    await expect(service.create(dto, teacher)).rejects.toBeInstanceOf(BadRequestException);
+  const ISC = { id: 'isc', faculty: { scheme: 'CUATRIMESTRAL' } };
+  const dto = { name: 'Redes 2 — 4.º ISC', term: '2026-2', careerId: 'isc', grade: 4 };
 
-    prisma.subject.findUnique.mockResolvedValue({ id: 'sub', career: { faculty: { scheme: 'CUATRIMESTRAL' } } });
+  it('crear exige una carrera existente y reintenta si el código choca', async () => {
+    const { service, prisma } = setup();
+    prisma.career.findUnique.mockResolvedValueOnce(null);
+    await expect(service.create(dto, teacher)).rejects.toThrow(/carrera no existe/);
+
+    prisma.career.findUnique.mockResolvedValue(ISC);
     const duplicate = new Prisma.PrismaClientKnownRequestError('dup', {
       code: 'P2002',
       clientVersion: 'test',
@@ -170,12 +175,27 @@ describe('CoursesService', () => {
     prisma.course.create.mockRejectedValueOnce(duplicate).mockResolvedValueOnce(courseRow());
     await expect(service.create(dto, teacher)).resolves.toMatchObject({ myRole: 'teacher' });
     expect(prisma.course.create).toHaveBeenCalledTimes(2);
+    expect(prisma.course.create.mock.calls[1][0].data).toMatchObject({ careerId: 'isc', grade: 4, subjectId: null });
+  });
+
+  it('el cuatrimestre o semestre no pasa del máximo del nivel', async () => {
+    const { service, prisma } = setup();
+    prisma.career.findUnique.mockResolvedValue({ id: 'bfm', faculty: { scheme: 'SEMESTRAL' } });
+    await expect(service.create({ ...dto, careerId: 'bfm', grade: 7 }, teacher)).rejects.toThrow(/semestre va de 1 a 6/);
+    expect(prisma.course.create).not.toHaveBeenCalled();
+  });
+
+  it('la materia opcional debe ser de la misma carrera', async () => {
+    const { service, prisma } = setup();
+    prisma.career.findUnique.mockResolvedValue(ISC);
+    prisma.subject.findUnique.mockResolvedValue({ careerId: 'lae' });
+    await expect(service.create({ ...dto, subjectId: 'sub' }, teacher)).rejects.toThrow(/no pertenece/);
+    expect(prisma.course.create).not.toHaveBeenCalled();
   });
 
   it('solo se crean cursos en periodos dados de alta y abiertos', async () => {
     const { service, prisma } = setup();
-    const dto = { name: 'Bases de Datos', term: '2026-2', subjectId: 'sub' };
-    prisma.subject.findUnique.mockResolvedValue({ id: 'sub', career: { faculty: { scheme: 'CUATRIMESTRAL' } } });
+    prisma.career.findUnique.mockResolvedValue(ISC);
     prisma.academicTerm.findUnique.mockResolvedValueOnce(null);
     await expect(service.create(dto, teacher)).rejects.toThrow(/periodo abierto/);
     prisma.academicTerm.findUnique.mockResolvedValueOnce({ code: '2026-2', closed: true });
@@ -183,12 +203,11 @@ describe('CoursesService', () => {
     expect(prisma.course.create).not.toHaveBeenCalled();
   });
 
-  it('una materia de licenciatura no se abre en un periodo semestral', async () => {
+  it('una carrera cuatrimestral no se abre en un periodo semestral', async () => {
     const { service, prisma } = setup();
-    const dto = { name: 'Bases de Datos', term: '2026-S2', subjectId: 'sub' };
-    prisma.subject.findUnique.mockResolvedValue({ id: 'sub', career: { faculty: { scheme: 'CUATRIMESTRAL' } } });
+    prisma.career.findUnique.mockResolvedValue(ISC);
     prisma.academicTerm.findUnique.mockResolvedValueOnce({ code: '2026-S2', closed: false, scheme: 'SEMESTRAL' });
-    await expect(service.create(dto, teacher)).rejects.toThrow(/cuatrimestral/);
+    await expect(service.create({ ...dto, term: '2026-S2' }, teacher)).rejects.toThrow(/cuatrimestral/);
     expect(prisma.course.create).not.toHaveBeenCalled();
   });
 
@@ -249,13 +268,17 @@ describe('DTOs y códigos', () => {
     const ok = plainToInstance(CreateCourseDto, {
       name: '  Bases   de Datos ',
       term: '2026-2',
-      subjectId: '11111111-1111-4111-8111-111111111111',
+      careerId: '11111111-1111-4111-8111-111111111111',
+      grade: '4',
     });
+    expect(ok.grade).toBe(4);
     expect(ok.name).toBe('Bases de Datos');
     expect(validateSync(ok)).toHaveLength(0);
 
-    const bad = plainToInstance(CreateCourseDto, { name: 'BD', term: '<x>', subjectId: 'no' });
+    const bad = plainToInstance(CreateCourseDto, { name: 'BD', term: '<x>', careerId: 'no', grade: 0, subjectId: 'no' });
     expect(validateSync(bad).map((error) => error.property).sort()).toEqual([
+      'careerId',
+      'grade',
       'name',
       'subjectId',
       'term',

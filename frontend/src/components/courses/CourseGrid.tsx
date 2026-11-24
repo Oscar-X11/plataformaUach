@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { courseLabel } from "@/lib/courses";
 import { ArrowRight, UsersRound } from "lucide-react";
 import { CourseTile } from "@/components/dashboard/primitives";
 import { CARD, FOCUS_RING, toneFor } from "@/components/dashboard/tone";
@@ -20,13 +21,13 @@ export function CourseGrid({ courses }: { courses: CourseSummary[] }) {
               <div className="min-w-0">
                 <h2 className="truncate text-base font-semibold text-uach-ink">{course.name}</h2>
                 <p className="truncate text-sm text-uach-ink/75">
-                  {course.subject.code} · {course.term}
+                  {courseLabel(course)} · {course.term}
                 </p>
               </div>
             </div>
             <div className="mt-auto flex items-center gap-3 text-sm text-uach-ink/75">
               <span className="min-w-0 truncate">
-                {course.myRole === "student" ? course.teacher.fullName : course.subject.name}
+                {course.myRole === "student" ? course.teacher.fullName : course.career.name}
               </span>
               <span className="ml-auto flex shrink-0 items-center gap-1.5 tabular-nums">
                 <UsersRound className="h-4 w-4" strokeWidth={1.5} aria-hidden />

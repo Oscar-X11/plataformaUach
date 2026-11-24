@@ -101,7 +101,9 @@ export interface CourseReportRow {
   id: string;
   name: string;
   term: string;
-  subject: { code: string; name: string };
+  career: { code: string; name: string };
+  /** "ISC · 4.º cuat" */
+  label: string;
   teacherName: string;
   students: number;
   assignments: number;

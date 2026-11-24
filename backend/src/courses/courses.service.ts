@@ -32,12 +32,23 @@ const COURSE_SELECT = {
   meetingInfo: true,
   teacherId: true,
   createdAt: true,
+  grade: true,
+  career: { select: { id: true, name: true, code: true, faculty: { select: { name: true, scheme: true } } } },
   subject: { select: { id: true, name: true, code: true, semester: true } },
   teacher: { select: { id: true, fullName: true } },
   _count: { select: { enrollments: true } },
 } satisfies Prisma.CourseSelect;
 
 type CourseRow = Prisma.CourseGetPayload<{ select: typeof COURSE_SELECT }>;
+
+/** Cuatrimestres o semestres que puede tener una carrera según su nivel. */
+export const MAX_GRADE = { CUATRIMESTRAL: 12, SEMESTRAL: 6 } as const;
+
+/** "ISC · 4.º cuat" — etiqueta corta de la clase para listas y paneles. */
+export function courseLabel(course: { grade: number; career: { code: string; faculty: { scheme: string } } }) {
+  const unit = course.career.faculty.scheme === 'SEMESTRAL' ? 'sem' : 'cuat';
+  return `${course.career.code} · ${course.grade}.º ${unit}`;
+}
 
 const isUniqueViolation = (error: unknown) =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
@@ -77,11 +88,26 @@ export class CoursesService {
   }
 
   async create(dto: CreateCourseDto, user: TokenPayload) {
-    const subject = await this.prisma.subject.findUnique({
-      where: { id: dto.subjectId },
-      select: { id: true, career: { select: { faculty: { select: { scheme: true } } } } },
+    const career = await this.prisma.career.findUnique({
+      where: { id: dto.careerId },
+      select: { id: true, faculty: { select: { scheme: true } } },
     });
-    if (!subject) throw new BadRequestException('La materia no existe');
+    if (!career) throw new BadRequestException('La carrera no existe');
+    const scheme = career.faculty.scheme;
+    const maxGrade = MAX_GRADE[scheme];
+    if (dto.grade > maxGrade) {
+      const unit = scheme === 'SEMESTRAL' ? 'semestre' : 'cuatrimestre';
+      throw new BadRequestException(`El ${unit} va de 1 a ${maxGrade}`);
+    }
+    if (dto.subjectId) {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: dto.subjectId },
+        select: { careerId: true },
+      });
+      if (!subject || subject.careerId !== career.id) {
+        throw new BadRequestException('La materia no pertenece a esa carrera');
+      }
+    }
     const term = await this.prisma.academicTerm.findUnique({
       where: { code: dto.term },
       select: { code: true, closed: true, scheme: true },
@@ -89,10 +115,10 @@ export class CoursesService {
     if (!term || term.closed) {
       throw new BadRequestException('Elige un periodo abierto (los da de alta la administración)');
     }
-    // Una materia de bachillerato va en un semestre; una de licenciatura, en un cuatrimestre.
-    if (term.scheme !== subject.career.faculty.scheme) {
-      const expected = subject.career.faculty.scheme === 'SEMESTRAL' ? 'semestral' : 'cuatrimestral';
-      throw new BadRequestException(`Esta materia se imparte en periodos de tipo ${expected}; elige uno de ese tipo`);
+    // El bachillerato va por semestres; licenciaturas e ingenierías, por cuatrimestres.
+    if (term.scheme !== scheme) {
+      const expected = scheme === 'SEMESTRAL' ? 'semestral' : 'cuatrimestral';
+      throw new BadRequestException(`Esta carrera va por periodos de tipo ${expected}; elige uno de ese tipo`);
     }
 
     const row = await this.withFreshCode((invitation) =>
@@ -103,7 +129,9 @@ export class CoursesService {
           description: dto.description ?? null,
           meetingInfo: dto.meetingInfo ?? null,
           invitation,
-          subjectId: dto.subjectId,
+          careerId: career.id,
+          grade: dto.grade,
+          subjectId: dto.subjectId ?? null,
           teacherId: user.sub,
         },
         select: COURSE_SELECT,
@@ -248,6 +276,8 @@ export class CoursesService {
       id: row.id,
       name: row.name,
       term: row.term,
+      career: row.career,
+      grade: row.grade,
       subject: row.subject,
       teacher: row.teacher,
       description: row.description,
