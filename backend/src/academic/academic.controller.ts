@@ -14,6 +14,7 @@ export class AcademicController {
         id: true,
         name: true,
         code: true,
+        scheme: true,
         careers: {
           orderBy: { name: 'asc' },
           select: { id: true, name: true, code: true },
@@ -32,7 +33,9 @@ export class AcademicController {
         name: true,
         code: true,
         semester: true,
-        career: { select: { id: true, name: true, code: true, faculty: { select: { scheme: true } } } },
+        career: {
+          select: { id: true, name: true, code: true, faculty: { select: { id: true, name: true, scheme: true } } },
+        },
       },
     });
   }

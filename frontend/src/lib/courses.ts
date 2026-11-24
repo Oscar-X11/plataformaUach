@@ -10,7 +10,9 @@ export interface CourseSummary {
   term: string;
   subject: { id: string; name: string; code: string; semester: number };
   teacher: { id: string; fullName: string };
-  /** Salón y horario, o enlace de la reunión (texto libre del docente). */
+  /** Descripción de la clase (como en Classroom). */
+  description: string | null;
+  /** Aula: salón y horario, o enlace de la reunión (texto libre del docente). */
   meetingInfo: string | null;
   studentCount: number;
   createdAt: string;
@@ -35,7 +37,8 @@ export interface SubjectOption {
   name: string;
   code: string;
   semester: number;
-  career: { id: string; name: string; code: string; faculty?: { scheme: TermScheme } };
+  /** faculty = nivel (Licenciaturas, Ingenierías, Preparatoria). */
+  career: { id: string; name: string; code: string; faculty?: { id: string; name: string; scheme: TermScheme } };
 }
 
 export const canManage = (course: Pick<CourseSummary, "myRole">) => course.myRole !== "student";

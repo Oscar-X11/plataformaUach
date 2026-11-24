@@ -34,6 +34,7 @@ function courseRow(overrides: Record<string, unknown> = {}) {
     name: 'Bases de Datos',
     term: '2026-2',
     invitation: 'ABC2345',
+    description: null,
     meetingInfo: null,
     teacherId: 't1',
     createdAt: new Date('2026-08-01'),

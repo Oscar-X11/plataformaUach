@@ -7,7 +7,7 @@ import { MeetingInfo } from "@/components/ui/MeetingInfo";
 import { api, ApiError } from "@/lib/api";
 
 /**
- * Lugar y horario del curso en el encabezado. El docente (o un admin) lo edita
+ * Aula de la clase en el encabezado (salón y horario, o enlace). El docente (o un admin) la edita
  * en línea; los alumnos solo lo ven si existe.
  */
 export function CourseMeetingInfo({
@@ -49,7 +49,7 @@ export function CourseMeetingInfo({
     return (
       <form onSubmit={save} className="mt-3 max-w-xl space-y-2">
         <label htmlFor={`meeting-${courseId}`} className="block text-xs font-medium text-white/80">
-          Lugar y horario, o enlace de la reunión
+          Aula: salón y horario, o enlace de la reunión
         </label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
@@ -58,7 +58,7 @@ export function CourseMeetingInfo({
             defaultValue={value ?? ""}
             maxLength={200}
             autoFocus
-            placeholder="Lun y mié 8:00, salón 12 · o enlace de Meet"
+            placeholder="Salón 12, lun y mié 8:00 · o enlace de Meet"
             className="h-11 min-w-0 flex-1 rounded-xl bg-white/10 px-3 text-sm text-white ring-1 ring-white/20 placeholder:text-white/50 focus:outline-none focus:ring-[3px] focus:ring-white/40"
           />
           <div className="flex gap-2">
@@ -100,14 +100,14 @@ export function CourseMeetingInfo({
       {value ? (
         <MeetingInfo text={value} linkClassName="text-white hover:text-white/80" />
       ) : (
-        <span className="text-white/60">Sin lugar ni horario</span>
+        <span className="text-white/60">Sin aula</span>
       )}
       {canEdit && (
         <button
           type="button"
           onClick={() => setEditing(true)}
           className="press-soft -my-1 inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
-          aria-label={value ? "Editar lugar y horario" : "Agregar lugar y horario"}
+          aria-label={value ? "Editar aula" : "Agregar aula"}
         >
           <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
           {value ? "Editar" : "Agregar"}

@@ -21,6 +21,9 @@ export default async function CursoLayout({
               {course.subject.code} · {course.subject.name}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{course.name}</h1>
+            {course.description && (
+              <p className="mt-2 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-white/85">{course.description}</p>
+            )}
             <p className="mt-2 text-sm text-white/80">
               Periodo {course.term} · {course.teacher.fullName}
             </p>

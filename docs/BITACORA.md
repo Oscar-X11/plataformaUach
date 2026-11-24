@@ -41,6 +41,10 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Probado de punta a punta con la BD real: 21/21 comprobaciones de la API y 11/11 de pantallas (docente y alumno). Datos de prueba borrados. 96 pruebas unitarias.
 - Commit `862df71`: cuestionarios y encuestas estilo Google Forms y registro abierto retirado.
 
+- **«Crear clase» como en Classroom** (migración `20261124120000_descripcion_cursos`): nombre de la clase, descripción, nivel, materia (solo las del nivel, agrupadas por carrera) y aula. El periodo se propone solo (el actual del tipo del nivel) y se puede cambiar. La descripción se ve en el encabezado de la clase y «Lugar y horario» pasó a llamarse **Aula**.
+  - Causa de «el periodo no sirve»: el campo estaba antes que la materia pero bloqueado hasta elegirla. Ahora depende del nivel y aparece al final, ya seleccionado.
+- Docente de prueba en la BD real: `DOCENTE-PRUEBA` (contraseña fija, sin cambio obligatorio).
+
 ### Decisiones
 - **Solo alumnos importados:** no hay registro abierto; evita que alguien use la matrícula de otro.
 - Cuestionarios: exámenes y encuestas; fechas, tiempo límite y visibilidad del resultado; un intento; calificaciones aparte (decisiones del usuario).

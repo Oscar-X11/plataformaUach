@@ -111,7 +111,7 @@ export function TeacherDashboard({
             </span>
             <p className="mt-4 font-semibold text-uach-petrol">Tu primera clase empieza aquí</p>
             <p className="mt-1 max-w-sm text-sm text-uach-ink/75">Crea un curso y comparte su código con tus alumnos.</p>
-            <Link href="/cursos" className={`${BTN_PRIMARY} mt-4`}>Crear curso</Link>
+            <Link href="/cursos" className={`${BTN_PRIMARY} mt-4`}>Crear clase</Link>
           </div>
         ) : (
           <ul className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

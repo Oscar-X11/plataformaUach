@@ -175,7 +175,9 @@ model Course {
   term         String           @map("periodo")
   academicTerm AcademicTerm     @relation(fields: [term], references: [code], onDelete: Restrict, onUpdate: Cascade)
   invitation   String           @unique @map("codigo_invitacion")
-  /// Texto libre del docente: salón y horario, o enlace de la reunión en línea.
+  /// Descripción de la clase (como en Classroom). Opcional.
+  description  String?          @map("descripcion") @db.Text
+  /// Aula: salón y horario, o enlace de la reunión en línea (texto libre del docente).
   meetingInfo  String?          @map("lugar_horario") @db.VarChar(200)
   subjectId    String           @map("materia_id")
   teacherId    String           @map("docente_id")

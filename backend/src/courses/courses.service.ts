@@ -28,6 +28,7 @@ const COURSE_SELECT = {
   name: true,
   term: true,
   invitation: true,
+  description: true,
   meetingInfo: true,
   teacherId: true,
   createdAt: true,
@@ -99,6 +100,7 @@ export class CoursesService {
         data: {
           name: dto.name,
           term: term.code,
+          description: dto.description ?? null,
           meetingInfo: dto.meetingInfo ?? null,
           invitation,
           subjectId: dto.subjectId,
@@ -248,6 +250,7 @@ export class CoursesService {
       term: row.term,
       subject: row.subject,
       teacher: row.teacher,
+      description: row.description,
       meetingInfo: row.meetingInfo,
       studentCount: row._count.enrollments,
       createdAt: row.createdAt,

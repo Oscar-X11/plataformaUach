@@ -2,7 +2,7 @@
 const URL_PATTERN = /(https?:\/\/[^\s<>"']+)/g;
 
 /**
- * Lugar y horario escrito por el docente o el grupo ("Lunes 8:00, salón 12" o un
+ * Aula o lugar y horario escrito por el docente o el grupo ("Lunes 8:00, salón 12" o un
  * enlace de Meet/Zoom). Los enlaces se abren en otra pestaña; el resto es texto.
  * No usar dentro de otro <a> (por ejemplo, una tarjeta que ya es enlace).
  */

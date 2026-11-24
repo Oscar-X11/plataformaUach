@@ -130,6 +130,7 @@ function courseSummary(course, role) {
     term: course.term,
     subject: { id: subject.id, name: subject.name, code: subject.code, semester: subject.semester },
     teacher: { id: teacher.id, fullName: teacher.fullName },
+    description: course.description ?? null,
     meetingInfo: course.meetingInfo ?? null,
     studentCount: course.enrollments.length,
     createdAt: course.createdAt,
@@ -178,6 +179,7 @@ async function courseRoutes(req, res, path) {
       name,
       term,
       invitation: newCode(),
+      description: String(body.description ?? "").trim().slice(0, 2000) || null,
       meetingInfo: String(body.meetingInfo ?? "").trim().slice(0, 200) || null,
       subjectId: body.subjectId,
       teacherId: user.id,
@@ -376,7 +378,10 @@ const routes = {
     const entry = entryFromToken(readToken(req) ?? "");
     if (!entry) return unauthorized(res);
     const careers = FACULTIES.flatMap((faculty) =>
-      faculty.careers.map((career) => ({ ...career, faculty: { scheme: faculty.scheme } })),
+      faculty.careers.map((career) => ({
+        ...career,
+        faculty: { id: faculty.id, name: faculty.name, scheme: faculty.scheme },
+      })),
     );
     send(
       res,
