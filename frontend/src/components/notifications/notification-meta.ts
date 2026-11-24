@@ -1,6 +1,7 @@
 import {
   Bell,
   BookUp,
+  ClipboardCheck,
   ClipboardList,
   Library,
   Megaphone,
@@ -20,6 +21,7 @@ const NOTIFICATION_ICON: Record<NotificationType, LucideIcon> = {
   MATERIAL_CREATED: BookUp,
   RESOURCE_REVIEWED: Library,
   COURSE_ASSIGNED: School,
+  QUIZ_PUBLISHED: ClipboardCheck,
 };
 
 /**

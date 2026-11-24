@@ -37,6 +37,7 @@ enum NotificationType {
   MATERIAL_CREATED
   RESOURCE_REVIEWED
   COURSE_ASSIGNED
+  QUIZ_PUBLISHED
 }
 
 enum ResourceType {
@@ -73,7 +74,7 @@ model Faculty {
   scheme    TermScheme @default(CUATRIMESTRAL) @map("tipo_periodo")
   careers   Career[]
   users     User[]
-  createdAt DateTime @default(now()) @map("creado_en")
+  createdAt DateTime   @default(now()) @map("creado_en")
 
   @@map("facultades")
 }
@@ -119,7 +120,7 @@ model User {
   /// Va en cada token de sesión. Al subirla (desactivar cuenta, restablecer o cambiar
   /// contraseña) todas las sesiones abiertas dejan de valer.
   sessionVersion     Int                @default(0) @map("version_sesion")
-  fullName          String             @map("nombre_completo")
+  fullName           String             @map("nombre_completo")
   /// Ruta relativa dentro de storage/ (avatars/...).
   avatarUrl          String?            @map("ruta_avatar")
   role               UserRole           @map("rol")
@@ -135,6 +136,7 @@ model User {
   notifications      Notification[]
   assignments        Assignment[]       @relation("CreatedAssignments")
   submissions        Submission[]
+  quizAttempts       QuizAttempt[]
   resources          Resource[]         @relation("ResourceAuthors")
   reviewedResources  Resource[]         @relation("ResourceReviewers")
   studyGroups        StudyGroup[]       @relation("GroupCreators")
@@ -154,14 +156,14 @@ model AcademicTerm {
   name      String     @map("nombre")
   /// Solo lo usan las facultades con el mismo tipo de periodo.
   scheme    TermScheme @default(CUATRIMESTRAL) @map("tipo")
-  startsAt  DateTime? @map("inicia_en") @db.Date
-  endsAt    DateTime? @map("termina_en") @db.Date
+  startsAt  DateTime?  @map("inicia_en") @db.Date
+  endsAt    DateTime?  @map("termina_en") @db.Date
   /// Periodo que se propone por omisión al crear cursos. Solo uno a la vez por tipo.
-  isCurrent Boolean   @default(false) @map("actual")
+  isCurrent Boolean    @default(false) @map("actual")
   /// Cerrado: ya no se crean cursos en él.
-  closed    Boolean   @default(false) @map("cerrado")
+  closed    Boolean    @default(false) @map("cerrado")
   courses   Course[]
-  createdAt DateTime  @default(now()) @map("creado_en")
+  createdAt DateTime   @default(now()) @map("creado_en")
 
   @@map("periodos")
 }
@@ -182,6 +184,7 @@ model Course {
   enrollments  Enrollment[]
   posts        Post[]
   assignments  Assignment[]
+  quizzes      Quiz[]
   topics       CourseTopic[]
   materials    CourseMaterial[]
   createdAt    DateTime         @default(now()) @map("creado_en")
@@ -397,4 +400,110 @@ model StudyGroupMember {
   @@id([groupId, userId])
   @@index([userId])
   @@map("miembros_grupo_estudio")
+}
+
+// ───────────── Cuestionarios y encuestas (estilo Google Forms) ─────────────
+
+/// Cuestionario calificado o encuesta sin respuestas correctas.
+enum QuizKind {
+  QUIZ
+  SURVEY
+}
+
+/// Cuándo ve el alumno su resultado (solo cuestionarios calificados).
+enum QuizResultsVisibility {
+  ON_SUBMIT
+  AFTER_CLOSE
+  NEVER
+}
+
+enum QuizQuestionType {
+  SINGLE
+  MULTIPLE
+  TRUE_FALSE
+  SHORT
+  PARAGRAPH
+}
+
+model Quiz {
+  id                String                @id @default(uuid())
+  courseId          String                @map("curso_id")
+  course            Course                @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title             String                @map("titulo") @db.VarChar(150)
+  description       String?               @map("descripcion") @db.Text
+  kind              QuizKind              @default(QUIZ) @map("tipo")
+  /// Sin fecha = abierto desde que se publica / sin cierre.
+  opensAt           DateTime?             @map("abre_en")
+  closesAt          DateTime?             @map("cierra_en")
+  /// Minutos para responder desde que el alumno empieza. Null = sin límite.
+  timeLimitMinutes  Int?                  @map("limite_minutos")
+  resultsVisibility QuizResultsVisibility @default(ON_SUBMIT) @map("ver_resultados")
+  /// Borrador hasta que el docente lo publica; los alumnos solo ven los publicados.
+  published         Boolean               @default(false) @map("publicado")
+  publishedAt       DateTime?             @map("publicado_en")
+  questions         QuizQuestion[]
+  attempts          QuizAttempt[]
+  createdAt         DateTime              @default(now()) @map("creado_en")
+  updatedAt         DateTime              @updatedAt @map("actualizado_en")
+
+  @@index([courseId, published])
+  @@map("cuestionarios")
+}
+
+model QuizQuestion {
+  id        String           @id @default(uuid())
+  quizId    String           @map("cuestionario_id")
+  quiz      Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  position  Int              @map("posicion")
+  type      QuizQuestionType @map("tipo")
+  prompt    String           @map("enunciado") @db.Text
+  /// 0 en encuestas.
+  points    Int              @default(1) @map("puntos")
+  required  Boolean          @default(true) @map("obligatoria")
+  /// Opciones [{ id, text }] (opción múltiple, casillas y verdadero/falso).
+  options   Json?            @map("opciones")
+  /// Respuesta correcta: { option } | { options: [] } | { accepted: [] }. Null en párrafo y encuestas.
+  answerKey Json?            @map("respuesta_correcta")
+  answers   QuizAnswer[]
+
+  @@index([quizId, position])
+  @@map("preguntas_cuestionario")
+}
+
+/// Un solo intento por alumno.
+model QuizAttempt {
+  id          String       @id @default(uuid())
+  quizId      String       @map("cuestionario_id")
+  quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  studentId   String       @map("alumno_id")
+  student     User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  startedAt   DateTime     @default(now()) @map("iniciado_en")
+  /// Límite para enviar (tiempo límite o cierre, lo que llegue antes). Null = sin límite.
+  deadlineAt  DateTime?    @map("vence_en")
+  submittedAt DateTime?    @map("enviado_en")
+  score       Decimal?     @map("puntaje") @db.Decimal(7, 2)
+  maxScore    Int          @default(0) @map("puntaje_maximo")
+  /// Hay respuestas de párrafo (o cortas sin clave) que el docente debe calificar.
+  needsReview Boolean      @default(false) @map("por_revisar")
+  answers     QuizAnswer[]
+
+  @@unique([quizId, studentId])
+  @@index([studentId])
+  @@map("intentos_cuestionario")
+}
+
+model QuizAnswer {
+  id         String       @id @default(uuid())
+  attemptId  String       @map("intento_id")
+  attempt    QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String       @map("pregunta_id")
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  /// { option } | { options: [] } | { text }
+  value      Json         @map("valor")
+  /// Null = pendiente de calificar a mano.
+  points     Decimal?     @map("puntos") @db.Decimal(6, 2)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+  @@map("respuestas_cuestionario")
 }

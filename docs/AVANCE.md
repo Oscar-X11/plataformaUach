@@ -15,10 +15,10 @@
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
 | Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa y probada con la base de datos real |
 | Fase 2 | Valor institucional (calendario, repositorio, administración) | ✅ Completa y probada con la base de datos real |
-| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, asistencia, rúbricas, foros…) | ⬜ Pendiente |
+| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, asistencia, rúbricas, foros…) | 🔄 En proceso: cuestionarios y encuestas listos |
 | Fase 4 | Actividades y herramientas complementarias de Moodle (taller, wiki, insignias, reutilizar cursos…) | ⬜ Pendiente |
 
-**Siguiente paso:** instalar en el servidor Debian y empezar la Fase 3 por cuestionarios y asistencia.
+**Siguiente paso:** seguir la Fase 3 con asistencia y rúbricas; instalar en el servidor Debian cuando se quiera usar con personas reales.
 
 ### Estado del entorno
 
@@ -43,7 +43,8 @@
 | 2026-11-23 | ✅ No se implementan videollamadas ni videoclases. Para reuniones en línea, el docente o el grupo de estudio pega el enlace en «Lugar y horario». |
 | 2026-11-23 | ✅ Licenciaturas e ingenierías son **cuatrimestrales**; el bachillerato, **semestral**. |
 | 2026-11-23 | ✅ En la web no se usa la palabra «facultad»: los grupos de carreras se llaman **nivel** (Licenciaturas, Ingenierías, Preparatoria). |
-| — | ❓ Cómo impedir que alguien se registre con la matrícula de otro alumno: cargar la lista oficial de matrículas o que un administrador apruebe cada cuenta nueva. |
+| 2026-11-23 | ✅ **No hay registro abierto.** Las cuentas de alumnos solo se crean al importar el Excel oficial; así nadie puede usar la matrícula de otro. |
+| 2026-11-23 | ✅ Cuestionarios estilo Google Forms: exámenes calificados y encuestas, un solo intento, y sus calificaciones van **aparte** de las de las tareas. |
 
 ---
 
@@ -63,7 +64,7 @@
 - ✅ Modelo de datos en `schema.prisma`: Faculty, Career, Subject, User, Course, Enrollment, Post, Comment, Assignment, Submission, SubmissionFile, Notification, Resource, CourseTopic, CourseMaterial, StudyGroup, StudyGroupMember.
 - ✅ Migración inicial única `20261120120000_init` (sustituye a las tres anteriores), con tablas y columnas en español.
 - ✅ Seed con catálogos académicos de ejemplo y el administrador inicial (`SEED_ADMIN_USERNAME`).
-- ✅ Registro (solo alumnos, con matrícula), login, logout y `GET /auth/me`.
+- ✅ Login, logout y `GET /auth/me`. (El registro abierto se retiró el 2026-11-23: las cuentas se crean al importar el Excel.)
 - ✅ Cambio de contraseña (`POST /auth/change-password`) y restablecimiento por un administrador (`POST /users/:id/reset-password`).
 - ✅ Contraseña temporal: el backend bloquea con 403 todo excepto las rutas de cuenta hasta que se cambie.
 - ✅ Catálogo público de facultades y carreras.
@@ -127,7 +128,7 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 
 | # | Funcionalidad | Qué incluye | Notas para el servidor de 4 GB |
 | --- | --- | --- | --- |
-| 1 | **Cuestionarios / exámenes** | Banco de preguntas por curso (opción múltiple, verdadero/falso, respuesta corta, numérica, relacionar, ensayo); intentos, tiempo límite, ventana de fechas, orden aleatorio, calificación automática y revisión manual del ensayo. | Calificar en el backend; sin cálculos pesados. |
+| 1 | ✅ **Cuestionarios y encuestas** | Hecho (estilo Google Forms): opción múltiple, casillas, verdadero/falso, respuesta corta y párrafo; fechas de apertura y cierre, tiempo límite con envío automático, un intento, guardado automático, calificación automática, revisión manual, cuándo ve el alumno su resultado, resumen por pregunta y CSV. Las calificaciones van aparte. **No incluye** (decisión del usuario): varios intentos ni orden aleatorio. | Califica el backend; sin cálculos pesados. |
 | 2 | **Asistencia** | Sesiones por curso, pase de lista (presente, retardo, falta, justificada), código o QR que el alumno captura en clase, porcentaje por alumno y exportación CSV. | Ligero. |
 | 3 | **Rúbricas y guías de evaluación** | Criterios con niveles y puntos; el docente califica una tarea marcando niveles; el alumno ve la rúbrica antes y después. | Ligero. |
 | 4 | **Libro de calificaciones avanzado** | Categorías con ponderación (tareas 40 %, exámenes 60 %…), escalas y letras, calificación final del periodo, ocultar/bloquear notas. | Amplía lo que ya existe. |

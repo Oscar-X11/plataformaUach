@@ -2,14 +2,12 @@ import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@ne
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { plainToInstance } from 'class-transformer';
-import { validateSync } from 'class-validator';
 import { AllowPendingPassword } from '../common/decorators/allow-pending-password.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { EnvironmentVariables, validateEnv } from '../config/env.validation';
 import { PrismaService } from '../database/prisma.service';
 import { generateTemporaryPassword } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
 import { SessionStateService } from './session-state.service';
 import { TokenService } from './token.service';
 
@@ -108,14 +106,6 @@ describe('Matrícula / número de empleado', () => {
   it('se normaliza a mayúsculas sin espacios', () => {
     const dto = plainToInstance(LoginDto, { username: '  a2023-0148 ', password: 'x' });
     expect(dto.username).toBe('A2023-0148');
-  });
-
-  it('el registro rechaza caracteres no permitidos', () => {
-    const base = { password: 'secreta123', fullName: 'Ana Ruiz' };
-    const ok = plainToInstance(RegisterDto, { ...base, username: 'a2023-0148' });
-    const bad = plainToInstance(RegisterDto, { ...base, username: 'ana@uach.mx' });
-    expect(validateSync(ok)).toHaveLength(0);
-    expect(validateSync(bad).map((error) => error.property)).toEqual(['username']);
   });
 });
 

@@ -5,7 +5,7 @@
  *
  * - Escucha en el mismo puerto que el backend real (PORT o 4000), así que
  *   el proxy /api de Next.js no necesita cambios.
- * - Implementa: POST /auth/login, POST /auth/register, POST /auth/logout,
+ * - Implementa: POST /auth/login, POST /auth/logout,
  *   GET /auth/me, POST /auth/change-password, POST /users/:id/reset-password,
  *   GET /academic/faculties, GET /academic/subjects y los endpoints de /courses.
  * - Tareas, entregas, tablón, notificaciones, perfil, usuarios y dashboard
@@ -313,39 +313,6 @@ const routes = {
     }
     const session = createSession(entry.user);
     send(res, 200, session, { "Set-Cookie": sessionCookie(session) });
-  },
-
-  "POST /auth/register": async (req, res) => {
-    const body = await readJson(req);
-    const username = normalizeUsername(body.username);
-    const password = String(body.password ?? "");
-    const fullName = String(body.fullName ?? "").trim();
-    const errors = [];
-    if (!/^[A-Z0-9-]{3,30}$/.test(username)) {
-      errors.push("La matrícula o número de empleado solo admite letras, números y guiones (3 a 30)");
-    }
-    errors.push(...passwordErrors(password));
-    if (fullName.length < 3) errors.push("Escribe tu nombre completo");
-    if (errors.length) return send(res, 400, { statusCode: 400, message: errors });
-    if (users.has(username)) {
-      return send(res, 409, { statusCode: 409, message: "Ya existe una cuenta con esa matrícula" });
-    }
-
-    const user = {
-      id: randomUUID(),
-      username,
-      fullName,
-      role: "STUDENT",
-      status: "ACTIVE",
-      mustChangePassword: false,
-      avatarUrl: null,
-      createdAt: new Date().toISOString(),
-      facultyId: body.facultyId || null,
-      careerId: body.careerId || null,
-    };
-    users.set(username, { password, user });
-    const session = createSession(user);
-    send(res, 201, session, { "Set-Cookie": sessionCookie(session) });
   },
 
   "POST /auth/logout": (_req, res) =>

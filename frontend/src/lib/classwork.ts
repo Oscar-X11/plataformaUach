@@ -128,7 +128,8 @@ export type NotificationType =
   | "COMMENT_CREATED"
   | "MATERIAL_CREATED"
   | "RESOURCE_REVIEWED"
-  | "COURSE_ASSIGNED";
+  | "COURSE_ASSIGNED"
+  | "QUIZ_PUBLISHED";
 
 export interface NotificationView {
   id: string;

@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,7 +8,6 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
 import { SessionStateService } from './session-state.service';
 import { TokenService } from './token.service';
 
@@ -42,42 +40,6 @@ export class AuthService {
     private readonly tokens: TokenService,
     private readonly sessions: SessionStateService,
   ) {}
-
-  async register(dto: RegisterDto) {
-    await this.assertAcademicData(dto.facultyId, dto.careerId);
-
-    const existing = await this.prisma.user.findUnique({
-      where: { username: dto.username },
-      select: { id: true },
-    });
-    if (existing) {
-      throw new ConflictException('Ya existe una cuenta con esa matrícula');
-    }
-
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          username: dto.username,
-          passwordHash: await bcrypt.hash(dto.password, BCRYPT_ROUNDS),
-          fullName: dto.fullName,
-          role: 'STUDENT',
-          facultyId: dto.facultyId,
-          careerId: dto.careerId,
-        },
-        select: SESSION_SELECT,
-      });
-      return this.createSession(user);
-    } catch (error) {
-      // Dos registros simultáneos con la misma matrícula.
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException('Ya existe una cuenta con esa matrícula');
-      }
-      throw error;
-    }
-  }
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
@@ -158,32 +120,5 @@ export class AuthService {
       sv: sessionVersion,
     });
     return { user, accessToken: token, expiresAt };
-  }
-
-  private async assertAcademicData(facultyId?: string, careerId?: string) {
-    if (!careerId) {
-      if (facultyId) {
-        const faculty = await this.prisma.faculty.findUnique({
-          where: { id: facultyId },
-          select: { id: true },
-        });
-        if (!faculty) throw new BadRequestException('El nivel no existe');
-      }
-      return;
-    }
-
-    const career = await this.prisma.career.findUnique({
-      where: { id: careerId },
-      select: { facultyId: true },
-    });
-
-    if (!career) {
-      throw new BadRequestException('La carrera no existe');
-    }
-    if (facultyId && career.facultyId !== facultyId) {
-      throw new BadRequestException(
-        'La carrera no pertenece al nivel seleccionado',
-      );
-    }
   }
 }

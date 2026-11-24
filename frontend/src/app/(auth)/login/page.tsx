@@ -83,9 +83,9 @@ function LoginForm() {
       </form>
 
       <p className="mt-8 text-center text-sm text-uach-muted">
-        ¿Eres alumno y no tienes cuenta?{" "}
+        ¿Es tu primera vez?{" "}
         <Link href="/registro" className="font-medium text-uach-teal hover:text-uach-tealDark">
-          Regístrate
+          Cómo entrar
         </Link>
       </p>
     </>

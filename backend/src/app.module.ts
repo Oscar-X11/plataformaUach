@@ -19,6 +19,7 @@ import { GroupsModule } from './groups/groups.module';
 import { MaterialsModule } from './materials/materials.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ProfileModule } from './profile/profile.module';
+import { QuizzesModule } from './quizzes/quizzes.module';
 import { ReportsModule } from './reports/reports.module';
 import { RepositoryModule } from './repository/repository.module';
 import { StreamModule } from './stream/stream.module';
@@ -41,6 +42,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AcademicModule,
     CoursesModule,
     ClassworkModule,
+    QuizzesModule,
     NotificationsModule,
     StreamModule,
     ProfileModule,

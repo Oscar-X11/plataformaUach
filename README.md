@@ -29,13 +29,12 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | Método | Ruta | Acceso | Descripción |
 | --- | --- | --- | --- |
 | GET | `/` | Público | Comprobación de disponibilidad |
-| POST | `/auth/register` | Público (5/min) | Registro de **alumnos** (el rol no se puede elegir) |
 | POST | `/auth/login` | Público (5/min) | Inicio de sesión; crea la cookie `uach_session` |
 | POST | `/auth/logout` | Público | Borra la cookie de sesión |
 | GET | `/auth/me` | Autenticado | Usuario actual |
 | POST | `/auth/change-password` | Autenticado | Cambia la contraseña propia (también la temporal) |
 | POST | `/users/:id/reset-password` | Administrador | Asigna una contraseña temporal al usuario |
-| GET | `/academic/faculties` | Público | Facultades y carreras (para el registro) |
+| GET | `/academic/faculties` | Autenticado | Niveles y sus carreras |
 | GET | `/academic/subjects` | Docente, admin | Materias con su carrera (para crear cursos) |
 | GET | `/courses` | Autenticado | Cursos propios: los que imparte, en los que está inscrito o todos (admin) |
 | POST | `/courses` | Docente | Crea un curso con código de invitación |
@@ -52,6 +51,12 @@ El análisis funcional, las ventanas previstas y la hoja de ruta están en [`doc
 | PATCH | `/assignments/:id/submissions/:studentId` | Docente del curso, admin | Calificar (`grade`, `feedback`) y devolver (`return: true`) |
 | GET | `/classwork/overview` | Alumno, docente | Mis tareas (alumno) o entregas por calificar (docente) |
 | GET | `/courses/:id/grades` · `/grades/export` | Miembro / docente | Calificaciones; CSV para Excel |
+| GET/POST | `/courses/:id/quizzes` | Miembro / docente | Cuestionarios y encuestas del curso; crear (borrador) |
+| GET/PATCH/DELETE | `/quizzes/:id` | Miembro / docente | Ver (el alumno sin respuestas correctas), editar, borrar |
+| POST | `/quizzes/:id/publish` | Docente | Publicar u ocultar (avisa a los alumnos la primera vez) |
+| POST/PUT/POST | `/quizzes/:id/start` · `/answers` · `/submit` | Alumno | Empezar, guardado automático y envío (un intento) |
+| GET | `/quizzes/:id/results` · `/results/export` · `/attempts/:attemptId` | Docente | Resumen, CSV y respuestas de un alumno |
+| PATCH | `/quiz-answers/:id` | Docente | Calificar a mano una respuesta |
 | GET/POST | `/courses/:id/posts` | Miembro / docente | Tablón; publicar aviso |
 | DELETE | `/posts/:id` · `/comments/:id` | Autor o docente | Borrar aviso o comentario |
 | POST | `/posts/:id/comments` | Miembro del curso | Comentar |
@@ -109,7 +114,7 @@ Ventanas funcionales:
 
 | Grupo | Rutas |
 | --- | --- |
-| `(auth)` | `/login`, `/registro`, `/recuperar-contrasena` |
+| `(auth)` | `/login`, `/registro` (primer acceso; no hay registro abierto), `/recuperar-contrasena` |
 | `(cuenta)` | `/cambiar-contrasena` |
 | `(dashboard)` | `/dashboard` (alumno y docente), `/cursos`, `/cursos/[cursoId]` (tablón), `/cursos/[cursoId]/tareas`, `/cursos/[cursoId]/tareas/[tareaId]`, `/cursos/[cursoId]/recursos`, `/cursos/[cursoId]/personas`, `/cursos/[cursoId]/calificaciones`, `/entregas`, `/calendario`, `/repositorio`, `/grupos-estudio`, `/grupos-estudio/[grupoId]`, `/notificaciones`, `/perfil` |
 | `(admin)` | `/administracion` (panel), `/administracion/usuarios`, `/administracion/cursos`, `/administracion/carreras`, `/administracion/periodos`, `/administracion/reportes` |
@@ -212,7 +217,7 @@ Plataforma_UACH/
 │   ├── prisma/              # schema.prisma, migrations/ y seed.ts
 │   └── src/
 │       ├── academic/        # Catálogo de facultades, carreras y materias
-│       ├── auth/            # Registro, login, logout, sesión, cambio de contraseña
+│       ├── auth/            # Login, logout, sesión, cambio de contraseña
 │       ├── classwork/       # Tareas, entregas, calificaciones y calendario
 │       ├── common/          # Decoradores, guards y tipos compartidos
 │       ├── config/          # Validación de variables de entorno
@@ -246,5 +251,4 @@ Plataforma_UACH/
 - **Instalar en el servidor Debian** (4 GB): swap, respaldos de la BD y de `storage/`, imágenes construidas fuera del servidor.
 - **Cargar el catálogo oficial** desde `/administracion/carreras` y dar de alta los periodos en `/administracion/periodos`.
 - **Pendientes técnicos:** refresh token y pruebas e2e.
-- **Por decidir:** cómo evitar registros con la matrícula de otro alumno.
 - **Fase 3:** cuestionarios, asistencia, rúbricas, libro de calificaciones avanzado y foros (detalle en [`docs/AVANCE.md`](docs/AVANCE.md)).

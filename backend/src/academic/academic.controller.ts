@@ -1,13 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { Public } from '../common/decorators/public.decorator';
 import { PrismaService } from '../database/prisma.service';
 
 @Controller('academic')
 export class AcademicController {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Catálogo público de facultades y carreras (usado en el registro). */
-  @Public()
+  /** Niveles con sus carreras (requiere sesión; ya no hay registro abierto). */
   @Get('faculties')
   faculties() {
     return this.prisma.faculty.findMany({

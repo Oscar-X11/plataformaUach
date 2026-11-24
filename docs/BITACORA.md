@@ -31,7 +31,18 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Reporte del día en `docs/REPORTE_2026-11-23.md`.
 - Commit `fb3654e`: sesiones invalidables, `/health`, «Carreras» y «nivel», lugar y horario en cursos y reporte del día.
 
+- **Registro abierto retirado:** se quitó `POST /auth/register` y el catálogo público de niveles. `/registro` ahora es «Primer acceso»: explica que la cuenta la crea la escuela al importar el Excel. El login dice «¿Es tu primera vez? Cómo entrar».
+- **Cuestionarios y encuestas estilo Google Forms** (migración `20261124100000_cuestionarios`, módulo `backend/src/quizzes`, pestaña «Cuestionarios» del curso):
+  - Tipos: opción múltiple, casillas (todo o nada), verdadero/falso, respuesta corta (sin mayúsculas ni acentos; sin clave la califica el docente) y párrafo (manual).
+  - Ajustes: apertura y cierre, tiempo límite (envío automático al terminar), cuándo ve el alumno su resultado (al enviar, después del cierre o nunca). Un solo intento.
+  - El alumno responde con guardado automático; el docente ve resumen por pregunta, lista de alumnos, respuestas individuales con calificación manual y CSV.
+  - Encuestas: sin puntos ni respuestas correctas; conteo por opción. Borrador hasta publicar; al publicar se avisa a los alumnos (`QUIZ_PUBLISHED`).
+  - Con respuestas, las preguntas quedan fijas. Calificaciones aparte del libro de tareas.
+- Probado de punta a punta con la BD real: 21/21 comprobaciones de la API y 11/11 de pantallas (docente y alumno). Datos de prueba borrados. 96 pruebas unitarias.
+
 ### Decisiones
+- **Solo alumnos importados:** no hay registro abierto; evita que alguien use la matrícula de otro.
+- Cuestionarios: exámenes y encuestas; fechas, tiempo límite y visibilidad del resultado; un intento; calificaciones aparte (decisiones del usuario).
 - **No se implementan videollamadas.** Las reuniones en línea se resuelven pegando el enlace en «Lugar y horario».
 - Licenciaturas e ingenierías: cuatrimestrales. Bachillerato: semestral (lo confirmó el usuario).
 - El sitio no publica facultades. Se agrupa como él: «Licenciaturas» (`LIC`), «Ingenierías» (`ING`) y «Preparatoria Rosario Castellanos» (`PREP`).
@@ -45,7 +56,8 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Detener la tarea del backend no siempre cierra el proceso de Node: revisar el puerto 4000 antes de relanzarlo.
 
 ### Pendiente
-- Capturar las materias reales de cada carrera.
+- Capturar las materias reales de cada carrera (pendiente por decisión del usuario).
+- Cuestionarios en el calendario y en el panel del alumno (todavía no aparecen ahí).
 - El periodo `2026-2` (anterior al cambio) quedó como cuatrimestral; revisarlo o cerrarlo desde Periodos.
 
 ---

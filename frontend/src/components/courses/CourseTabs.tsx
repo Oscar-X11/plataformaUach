@@ -7,6 +7,7 @@ import { FOCUS_RING } from "@/components/dashboard/tone";
 const TABS = [
   { label: "Tablón", segment: "" },
   { label: "Trabajo de clase", segment: "/tareas" },
+  { label: "Cuestionarios", segment: "/cuestionarios" },
   { label: "Personas", segment: "/personas" },
   { label: "Calificaciones", segment: "/calificaciones" },
   { label: "Recursos", segment: "/recursos" },

@@ -9,7 +9,6 @@ import { EnvironmentVariables } from '../config/env.validation';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
 import { SESSION_COOKIE } from './token.service';
 
 /** Máximo 5 intentos por minuto por IP en login, registro y cambio de contraseña. */
@@ -22,17 +21,9 @@ export class AuthController {
     private readonly config: ConfigService<EnvironmentVariables, true>,
   ) {}
 
-  @Public()
-  @Throttle(AUTH_THROTTLE)
-  @Post('register')
-  async register(
-    @Body() dto: RegisterDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const session = await this.authService.register(dto);
-    this.setSessionCookie(res, session.accessToken, session.expiresAt);
-    return session;
-  }
+  // No hay registro abierto: las cuentas de alumnos solo se crean al importar el
+  // Excel de la universidad (POST /users/import-students) y las de personal, desde
+  // la administración. Así nadie puede apropiarse de la matrícula de otro alumno.
 
   @Public()
   @Throttle(AUTH_THROTTLE)
