@@ -59,6 +59,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Notificaciones que no se marcaban como leídas:** la API sí las marcaba, pero Next.js mostraba al regresar una copia en caché de hasta 30 s. Se desactivó esa caché para páginas dinámicas (`experimental.staleTimes.dynamic = 0`), las peticiones usan `keepalive` para llegar aunque el clic navegue, y la campana se actualiza al instante con un evento del navegador (`lib/notifications.ts`).
 - **Sin emojis en la web:** 19 emojis reemplazados por íconos de lucide (palomita en «Estás al día», «Todo leído», etc.) o por texto sobrio. `DESIGN.md` actualizado.
 - Probado con un alumno de prueba (10/10). Datos de prueba borrados.
+- Commit `081f1f3`: avisos y cuestionarios en el inicio, notificaciones leídas, sin emojis y «Cambiar contraseña» solo en Mi perfil.
 
 ### Decisiones
 - Sin emojis en toda la interfaz; íconos de lucide solo donde aporten (decisión del usuario).
