@@ -51,6 +51,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - Encabezado, lista de clases, panel, administración de cursos, reportes y su CSV muestran «ISC · 4.º cuat».
   - Probado de punta a punta con una clase de bachillerato (BFM, 2.º semestre). 98 pruebas unitarias.
 - Detener el backend dejaba vivos los procesos `nest start --watch` (había 16 acumulados y bloqueaban el motor de Prisma). Se cerraron todos.
+- Commit `3e7cb3e`: clase por carrera y cuatrimestre/semestre, materia opcional.
 
 ### Decisiones
 - La clase la define la **carrera** y el número de cuatrimestre o semestre; la materia es opcional (lo pidió el usuario).
