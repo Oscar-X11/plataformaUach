@@ -44,6 +44,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **«Crear clase» como en Classroom** (migración `20261124120000_descripcion_cursos`): nombre de la clase, descripción, nivel, materia (solo las del nivel, agrupadas por carrera) y aula. El periodo se propone solo (el actual del tipo del nivel) y se puede cambiar. La descripción se ve en el encabezado de la clase y «Lugar y horario» pasó a llamarse **Aula**.
   - Causa de «el periodo no sirve»: el campo estaba antes que la materia pero bloqueado hasta elegirla. Ahora depende del nivel y aparece al final, ya seleccionado.
 - Docente de prueba en la BD real: `DOCENTE-PRUEBA` (contraseña fija, sin cambio obligatorio).
+- Commit `8f5d3e2`: «Crear clase» como en Classroom (nivel, materia, descripción y aula).
 
 ### Decisiones
 - **Solo alumnos importados:** no hay registro abierto; evita que alguien use la matrícula de otro.
