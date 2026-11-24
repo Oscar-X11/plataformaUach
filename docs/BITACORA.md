@@ -69,6 +69,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 
 - **Revisión completa del sistema:** compilación y lint sin errores ni advertencias (se corrigieron 4 advertencias del backend), 102 pruebas unitarias, 9 e2e y un recorrido de 82 comprobaciones con los tres roles: cuentas y contraseña temporal, clase, aviso y comentario, tarea con archivo entregada y calificada, tema y material, cuestionario y encuesta, repositorio con aprobación, grupo de estudio, todas las pantallas de alumno, docente y administración, páginas públicas, bloqueos de acceso y exportaciones CSV. Datos y archivos de prueba borrados.
   - Ojo al revisar HTML de Next.js: la página «no encontrado» viaja en los scripts de todas las páginas; hay que buscar solo en el contenido visible.
+- Commit `e300bb2`: cuestionarios en «Lo que sigue» y calendario, descripción editable, sesión deslizante, pruebas e2e y revisión completa.
 
 ### Decisiones
 - **No se implementa asistencia** (decisión del usuario).
