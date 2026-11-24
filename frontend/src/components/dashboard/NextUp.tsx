@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, CheckCircle2, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardCheck, Upload } from "lucide-react";
 import { FOCUS_RING, TONE_BG } from "@/components/dashboard/tone";
 import { dueUrgency, formatTimeLeft, type DueUrgency } from "@/lib/dashboard/format";
 import type { DashboardAssignment } from "@/lib/dashboard/types";
@@ -15,6 +15,10 @@ const ON_DARK: Record<DueUrgency, { chip: string; text: string; label: string }>
   soon: { chip: "bg-amber-200/15 text-amber-100", text: "text-amber-100", label: "Vence mañana" },
   later: { chip: "bg-white/10 text-white/85", text: "text-white/85", label: "Próxima" },
 };
+
+/** Texto del botón principal según la actividad. */
+const ACTION_LABEL = { assignment: "Abrir y entregar", quiz: "Responder cuestionario", survey: "Responder encuesta" } as const;
+const KIND_LABEL = { assignment: "Tarea", quiz: "Cuestionario", survey: "Encuesta" } as const;
 
 export function NextUp({
   items,
@@ -72,16 +76,23 @@ export function NextUp({
               <span className="text-sm text-white/60" aria-hidden>
                 ·
               </span>
-              <span className="text-sm tabular-nums text-white/70">{hero.points} pts</span>
+              <span className="text-sm text-white/70">
+                {KIND_LABEL[hero.kind]}
+                {hero.kind !== "survey" && <span className="tabular-nums"> · {hero.points} pts</span>}
+              </span>
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link
-                href={`/cursos/${hero.courseId}/tareas/${hero.id}`}
+                href={hero.href}
                 className={`press inline-flex h-11 items-center gap-2 rounded-xl bg-uach-teal px-5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-uach-teal/85 ${FOCUS_RING} focus-visible:ring-offset-uach-petrol`}
               >
-                <Upload className="h-4 w-4" strokeWidth={2} aria-hidden />
-                Abrir y entregar
+                {hero.kind === "assignment" ? (
+                  <Upload className="h-4 w-4" strokeWidth={2} aria-hidden />
+                ) : (
+                  <ClipboardCheck className="h-4 w-4" strokeWidth={2} aria-hidden />
+                )}
+                {ACTION_LABEL[hero.kind]}
               </Link>
             </div>
           </motion.div>
@@ -121,7 +132,7 @@ export function NextUp({
                     transition={{ duration: 0.24, ease: EASE_OUT }}
                   >
                     <Link
-                      href={`/cursos/${item.courseId}/tareas/${item.id}`}
+                      href={item.href}
                       className={`press-soft group flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-white/[0.07] ${FOCUS_RING} focus-visible:ring-offset-uach-petrol`}
                     >
                       <span className={`h-2 w-2 shrink-0 rounded-full ${TONE_BG[item.tone]} ring-2 ring-white/25`} aria-hidden />

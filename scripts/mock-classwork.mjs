@@ -656,7 +656,7 @@ export function createClasswork(ctx) {
       for (const a of list) {
         const row = subOf(a.id, user.id);
         const state = submissionState(a.dueAt, row, current);
-        const item = { id: a.id, title: a.title, points: a.points, ...base };
+        const item = { id: a.id, kind: "assignment", href: `/cursos/${course.id}/tareas/${a.id}`, title: a.title, points: a.points, ...base };
         if (state === "pending" || state === "missing") {
           if (a.dueAt) pending.push({ ...item, dueAt: a.dueAt, status: state === "missing" ? "LATE" : "ASSIGNED" });
         } else {

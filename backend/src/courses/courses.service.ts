@@ -10,7 +10,7 @@ import { TokenPayload } from '../auth/token.service';
 import { PrismaService } from '../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CourseAccessService, CourseRole } from './course-access.service';
-import { CreateCourseDto, UpdateMeetingInfoDto } from './dto/create-course.dto';
+import { CreateCourseDto, UpdateDescriptionDto, UpdateMeetingInfoDto } from './dto/create-course.dto';
 
 // Sin caracteres que se confunden al dictarlos o copiarlos del pizarrón (0/O, 1/I/L).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -241,6 +241,17 @@ export class CoursesService {
     const row = await this.prisma.course.update({
       where: { id: courseId },
       data: { meetingInfo: dto.meetingInfo ?? null },
+      select: COURSE_SELECT,
+    });
+    return this.toSummary(row, role);
+  }
+
+  /** El docente (o un admin) cambia la descripción de la clase. */
+  async updateDescription(courseId: string, dto: UpdateDescriptionDto, user: TokenPayload) {
+    const role = await this.access.assertCanManage(courseId, user);
+    const row = await this.prisma.course.update({
+      where: { id: courseId },
+      data: { description: dto.description ?? null },
       select: COURSE_SELECT,
     });
     return this.toSummary(row, role);

@@ -45,7 +45,27 @@ describe('TokenService', () => {
   it('firma y verifica tokens', () => {
     const { token, expiresAt } = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0 });
     expect(expiresAt.getTime()).toBeGreaterThan(Date.now());
-    expect(tokens.verify(token)).toEqual({ sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0 });
+    expect(tokens.verify(token)).toMatchObject({ sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0 });
+  });
+
+  const now = () => Math.floor(Date.now() / 1000);
+  const state = { role: 'STUDENT' as const, mustChangePassword: false };
+
+  it('renueva la sesión solo cuando el token tiene más de 15 minutos', () => {
+    const base = { sub: 'u1', role: 'STUDENT' as const, mustChangePassword: false, sv: 2 };
+    expect(tokens.renew({ ...base, iat: now() - 60, at: now() - 60 }, state)).toBeNull();
+    const renewed = tokens.renew({ ...base, iat: now() - 20 * 60, at: now() - 3600 }, state);
+    expect(renewed).not.toBeNull();
+    // Conserva la versión de sesión y el momento del inicio de sesión.
+    expect(tokens.verify(renewed!.token)).toMatchObject({ sub: 'u1', sv: 2, at: now() - 3600 });
+  });
+
+  it('nunca pasa del límite absoluto de la sesión (14 días)', () => {
+    const base = { sub: 'u1', role: 'STUDENT' as const, mustChangePassword: false, sv: 0 };
+    const started = now() - 14 * 86_400 + 600; // faltan 10 minutos para el límite
+    const renewed = tokens.renew({ ...base, iat: now() - 20 * 60, at: started }, state);
+    expect(renewed!.expiresAt.getTime()).toBe((started + 14 * 86_400) * 1000);
+    expect(tokens.renew({ ...base, iat: now() - 20 * 60, at: now() - 15 * 86_400 }, state)).toBeNull();
   });
 
   it('rechaza tokens manipulados', () => {

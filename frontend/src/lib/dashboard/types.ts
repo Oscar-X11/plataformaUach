@@ -28,8 +28,14 @@ export interface DashboardCourse {
   lastActivity: { label: string; at: string } | null;
 }
 
+/** Actividad con fecha: tarea, cuestionario o encuesta. */
+export type ActivityKind = "assignment" | "quiz" | "survey";
+
 export interface DashboardAssignment {
   id: string;
+  kind: ActivityKind;
+  /** Página de la actividad (tarea o cuestionario). */
+  href: string;
   title: string;
   courseId: string;
   courseName: string;

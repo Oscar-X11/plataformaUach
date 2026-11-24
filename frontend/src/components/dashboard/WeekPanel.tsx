@@ -159,7 +159,11 @@ export function WeekPanel({
                     ? "text-red-700"
                     : "text-amber-700";
                 return (
-                  <li key={item.id} className="flex items-start gap-3 py-1.5">
+                  <li key={item.id}>
+                    <Link
+                      href={item.href}
+                      className={`press-soft -mx-2 flex items-start gap-3 rounded-xl px-2 py-1.5 transition-colors duration-150 hover:bg-uach-canvas ${FOCUS_RING}`}
+                    >
                     <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} strokeWidth={2} aria-hidden />
                     <span className="min-w-0 flex-1">
                       <span
@@ -174,10 +178,11 @@ export function WeekPanel({
                         <span className="truncate">{item.courseName}</span>
                         <span aria-hidden>·</span>
                         <span className="shrink-0 tabular-nums">
-                          {item.done ? "Entregada" : formatDue(item.dueAt, now)}
+                          {item.done ? (item.kind === "assignment" ? "Entregada" : "Respondido") : formatDue(item.dueAt, now)}
                         </span>
                       </span>
                     </span>
+                    </Link>
                   </li>
                 );
               })

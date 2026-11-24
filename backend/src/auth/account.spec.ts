@@ -1,5 +1,6 @@
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import jwt from 'jsonwebtoken';
 import { Reflector } from '@nestjs/core';
 import { plainToInstance } from 'class-transformer';
 import { AllowPendingPassword } from '../common/decorators/allow-pending-password.decorator';
@@ -22,13 +23,17 @@ class Handlers {
   account() {}
 }
 
-function contextFor(handler: keyof Handlers, token: string) {
-  const request = { headers: { authorization: `Bearer ${token}` }, cookies: {} };
+function contextFor(handler: keyof Handlers, token: string, viaCookie = false) {
+  const request = viaCookie
+    ? { headers: {}, cookies: { uach_session: token } }
+    : { headers: { authorization: `Bearer ${token}` }, cookies: {} };
+  const response = { cookie: jest.fn() };
   return {
+    response,
     getHandler: () => Handlers.prototype[handler],
     getClass: () => Handlers,
-    switchToHttp: () => ({ getRequest: () => request }),
-  } as unknown as ExecutionContext;
+    switchToHttp: () => ({ getRequest: () => request, getResponse: () => response }),
+  } as unknown as ExecutionContext & { response: { cookie: jest.Mock } };
 }
 
 /** Guard con una BD simulada: `row` es lo que hay guardado del usuario u1. */
@@ -83,7 +88,7 @@ describe('Sesiones revocadas', () => {
     const { guard } = guardWith(activeRow({ role: 'TEACHER' }));
     const request = { headers: { authorization: `Bearer ${token}` }, cookies: {} } as { user?: { role: string } };
     const context = {
-      getHandler: () => Handlers.prototype.normal,
+      getHandler: () => Handlers.prototype.normal.bind(Handlers.prototype),
       getClass: () => Handlers,
       switchToHttp: () => ({ getRequest: () => request }),
     } as unknown as ExecutionContext;
@@ -114,5 +119,28 @@ describe('generateTemporaryPassword', () => {
     const values = new Set(Array.from({ length: 50 }, generateTemporaryPassword));
     expect(values.size).toBe(50);
     for (const value of values) expect(value).toMatch(/^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+  });
+});
+
+describe('Sesión deslizante', () => {
+  it('con cookie y token de más de 15 minutos, responde con una cookie renovada', async () => {
+    const old = Math.floor(Date.now() / 1000) - 20 * 60;
+    const token = jwt.sign(
+      { sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0, at: old, iat: old },
+      env.JWT_SECRET,
+      { algorithm: 'HS256', expiresIn: '8h' },
+    );
+    const { guard } = guardWith(activeRow());
+    const context = contextFor('normal', token, true);
+    await expect(guard.canActivate(context as unknown as ExecutionContext)).resolves.toBe(true);
+    expect(context.response.cookie).toHaveBeenCalledWith('uach_session', expect.any(String), expect.objectContaining({ httpOnly: true }));
+  });
+
+  it('un token reciente o enviado como Bearer no se renueva', async () => {
+    const fresh = tokens.sign({ sub: 'u1', role: 'STUDENT', mustChangePassword: false, sv: 0 }).token;
+    const { guard } = guardWith(activeRow());
+    const cookieContext = contextFor('normal', fresh, true);
+    await guard.canActivate(cookieContext as unknown as ExecutionContext);
+    expect(cookieContext.response.cookie).not.toHaveBeenCalled();
   });
 });

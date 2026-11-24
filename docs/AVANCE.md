@@ -18,7 +18,7 @@
 | Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, asistencia, rúbricas, foros…) | 🔄 En proceso: cuestionarios y encuestas listos |
 | Fase 4 | Actividades y herramientas complementarias de Moodle (taller, wiki, insignias, reutilizar cursos…) | ⬜ Pendiente |
 
-**Siguiente paso:** seguir la Fase 3 con asistencia y rúbricas; instalar en el servidor Debian cuando se quiera usar con personas reales.
+**Siguiente paso:** seguir la Fase 3 con rúbricas y foros; instalar en el servidor Debian cuando se quiera usar con personas reales.
 
 ### Estado del entorno
 
@@ -40,6 +40,7 @@
 | 2026-11-19 | ✅ Se inicia sesión con **matrícula** (alumnos) o **número de empleado** (docentes y administradores), guardados en el campo `User.username`. |
 | 2026-11-19 | ✅ La contraseña olvidada la restablece un **administrador** con una contraseña temporal que el usuario debe cambiar al entrar. |
 | 2026-11-19 | ✅ Privacidad en cursos: los alumnos no ven las matrículas de sus compañeros ni el código de invitación. |
+| 2026-11-23 | ✅ No se implementa asistencia (pase de lista). |
 | 2026-11-23 | ✅ No se implementan videollamadas ni videoclases. Para reuniones en línea, el docente o el grupo de estudio pega el enlace en «Lugar y horario». |
 | 2026-11-23 | ✅ Licenciaturas e ingenierías son **cuatrimestrales**; el bachillerato, **semestral**. |
 | 2026-11-23 | ✅ En la web no se usa la palabra «facultad»: los grupos de carreras se llaman **nivel** (Licenciaturas, Ingenierías, Preparatoria). |
@@ -129,7 +130,7 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 | # | Funcionalidad | Qué incluye | Notas para el servidor de 4 GB |
 | --- | --- | --- | --- |
 | 1 | ✅ **Cuestionarios y encuestas** | Hecho (estilo Google Forms): opción múltiple, casillas, verdadero/falso, respuesta corta y párrafo; fechas de apertura y cierre, tiempo límite con envío automático, un intento, guardado automático, calificación automática, revisión manual, cuándo ve el alumno su resultado, resumen por pregunta y CSV. Las calificaciones van aparte. **No incluye** (decisión del usuario): varios intentos ni orden aleatorio. | Califica el backend; sin cálculos pesados. |
-| 2 | **Asistencia** | Sesiones por curso, pase de lista (presente, retardo, falta, justificada), código o QR que el alumno captura en clase, porcentaje por alumno y exportación CSV. | Ligero. |
+| 2 | ~~**Asistencia**~~ | **No se implementa** (decisión del 2026-11-23). | — |
 | 3 | **Rúbricas y guías de evaluación** | Criterios con niveles y puntos; el docente califica una tarea marcando niveles; el alumno ve la rúbrica antes y después. | Ligero. |
 | 4 | **Libro de calificaciones avanzado** | Categorías con ponderación (tareas 40 %, exámenes 60 %…), escalas y letras, calificación final del periodo, ocultar/bloquear notas. | Amplía lo que ya existe. |
 | 5 | **Foros por curso** | Foros con temas e hilos, suscripción, foro de preguntas y respuestas, calificar participación. | Más estructurado que el tablón. |
@@ -160,8 +161,8 @@ Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo 
 - ⬜ Crear la base de datos MySQL, aplicar la migración (`npm run prisma:deploy`), cargar el seed y probar el backend real.
 - ⬜ Reemplazar el catálogo de ejemplo del seed por las facultades, carreras y materias oficiales.
 - ✅ Endpoint `GET /health` (BD y storage) y healthcheck del backend en Docker.
-- ⬜ Refresh token para sesiones largas.
+- ✅ Sesión deslizante: la cookie se renueva sola mientras el usuario está activo (cada token dura 8 h; límite absoluto `SESSION_MAX_DAYS`, 14 días). Respeta la revocación por `sessionVersion`.
 - ✅ Invalidar las sesiones abiertas al desactivar una cuenta o restablecer o cambiar su contraseña (`sessionVersion`).
 - ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
 - ⬜ Swap y respaldos automáticos en el servidor Debian.
-- 🔄 Pruebas automatizadas: unitarias de todos los módulos (77); faltan pruebas e2e con base de datos.
+- ✅ Pruebas automatizadas: 102 unitarias y 9 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).

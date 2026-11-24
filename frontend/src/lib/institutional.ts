@@ -4,6 +4,9 @@ import type { UserRole } from "@/lib/session";
 
 export interface CalendarItem {
   id: string;
+  /** Tarea, cuestionario o encuesta (estos últimos, en su fecha de cierre). */
+  kind: "assignment" | "quiz" | "survey";
+  href: string;
   title: string;
   dueAt: string;
   points: number;

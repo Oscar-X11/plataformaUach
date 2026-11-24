@@ -1,3 +1,4 @@
+import { CourseDescription } from "@/components/courses/CourseDescription";
 import { CourseMeetingInfo } from "@/components/courses/CourseMeetingInfo";
 import { CourseTabs } from "@/components/courses/CourseTabs";
 import { InvitationCode } from "@/components/courses/InvitationCode";
@@ -23,9 +24,11 @@ export default async function CursoLayout({
               {course.subject && ` · ${course.subject.name}`}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{course.name}</h1>
-            {course.description && (
-              <p className="mt-2 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-white/85">{course.description}</p>
-            )}
+            <CourseDescription
+              courseId={course.id}
+              initial={course.description ?? null}
+              canEdit={course.myRole !== "student"}
+            />
             <p className="mt-2 text-sm text-white/80">
               Periodo {course.term} · {course.teacher.fullName}
             </p>

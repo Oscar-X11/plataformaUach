@@ -118,7 +118,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
                       {list.slice(0, 3).map((item) => (
                         <li key={item.id}>
                           <Link
-                            href={`/cursos/${item.course.id}/tareas/${item.id}`}
+                            href={item.href}
                             title={`${item.title} · ${item.course.name}`}
                             className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] leading-tight text-uach-ink hover:bg-uach-canvas ${FOCUS_RING}`}
                           >
@@ -156,7 +156,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
                 {list.map((item) => (
                   <li key={item.id}>
                     <Link
-                      href={`/cursos/${item.course.id}/tareas/${item.id}`}
+                      href={item.href}
                       className="press-soft flex min-h-[52px] items-center gap-3 rounded-xl px-2 py-2 hover:bg-uach-canvas"
                     >
                       <span className={`h-2 w-2 shrink-0 rounded-full ${TONE_BG[toneFor(item.course.id)]}`} aria-hidden />

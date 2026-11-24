@@ -137,7 +137,7 @@ export function createInstitutional(ctx, classwork) {
           const student = user.role === "STUDENT";
           const row = submissions.find((s) => s.assignmentId === a.id && s.studentId === user.id);
           return {
-            id: a.id, title: a.title, dueAt: a.dueAt, points: a.points, course: { id: course.id, name: course.name },
+            id: a.id, kind: "assignment", href: `/cursos/${course.id}/tareas/${a.id}`, title: a.title, dueAt: a.dueAt, points: a.points, course: { id: course.id, name: course.name },
             state: student ? submissionState(a.dueAt, row) : null,
             submitted: student ? null : submissions.filter((s) => s.assignmentId === a.id && s.status !== "ASSIGNED").length,
             students: student ? null : course.enrollments.length,

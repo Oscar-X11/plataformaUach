@@ -1,15 +1,13 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Response } from 'express';
 import { AllowPendingPassword } from '../common/decorators/allow-pending-password.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
-import { EnvironmentVariables } from '../config/env.validation';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
-import { SESSION_COOKIE } from './token.service';
+import { SESSION_COOKIE, TokenService } from './token.service';
 
 /** Máximo 5 intentos por minuto por IP en login, registro y cambio de contraseña. */
 const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
@@ -18,7 +16,7 @@ const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly config: ConfigService<EnvironmentVariables, true>,
+    private readonly tokens: TokenService,
   ) {}
 
   // No hay registro abierto: las cuentas de alumnos solo se crean al importar el
@@ -64,18 +62,10 @@ export class AuthController {
   }
 
   private setSessionCookie(res: Response, token: string, expiresAt: Date) {
-    res.cookie(SESSION_COOKIE, token, {
-      ...this.cookieOptions(),
-      expires: expiresAt,
-    });
+    res.cookie(SESSION_COOKIE, token, this.tokens.cookieOptions(expiresAt));
   }
 
   private cookieOptions(): CookieOptions {
-    return {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: this.config.get('COOKIE_SECURE', { infer: true }),
-      path: '/',
-    };
+    return this.tokens.cookieOptions();
   }
 }

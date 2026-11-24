@@ -36,7 +36,11 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       validate: validateEnv,
     }),
     // Límite general: 120 peticiones por minuto por IP.
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
+    // THROTTLE_DISABLED=true solo lo usan las pruebas e2e (inician sesión muchas veces seguidas).
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+      skipIf: () => process.env.THROTTLE_DISABLED === 'true' && process.env.NODE_ENV === 'test',
+    }),
     DatabaseModule,
     AuthModule,
     AcademicModule,

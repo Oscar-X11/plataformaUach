@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Response } from 'express';
 import { SessionStateService } from '../../auth/session-state.service';
 import { SESSION_COOKIE, TokenService } from '../../auth/token.service';
 import { ALLOW_PENDING_PASSWORD_KEY } from '../decorators/allow-pending-password.decorator';
@@ -19,6 +20,9 @@ import { AuthRequest } from '../types/auth-request';
  * Además de la firma, comprueba en la BD (con caché corta) que la cuenta siga
  * activa y que la sesión no se haya revocado. El rol y la marca de contraseña
  * temporal se toman de la BD, no del token.
+ *
+ * Sesión deslizante: si la sesión viene en la cookie y el token tiene más de
+ * 15 minutos, responde con una cookie renovada (hasta SESSION_MAX_DAYS).
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -39,7 +43,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<AuthRequest>();
-    const token = this.extractToken(request);
+    const { token, fromCookie } = this.extractToken(request);
 
     if (!token) {
       throw new UnauthorizedException('Sesión requerida');
@@ -66,15 +70,23 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     request.user = { ...payload, ...state };
+
+    if (fromCookie) {
+      const renewed = this.tokens.renew(payload, state);
+      if (renewed) {
+        const response = context.switchToHttp().getResponse<Response>();
+        response.cookie(SESSION_COOKIE, renewed.token, this.tokens.cookieOptions(renewed.expiresAt));
+      }
+    }
     return true;
   }
 
-  private extractToken(request: AuthRequest): string | undefined {
+  private extractToken(request: AuthRequest): { token?: string; fromCookie: boolean } {
     const authorization = request.headers.authorization;
     if (authorization?.startsWith('Bearer ')) {
-      return authorization.slice(7);
+      return { token: authorization.slice(7), fromCookie: false };
     }
     const cookies = request.cookies as Record<string, string> | undefined;
-    return cookies?.[SESSION_COOKIE];
+    return { token: cookies?.[SESSION_COOKIE], fromCookie: true };
   }
 }

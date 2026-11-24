@@ -1,4 +1,4 @@
-import { plainToInstance, Transform } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsIn,
@@ -41,8 +41,16 @@ export class EnvironmentVariables {
   })
   JWT_SECRET!: string;
 
+  /** Duración de cada token; mientras el usuario esté activo se renueva solo. */
   @IsString()
   JWT_EXPIRES_IN = '8h';
+
+  /** Límite absoluto de una sesión (días desde que se inició). */
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(90)
+  SESSION_MAX_DAYS = 14;
 
   /** Orígenes permitidos para CORS separados por coma. */
   @IsString()

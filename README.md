@@ -207,7 +207,19 @@ La plataforma queda en `http://localhost` (puerto `NGINX_PORT`). MySQL y Redis s
 | `npm run prisma:seed` | Carga catálogo y administrador inicial |
 | `npm run prisma:studio` | Explorador visual de la base de datos |
 | `npm --workspace=backend run test` | Pruebas unitarias del backend |
+| `npm --workspace=backend run test:e2e` | Pruebas de punta a punta contra la base de pruebas (ver abajo) |
 | `npm --workspace=backend run lint` / `npm --workspace=frontend run lint` | Análisis estático |
+
+### Pruebas e2e
+
+Recorren los flujos principales (cuentas, clases, tareas, cuestionarios, avisos y cierre de sesiones) contra MySQL real. **Nunca usan la base de desarrollo:** usan `DATABASE_URL_TEST` o, si no existe, la misma URL con `_test` al final (`uach_platform_test`), y se niegan a correr en una base que no termine en `_test`. Cada ejecución vacía esa base y aplica las migraciones.
+
+Crear la base de pruebas una sola vez (con Docker):
+
+```bash
+docker exec uach_mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS uach_platform_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON uach_platform_test.* TO \"$MYSQL_USER\"@\"%\";"'
+npm --workspace=backend run test:e2e
+```
 
 ## Estructura
 
@@ -250,5 +262,4 @@ Plataforma_UACH/
 
 - **Instalar en el servidor Debian** (4 GB): swap, respaldos de la BD y de `storage/`, imágenes construidas fuera del servidor.
 - **Cargar el catálogo oficial** desde `/administracion/carreras` y dar de alta los periodos en `/administracion/periodos`.
-- **Pendientes técnicos:** refresh token y pruebas e2e.
 - **Fase 3:** cuestionarios, asistencia, rúbricas, libro de calificaciones avanzado y foros (detalle en [`docs/AVANCE.md`](docs/AVANCE.md)).

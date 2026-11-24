@@ -84,7 +84,7 @@ export function UpcomingList({
           {items.map((item, index) => (
             <motion.li key={item.id} {...rowMotion(index, animateIn)}>
               <Link
-                href={`/cursos/${item.courseId}/tareas/${item.id}`}
+                href={item.href}
                 className={`press-soft flex min-h-[44px] items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-150 hover:bg-uach-canvas ${FOCUS_RING}`}
               >
                 <CourseTile name={item.courseName} tone={item.tone} size="sm" />

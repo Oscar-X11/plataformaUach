@@ -194,13 +194,54 @@ export class AssignmentsService {
             : { where: { status: { not: 'ASSIGNED' } }, select: { status: true, submittedAt: true } },
       },
     });
-    return rows.map(({ course, submissions, ...assignment }) => ({
+    const assignments = rows.map(({ course, submissions, ...assignment }) => ({
       ...assignment,
+      kind: 'assignment' as const,
+      href: `/cursos/${course.id}/tareas/${assignment.id}`,
       course: { id: course.id, name: course.name },
       state: user.role === 'STUDENT' ? submissionState(assignment.dueAt, submissions[0]) : null,
       submitted: user.role === 'STUDENT' ? null : submissions.length,
       students: user.role === 'STUDENT' ? null : course._count.enrollments,
     }));
+
+    // Cuestionarios y encuestas publicados: aparecen en su fecha de cierre.
+    const student = user.role === 'STUDENT';
+    const quizRows = await this.prisma.quiz.findMany({
+      where: { published: true, closesAt: { gte: from, lt: to }, course: courseFilter },
+      orderBy: { closesAt: 'asc' },
+      take: 200,
+      select: {
+        id: true,
+        kind: true,
+        title: true,
+        closesAt: true,
+        course: { select: { id: true, name: true, _count: { select: { enrollments: true } } } },
+        questions: { select: { points: true } },
+        attempts: student
+          ? { where: { studentId: user.sub }, select: { submittedAt: true } }
+          : { where: { submittedAt: { not: null } }, select: { submittedAt: true } },
+      },
+    });
+    const now = new Date();
+    const quizzes = quizRows.map((quiz) => {
+      const sent = Boolean(quiz.attempts[0]?.submittedAt);
+      return {
+        id: quiz.id,
+        kind: quiz.kind === 'SURVEY' ? ('survey' as const) : ('quiz' as const),
+        href: `/cursos/${quiz.course.id}/cuestionarios/${quiz.id}`,
+        title: quiz.title,
+        dueAt: quiz.closesAt as Date,
+        points: quiz.questions.reduce((sum, question) => sum + question.points, 0),
+        course: { id: quiz.course.id, name: quiz.course.name },
+        state: student ? (sent ? 'submitted' : (quiz.closesAt as Date) <= now ? 'missing' : 'pending') : null,
+        submitted: student ? null : quiz.attempts.length,
+        students: student ? null : quiz.course._count.enrollments,
+      };
+    });
+
+    // En el rango todas tienen fecha (las tareas se filtran por dueAt).
+    const time = (date: Date | null) => date?.getTime() ?? 0;
+    return [...assignments, ...quizzes].sort((a, b) => time(a.dueAt) - time(b.dueAt));
   }
 
   /** Alumno: su entrega. Docente/admin: cuántos entregaron y cuántas devolvió. */

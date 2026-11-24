@@ -69,6 +69,6 @@ export function diskUpload(maxBytes: number, files = 1) {
 /** Borra los temporales que no se guardaron (por ejemplo, si la validación falló). */
 export async function discardTemporary(files: Array<{ path?: string } | undefined>) {
   await Promise.all(
-    files.map((file) => (file?.path ? unlink(file.path).catch(() => undefined) : undefined)),
+    files.map((file) => (file?.path ? unlink(file.path).catch(() => undefined) : Promise.resolve())),
   );
 }

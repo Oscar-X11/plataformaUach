@@ -67,6 +67,15 @@ export class CreateCourseDto {
   meetingInfo?: string | null;
 }
 
+/** Descripción de la clase (editable después de crearla). Vacío la borra. */
+export class UpdateDescriptionDto {
+  @IsOptional()
+  @Transform(textToNull)
+  @IsString()
+  @MaxLength(2000, { message: 'La descripción no puede exceder 2000 caracteres' })
+  description!: string | null;
+}
+
 export class UpdateMeetingInfoDto {
   /** Texto vacío o null lo borra. */
   @IsOptional()

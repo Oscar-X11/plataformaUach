@@ -61,7 +61,17 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Probado con un alumno de prueba (10/10). Datos de prueba borrados.
 - Commit `081f1f3`: avisos y cuestionarios en el inicio, notificaciones leídas, sin emojis y «Cambiar contraseña» solo en Mi perfil.
 
+- **Cuestionarios en «Lo que sigue», la semana y el calendario:** los publicados con fecha de cierre aparecen como actividad pendiente (y como respondidos en la semana). Cada elemento lleva a su página: «Lo que sigue» muestra «Responder cuestionario» o «Responder encuesta» en lugar de «Abrir y entregar», y los días de la semana ahora son enlaces.
+- **Descripción editable:** el docente la cambia desde el encabezado de la clase (`PATCH /courses/:id/description`).
+- **Periodo `2026-2` cerrado:** su curso se conserva; ya no acepta cursos nuevos.
+- **Sesión deslizante:** cada token dura 8 h y, mientras el usuario usa la plataforma, el backend renueva la cookie (como mucho cada 15 min). Límite absoluto `SESSION_MAX_DAYS` (14 días) desde el inicio de sesión. Probado a través del proxy del frontend.
+- **Pruebas e2e** (`npm --workspace=backend run test:e2e`): 9 pruebas contra `uach_platform_test` (cuentas, clases, tareas, cuestionarios, avisos y cierre de sesiones). Se niegan a correr en una base que no termine en `_test`. Pruebas unitarias: 102.
+
+- **Revisión completa del sistema:** compilación y lint sin errores ni advertencias (se corrigieron 4 advertencias del backend), 102 pruebas unitarias, 9 e2e y un recorrido de 82 comprobaciones con los tres roles: cuentas y contraseña temporal, clase, aviso y comentario, tarea con archivo entregada y calificada, tema y material, cuestionario y encuesta, repositorio con aprobación, grupo de estudio, todas las pantallas de alumno, docente y administración, páginas públicas, bloqueos de acceso y exportaciones CSV. Datos y archivos de prueba borrados.
+  - Ojo al revisar HTML de Next.js: la página «no encontrado» viaja en los scripts de todas las páginas; hay que buscar solo en el contenido visible.
+
 ### Decisiones
+- **No se implementa asistencia** (decisión del usuario).
 - Sin emojis en toda la interfaz; íconos de lucide solo donde aporten (decisión del usuario).
 - El panel del inicio muestra solo avisos y cuestionarios; las tareas ya aparecen en «Lo que sigue» y en la semana.
 - La clase la define la **carrera** y el número de cuatrimestre o semestre; la materia es opcional (lo pidió el usuario).
@@ -81,8 +91,6 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 
 ### Pendiente
 - Capturar las materias reales de cada carrera (pendiente por decisión del usuario).
-- Cuestionarios en el calendario y en el panel del alumno (todavía no aparecen ahí).
-- El periodo `2026-2` (anterior al cambio) quedó como cuatrimestral; revisarlo o cerrarlo desde Periodos.
 
 ---
 

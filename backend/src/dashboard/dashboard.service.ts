@@ -9,12 +9,16 @@ const DAY = 86_400_000;
 
 export interface DashboardItem {
   id: string;
+  /** Tarea, cuestionario o encuesta. */
+  kind: 'assignment' | 'quiz' | 'survey';
   title: string;
   points: number;
   courseId: string;
   courseName: string;
   dueAt: Date;
   status: 'ASSIGNED' | 'LATE' | 'SUBMITTED' | 'GRADED';
+  /** Página de la actividad. */
+  href: string;
 }
 
 export interface DashboardGrade {
@@ -41,7 +45,7 @@ export class DashboardService {
 
   async student(user: TokenPayload) {
     const now = new Date();
-    const [courses, noticeItems, noticeUnread] = await Promise.all([
+    const [courses, noticeItems, noticeUnread, quizzes] = await Promise.all([
       this.prisma.course.findMany({
         where: { enrollments: { some: { studentId: user.sub } } },
         orderBy: { name: 'asc' },
@@ -83,6 +87,19 @@ export class DashboardService {
       this.prisma.notification.count({
         where: { userId: user.sub, type: { in: NOTICE_TYPES }, readAt: null },
       }),
+      this.prisma.quiz.findMany({
+        where: { published: true, course: { enrollments: { some: { studentId: user.sub } } } },
+        select: {
+          id: true,
+          kind: true,
+          title: true,
+          closesAt: true,
+          courseId: true,
+          course: { select: { name: true } },
+          questions: { select: { points: true } },
+          attempts: { where: { studentId: user.sub }, select: { submittedAt: true } },
+        },
+      }),
     ]);
 
     const pending: DashboardItem[] = [];
@@ -102,7 +119,14 @@ export class DashboardService {
         const submission = assignment.submissions[0];
         const state = submissionState(assignment.dueAt, submission, now);
         const grade = submission?.status === 'RETURNED' ? decimalToNumber(submission.grade) : null;
-        const item = { id: assignment.id, title: assignment.title, points: assignment.points, ...base };
+        const item = {
+          id: assignment.id,
+          kind: 'assignment' as const,
+          title: assignment.title,
+          points: assignment.points,
+          href: `/cursos/${course.id}/tareas/${assignment.id}`,
+          ...base,
+        };
 
         if (state === 'pending' || state === 'missing') {
           if (assignment.dueAt) {
@@ -157,6 +181,28 @@ export class DashboardService {
         lastActivity,
       };
     });
+
+    // Cuestionarios y encuestas con fecha de cierre: los abiertos sin responder van a
+    // «Lo que sigue»; los ya enviados, a la semana. Los cerrados sin responder ya no se pueden hacer.
+    for (const quiz of quizzes) {
+      if (!quiz.closesAt) continue;
+      const submitted = quiz.attempts[0]?.submittedAt ?? null;
+      const item = {
+        id: quiz.id,
+        kind: quiz.kind === 'SURVEY' ? ('survey' as const) : ('quiz' as const),
+        title: quiz.title,
+        points: quiz.questions.reduce((sum, question) => sum + question.points, 0),
+        courseId: quiz.courseId,
+        courseName: quiz.course.name,
+        dueAt: quiz.closesAt,
+        href: `/cursos/${quiz.courseId}/cuestionarios/${quiz.id}`,
+      };
+      if (!submitted && quiz.closesAt > now) {
+        pending.push({ ...item, status: 'ASSIGNED' });
+      } else if (submitted && Math.abs(quiz.closesAt.getTime() - now.getTime()) <= 7 * DAY) {
+        recentlySubmitted.push({ ...item, status: 'SUBMITTED' });
+      }
+    }
 
     const notices = {
       items: noticeItems.map(({ readAt, ...notice }) => ({ ...notice, unread: readAt === null })),
