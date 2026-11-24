@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, KeyRound, LoaderCircle, LogOut, User } from "lucide-react";
+import { ChevronDown, LoaderCircle, LogOut, User } from "lucide-react";
 import { EASE_OUT } from "@/lib/motion";
 import { useSession } from "@/components/providers/SessionProvider";
 import { Avatar } from "@/components/ui/Avatar";
@@ -69,15 +69,6 @@ export function UserMenu() {
           >
             <User className="h-4 w-4 text-uach-soft" aria-hidden />
             Mi perfil
-          </Link>
-          <Link
-            href="/cambiar-contrasena"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-uach-ink hover:bg-uach-canvas"
-          >
-            <KeyRound className="h-4 w-4 text-uach-soft" aria-hidden />
-            Cambiar contraseña
           </Link>
           <button
             type="button"

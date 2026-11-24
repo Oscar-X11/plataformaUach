@@ -371,10 +371,10 @@ export function RepositoryBrowser({
       ) : items.length === 0 ? (
         <p className={`${CARD} px-6 py-12 text-center text-sm text-uach-ink/75`}>
           {view === "explore"
-            ? "No encontramos recursos con esos filtros. ¿Tienes buenos apuntes? Compártelos 🙌"
+            ? "No encontramos recursos con esos filtros. ¿Tienes buenos apuntes? Compártelos."
             : view === "mine"
               ? "Todavía no has compartido recursos."
-              : "No hay recursos esperando revisión 👌"}
+              : "No hay recursos esperando revisión."}
         </p>
       ) : (
         <>

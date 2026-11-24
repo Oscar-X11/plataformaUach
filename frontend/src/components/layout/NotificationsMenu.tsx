@@ -9,6 +9,7 @@ import { notificationIcon } from "@/components/notifications/notification-meta";
 import { api } from "@/lib/api";
 import type { NotificationList, NotificationView } from "@/lib/classwork";
 import { formatRelative } from "@/lib/dashboard/format";
+import { markAllNotificationsRead, markNotificationRead, NOTIFICATIONS_CHANGED } from "@/lib/notifications";
 import { EASE_OUT } from "@/lib/motion";
 
 const FOCUS = "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-uach-teal/40";
@@ -39,6 +40,11 @@ export function NotificationsMenu() {
     const timer = window.setInterval(() => document.visibilityState === "visible" && load(), POLL_MS);
     return () => window.clearInterval(timer);
   }, [load]);
+  // Cuando otra parte de la página marca notificaciones como leídas.
+  useEffect(() => {
+    window.addEventListener(NOTIFICATIONS_CHANGED, load);
+    return () => window.removeEventListener(NOTIFICATIONS_CHANGED, load);
+  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -58,7 +64,7 @@ export function NotificationsMenu() {
     const now = new Date().toISOString();
     setItems((list) => list.map((item) => ({ ...item, readAt: item.readAt ?? now })));
     setUnread(0);
-    void api("/notifications/read-all", { method: "POST" }).catch(() => undefined);
+    void markAllNotificationsRead();
   }
 
   function follow(item: NotificationView) {
@@ -66,7 +72,7 @@ export function NotificationsMenu() {
     if (item.readAt) return;
     setItems((list) => list.map((n) => (n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n)));
     setUnread((count) => Math.max(0, count - 1));
-    void api(`/notifications/${item.id}/read`, { method: "POST" }).catch(() => undefined);
+    void markNotificationRead(item.id);
   }
 
   const now = new Date();
@@ -111,7 +117,7 @@ export function NotificationsMenu() {
               )}
             </div>
             {items.length === 0 ? (
-              <p className="px-3 pb-4 pt-1 text-sm text-uach-ink/75">Sin novedades por ahora. Te avisaremos aquí 🔔</p>
+              <p className="px-3 pb-4 pt-1 text-sm text-uach-ink/75">Sin novedades por ahora. Te avisaremos aquí.</p>
             ) : (
               <ul>
                 {items.map((item) => {

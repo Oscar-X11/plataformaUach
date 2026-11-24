@@ -683,22 +683,23 @@ export function createClasswork(ctx) {
         nextDue: next ? { title: next.title, dueAt: next.dueAt } : null, lastActivity,
       };
     });
-    const unreadPosts = notifications.filter((n) => n.userId === user.id && n.type === "POST_CREATED" && !n.readAt);
-    const announcements = posts
-      .filter((p) => mine.some((c) => c.id === p.courseId))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, 8)
-      .map((p) => ({
-        id: p.id, courseId: p.courseId, courseName: courseOf(p.courseId).name, authorName: findUser(p.authorId).fullName,
-        content: p.content, createdAt: p.createdAt, unread: unreadPosts.some((n) => n.link === `/cursos/${p.courseId}`),
-      }));
+    // Panel «Avisos recientes»: avisos y cuestionarios, máximo 3.
+    const noticeList = notifications
+      .filter((n) => n.userId === user.id && ["POST_CREATED", "QUIZ_PUBLISHED"].includes(n.type))
+      .sort((x, y) => y.createdAt.localeCompare(x.createdAt));
+    const notices = {
+      items: noticeList.slice(0, 3).map((n) => ({
+        id: n.id, type: n.type, title: n.title, link: n.link ?? null, createdAt: n.createdAt, unread: !n.readAt,
+      })),
+      unread: noticeList.filter((n) => !n.readAt).length,
+    };
     return {
       term: [...new Set(mine.map((c) => c.term))].join(" · "),
       isSample: false,
       courses: cards,
       pending: pending.sort((a, b) => a.dueAt.localeCompare(b.dueAt)),
       recentlySubmitted,
-      announcements,
+      notices,
       recentGrades: recentGrades.sort((a, b) => b.gradedAt.localeCompare(a.gradedAt)).slice(0, 5),
       stats: { overallAverage: average(allGrades), onTimeCount, submittedCount },
     };

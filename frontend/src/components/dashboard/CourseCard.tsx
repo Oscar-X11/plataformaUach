@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Check, Clock } from "lucide-react";
 import { CourseTile, ProgressBar } from "@/components/dashboard/primitives";
 import { CARD, FOCUS_RING, URGENCY_TEXT } from "@/components/dashboard/tone";
 import { dueUrgency, formatGrade, formatRelative, formatTimeLeft } from "@/lib/dashboard/format";
@@ -41,7 +41,12 @@ function Progress({ course }: { course: DashboardCourse }) {
 
 function NextDue({ course, now }: { course: DashboardCourse; now: Date }) {
   if (!course.nextDue) {
-    return <p className="text-xs text-uach-emerald">Al corriente ✓</p>;
+    return (
+      <p className="flex items-center gap-1 text-xs text-uach-emerald">
+        <Check className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+        Al corriente
+      </p>
+    );
   }
   const urgency = dueUrgency(course.nextDue.dueAt, now);
   return (

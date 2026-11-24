@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck, CheckCircle2 } from "lucide-react";
 import { notificationIcon } from "@/components/notifications/notification-meta";
 import { CARD } from "@/components/dashboard/tone";
 import { BTN_GHOST } from "@/components/ui/styles";
-import { api } from "@/lib/api";
 import type { NotificationList as Data, NotificationView } from "@/lib/classwork";
 import { formatRelative } from "@/lib/dashboard/format";
+import { markAllNotificationsRead, markNotificationRead } from "@/lib/notifications";
 
 export function NotificationList({ initial, nowIso }: { initial: Data; nowIso: string }) {
   const router = useRouter();
@@ -19,14 +19,14 @@ export function NotificationList({ initial, nowIso }: { initial: Data; nowIso: s
 
   async function markAll() {
     setItems((list) => list.map((item) => ({ ...item, readAt: item.readAt ?? nowIso })));
-    await api("/notifications/read-all", { method: "POST" }).catch(() => undefined);
+    await markAllNotificationsRead();
     router.refresh();
   }
 
   function markRead(item: NotificationView) {
     if (item.readAt) return;
     setItems((list) => list.map((n) => (n.id === item.id ? { ...n, readAt: nowIso } : n)));
-    void api(`/notifications/${item.id}/read`, { method: "POST" }).catch(() => undefined);
+    void markNotificationRead(item.id);
   }
 
   if (items.length === 0) {
@@ -46,7 +46,16 @@ export function NotificationList({ initial, nowIso }: { initial: Data; nowIso: s
   return (
     <section className={`${CARD} p-2 sm:p-3`}>
       <div className="flex items-center justify-between gap-3 px-2 pb-2 pt-1">
-        <p className="text-sm text-uach-ink/75">{unread === 0 ? "Todo leído 👌" : `${unread} sin leer`}</p>
+        <p className="flex items-center gap-2 text-sm text-uach-ink/75">
+          {unread === 0 ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-uach-emerald" strokeWidth={1.75} aria-hidden />
+              Todo leído
+            </>
+          ) : (
+            `${unread} sin leer`
+          )}
+        </p>
         {unread > 0 && (
           <button type="button" onClick={markAll} className={BTN_GHOST}>
             <CheckCheck className="h-4 w-4" strokeWidth={1.75} aria-hidden />

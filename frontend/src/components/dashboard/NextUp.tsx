@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, Upload } from "lucide-react";
 import { FOCUS_RING, TONE_BG } from "@/components/dashboard/tone";
 import { dueUrgency, formatTimeLeft, type DueUrgency } from "@/lib/dashboard/format";
 import type { DashboardAssignment } from "@/lib/dashboard/types";
@@ -92,7 +92,10 @@ export function NextUp({
             animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT } }}
             className="mt-5"
           >
-            <p className="text-2xl font-semibold tracking-tight sm:text-[28px]">Estás al día 🎉</p>
+            <p className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight sm:text-[28px]">
+              <CheckCircle2 className="h-7 w-7 shrink-0 text-white/85" strokeWidth={1.75} aria-hidden />
+              Estás al día
+            </p>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-white/80">
               No tienes nada atrasado ni por vencer en las próximas horas.
               {upcomingTitle ? ` Si quieres adelantar, lo siguiente es “${upcomingTitle}”.` : " Disfruta el respiro."}

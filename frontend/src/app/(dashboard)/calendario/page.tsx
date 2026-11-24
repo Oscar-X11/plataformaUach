@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { StateChip } from "@/components/classwork/StateChip";
 import { CARD, FOCUS_RING, TONE_BG, toneFor } from "@/components/dashboard/tone";
 import { BTN_SECONDARY } from "@/components/ui/styles";
@@ -141,8 +141,9 @@ export default async function CalendarioPage({ searchParams }: { searchParams: {
       <section aria-label="Agenda del mes" className="space-y-3">
         <h2 className="text-base font-semibold text-uach-ink md:sr-only">Agenda</h2>
         {agenda.length === 0 ? (
-          <p className={`${CARD} px-6 py-10 text-center text-sm text-uach-ink/75 md:hidden`}>
-            Nada que entregar este mes 🎉
+          <p className={`${CARD} flex items-center justify-center gap-2 px-6 py-10 text-sm text-uach-ink/75 md:hidden`}>
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-uach-emerald" strokeWidth={1.75} aria-hidden />
+            Nada que entregar este mes
           </p>
         ) : (
           agenda.map(([day, list]) => (

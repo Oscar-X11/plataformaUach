@@ -1,3 +1,4 @@
+import type { NotificationType } from "@/lib/classwork";
 /**
  * Tipos del dashboard del alumno. Reflejan los modelos de `schema.prisma`
  * (Course, Assignment, Submission, Post) en la forma en que la vista los usa,
@@ -38,15 +39,20 @@ export interface DashboardAssignment {
   points: number;
 }
 
-export interface DashboardAnnouncement {
+/** Notificación de aviso o cuestionario para el panel del inicio. */
+export interface DashboardNotice {
   id: string;
-  courseId: string;
-  courseName: string;
-  tone: CourseTone;
-  authorName: string;
-  content: string;
+  type: NotificationType;
+  title: string;
+  link: string | null;
   createdAt: string;
   unread: boolean;
+}
+
+/** Los 3 más recientes y cuántos hay sin leer en total. */
+export interface DashboardNotices {
+  items: DashboardNotice[];
+  unread: number;
 }
 
 export interface DashboardGrade {
@@ -69,7 +75,8 @@ export interface StudentDashboardData {
   pending: DashboardAssignment[];
   /** Tareas ya entregadas cuya fecha cae en los últimos días (para la semana). */
   recentlySubmitted: DashboardAssignment[];
-  announcements: DashboardAnnouncement[];
+  /** Avisos y cuestionarios (máximo 3); el resto, en Notificaciones. */
+  notices: DashboardNotices;
   recentGrades: DashboardGrade[];
   stats: {
     overallAverage: number | null;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, CheckCircle2 } from "lucide-react";
 import { StreamBoard } from "@/components/stream/StreamBoard";
 import { CARD } from "@/components/dashboard/tone";
 import type { AssignmentView, StreamView } from "@/lib/classwork";
@@ -33,7 +33,10 @@ export default async function CursoTablonPage({ params }: { params: { cursoId: s
       <aside className={`${CARD} p-5 lg:col-start-2 lg:row-start-1`}>
         <h2 className="text-sm font-semibold text-uach-ink">Próximas entregas</h2>
         {upcoming.length === 0 ? (
-          <p className="mt-2 text-sm text-uach-ink/75">Nada por entregar pronto 🎉</p>
+          <p className="mt-2 flex items-center gap-2 text-sm text-uach-ink/75">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-uach-emerald" strokeWidth={1.75} aria-hidden />
+            Nada por entregar pronto
+          </p>
         ) : (
           <ul className="mt-2 space-y-1">
             {upcoming.map((item) => (

@@ -100,7 +100,7 @@ Si cambias un valor, cámbialo en su fuente y actualiza este documento.
 
 ## Overview
 
-Interfaz de trabajo (no de marketing): el alumno entra a resolver algo. La marca vive en los detalles —paleta institucional, tipografía cuidada, movimiento preciso— no en decoración. Tono cercano y útil ("Lo que sigue", "Estás al día 🎉"), nunca burocrático.
+Interfaz de trabajo (no de marketing): el alumno entra a resolver algo. La marca vive en los detalles —paleta institucional, tipografía cuidada, movimiento preciso— no en decoración. Tono cercano y útil ("Lo que sigue", "Estás al día"), nunca burocrático. Sin emojis.
 
 Principios:
 1. **Lo urgente primero.** Fechas y atrasos antes que cualquier otra cosa.
@@ -180,7 +180,7 @@ Prohibido: glassmorphism, gradientes decorativos, sombras duras desplazadas, hal
 - Botones, ítems de navegación, filas clicables: `rounded-xl` (12px).
 - Controles pequeños, tooltips: `rounded-lg` (8px).
 - Pills y puntos de estado: `rounded-full`.
-- Iconos: **lucide-react, trazo 1.5** (`strokeWidth={1.5}`; 1.75–2 solo en iconos de 16px o menos). Sin emojis como iconos; los emojis solo acompañan texto cercano ("👋", "🎉").
+- Iconos: **lucide-react, trazo 1.5** (`strokeWidth={1.5}`; 1.75–2 solo en iconos de 16px o menos). **Sin emojis en ninguna parte de la interfaz.** Donde un estado necesita apoyo visual, se usa un ícono de lucide (p. ej. `CheckCircle2` en `text-uach-emerald` para «Estás al día» o «Todo leído»).
 
 ## Components
 
@@ -196,7 +196,7 @@ Constantes en `src/components/dashboard/tone.ts`; reutilízalas en lugar de copi
 - **Números vivos:** `<CountUp value />` — cuenta ~600ms; los lectores de pantalla leen el valor final.
 - **Ficha de curso:** `<CourseTile name tone size />`.
 - **Foco:** `FOCUS_RING` = `focus-visible:ring-[3px] ring-uach-teal/40` con offset. Nunca quitar el foco sin reemplazo.
-- **Estados vacíos:** con personalidad y una salida ("Todo leído 👌…", "Tu semestre empieza aquí" + botón). Nunca solo "No hay datos".
+- **Estados vacíos:** con personalidad y una salida ("Todo leído" con ícono de palomita, "Tu ciclo escolar empieza aquí" + botón). Nunca solo "No hay datos".
 - **Datos de ejemplo:** mientras no haya backend, muestra el chip "Datos de ejemplo".
 - **Áreas táctiles:** mínimo 44px en móvil (`h-11`, `min-h-[44px]`).
 
@@ -243,7 +243,7 @@ Reglas:
 - Reutilizar `CARD`, `FOCUS_RING`, `TONE_*` y las clases de movimiento.
 - Un bloque petrol por pantalla para lo más importante.
 - Fechas relativas y concretas ("vence en 3 h", "venció hace 2 días") en la zona `America/Mexico_City` (`lib/dashboard/format.ts`).
-- Lenguaje cercano: "Lo que sigue", "Continúa donde te quedaste", "Estás al día 🎉".
+- Lenguaje cercano y sobrio: "Lo que sigue", "Continúa donde te quedaste", "Estás al día". Sin emojis.
 - Probar en 360/768/1280 px y con movimiento reducido.
 
 **No**

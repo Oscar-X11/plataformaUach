@@ -4,11 +4,10 @@ import type { StudentDashboardData } from "@/lib/dashboard/types";
 /** Respuesta de GET /dashboard/student: igual que la vista pero sin el color del curso. */
 type WithoutTone<T> = T extends { tone: unknown } ? Omit<T, "tone"> : T;
 export interface StudentDashboardResponse
-  extends Omit<StudentDashboardData, "courses" | "pending" | "recentlySubmitted" | "announcements" | "recentGrades"> {
+  extends Omit<StudentDashboardData, "courses" | "pending" | "recentlySubmitted" | "recentGrades"> {
   courses: WithoutTone<StudentDashboardData["courses"][number]>[];
   pending: WithoutTone<StudentDashboardData["pending"][number]>[];
   recentlySubmitted: WithoutTone<StudentDashboardData["recentlySubmitted"][number]>[];
-  announcements: WithoutTone<StudentDashboardData["announcements"][number]>[];
   recentGrades: WithoutTone<StudentDashboardData["recentGrades"][number]>[];
 }
 
@@ -20,7 +19,6 @@ export function withTones(data: StudentDashboardResponse): StudentDashboardData 
     courses: data.courses.map((course) => ({ ...course, tone: toneFor(course.id) })),
     pending: data.pending.map(tone),
     recentlySubmitted: data.recentlySubmitted.map(tone),
-    announcements: data.announcements.map(tone),
     recentGrades: data.recentGrades.map(tone),
   };
 }

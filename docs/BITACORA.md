@@ -53,7 +53,16 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Detener el backend dejaba vivos los procesos `nest start --watch` (había 16 acumulados y bloqueaban el motor de Prisma). Se cerraron todos.
 - Commit `3e7cb3e`: clase por carrera y cuatrimestre/semestre, materia opcional.
 
+- «Cambiar contraseña» se quitó del menú desplegable del usuario; queda solo en Mi perfil.
+
+- **Panel «Avisos recientes» del alumno:** ahora muestra las notificaciones de avisos del tablón **y de cuestionarios/encuestas**, máximo 3, con «Ver todas las notificaciones». Al abrir una se marca como leída. El backend las toma de `notificaciones` (ya no de las publicaciones).
+- **Notificaciones que no se marcaban como leídas:** la API sí las marcaba, pero Next.js mostraba al regresar una copia en caché de hasta 30 s. Se desactivó esa caché para páginas dinámicas (`experimental.staleTimes.dynamic = 0`), las peticiones usan `keepalive` para llegar aunque el clic navegue, y la campana se actualiza al instante con un evento del navegador (`lib/notifications.ts`).
+- **Sin emojis en la web:** 19 emojis reemplazados por íconos de lucide (palomita en «Estás al día», «Todo leído», etc.) o por texto sobrio. `DESIGN.md` actualizado.
+- Probado con un alumno de prueba (10/10). Datos de prueba borrados.
+
 ### Decisiones
+- Sin emojis en toda la interfaz; íconos de lucide solo donde aporten (decisión del usuario).
+- El panel del inicio muestra solo avisos y cuestionarios; las tareas ya aparecen en «Lo que sigue» y en la semana.
 - La clase la define la **carrera** y el número de cuatrimestre o semestre; la materia es opcional (lo pidió el usuario).
 - **Solo alumnos importados:** no hay registro abierto; evita que alguien use la matrícula de otro.
 - Cuestionarios: exámenes y encuestas; fechas, tiempo límite y visibilidad del resultado; un intento; calificaciones aparte (decisiones del usuario).

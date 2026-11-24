@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import { StateChip } from "@/components/classwork/StateChip";
 import { CARD, FOCUS_RING } from "@/components/dashboard/tone";
 import type { ClassworkOverview, SubmissionState } from "@/lib/classwork";
@@ -25,7 +25,10 @@ function Group({ title, rows, empty }: { title: string; rows: Row[]; empty: stri
         <span className="text-sm font-normal tabular-nums text-uach-ink/75">{rows.length}</span>
       </h2>
       {rows.length === 0 ? (
-        <p className="rounded-xl bg-uach-canvas px-4 py-5 text-center text-sm text-uach-ink/75">{empty}</p>
+        <p className="flex items-center justify-center gap-2 rounded-xl bg-uach-canvas px-4 py-5 text-sm text-uach-ink/75">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-uach-emerald" strokeWidth={1.75} aria-hidden />
+          {empty}
+        </p>
       ) : (
         <ul className="divide-y divide-uach-ink/[0.06]">
           {rows.map((row) => (
@@ -74,7 +77,7 @@ export default async function EntregasPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-uach-petrol">Entregas por calificar</h1>
           <p className="mt-1 text-sm text-uach-ink/75">Las más antiguas primero, de todos tus cursos.</p>
         </header>
-        <Group title="Por calificar" rows={rows} empty="No tienes entregas pendientes de revisar 🎉" />
+        <Group title="Por calificar" rows={rows} empty="No tienes entregas pendientes de revisar" />
       </section>
     );
   }
@@ -100,7 +103,7 @@ export default async function EntregasPage() {
         <p className="mt-1 text-sm text-uach-ink/75">Todas tus tareas, de todos tus cursos.</p>
       </header>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] xl:items-start">
-        <Group title="Por entregar" rows={todo.map(toRow)} empty="Estás al día 🎉" />
+        <Group title="Por entregar" rows={todo.map(toRow)} empty="Estás al día" />
         <div className="space-y-4">
           <Group title="Entregadas" rows={done.map(toRow)} empty="Nada esperando calificación." />
           <Group title="Calificadas" rows={graded.map(toRow)} empty="Aún no te devuelven tareas." />

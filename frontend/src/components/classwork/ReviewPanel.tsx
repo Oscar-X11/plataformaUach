@@ -197,7 +197,7 @@ export function ReviewPanel({
         </p>
       ) : visible.length === 0 ? (
         <p className="rounded-xl bg-uach-canvas px-4 py-6 text-center text-sm text-uach-ink/75">
-          Nadie en esta categoría 👌
+          Nadie en esta categoría.
         </p>
       ) : (
         <ul className="divide-y divide-uach-ink/[0.06]">

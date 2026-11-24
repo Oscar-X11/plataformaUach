@@ -77,7 +77,7 @@ export function UpcomingList({
     >
       {items.length === 0 ? (
         <p className="text-sm leading-relaxed text-uach-ink/75">
-          Nada más en el horizonte. Buen momento para repasar o adelantar lecturas 📚
+          Nada más en el horizonte. Buen momento para repasar o adelantar lecturas.
         </p>
       ) : (
         <ul className="-mx-2">

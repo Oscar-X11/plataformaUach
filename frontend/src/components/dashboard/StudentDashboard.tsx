@@ -23,7 +23,7 @@ import { useFirstLoad } from "@/lib/motion";
 const stagger = (i: number) => ({ "--i": i }) as React.CSSProperties;
 
 function summary(overdue: number, thisWeek: number) {
-  if (overdue === 0 && thisWeek === 0) return "Estás al día 🎉 No tienes entregas pendientes esta semana.";
+  if (overdue === 0 && thisWeek === 0) return "Estás al día. No tienes entregas pendientes esta semana.";
   const week = thisWeek === 1 ? "1 entrega esta semana" : `${thisWeek} entregas esta semana`;
   if (overdue === 0) return `Tienes ${week}. ¡Tú puedes!`;
   const late = overdue === 1 ? "1 atrasada" : `${overdue} atrasadas`;
@@ -61,7 +61,7 @@ export function StudentDashboard({
       <header className="enter flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" style={stagger(0)}>
         <div>
           <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-uach-petrol sm:text-4xl">
-            {greetingFor(now)}, {firstName(fullName)} <span aria-hidden>👋</span>
+            {greetingFor(now)}, {firstName(fullName)}
           </h1>
           <p className="mt-2 text-[15px] text-uach-ink">{summary(overdue, dueThisWeek)}</p>
           <p className="mt-1 text-sm text-uach-ink/75">
@@ -96,7 +96,7 @@ export function StudentDashboard({
           style={stagger(2)}
         />
         <AnnouncementsPanel
-          items={data.announcements}
+          notices={data.notices}
           now={now}
           animateIn={animateIn}
           className="enter"

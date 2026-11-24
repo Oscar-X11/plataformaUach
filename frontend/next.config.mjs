@@ -14,6 +14,9 @@ const securityHeaders = [
 const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  // Sin caché de páginas dinámicas en el navegador: al volver a una página (por
+  // ejemplo Notificaciones) se ven los datos actuales, no una copia de hace 30 s.
+  experimental: { staleTimes: { dynamic: 0 } },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiInternalUrl}/:path*` }];
   },

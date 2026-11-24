@@ -1,3 +1,4 @@
+import { NotificationType } from '@prisma/client';
 import { courseLabel } from '../courses/courses.service';
 import { Injectable } from '@nestjs/common';
 import { TokenPayload } from '../auth/token.service';
@@ -31,13 +32,16 @@ export interface DashboardGrade {
  * frontend/src/lib/dashboard/types.ts (StudentDashboardData) salvo el color
  * del curso, que el frontend asigna a partir del id.
  */
+/** Tipos de notificación que aparecen en el panel del inicio del alumno. */
+const NOTICE_TYPES: NotificationType[] = ['POST_CREATED', 'QUIZ_PUBLISHED'];
+
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async student(user: TokenPayload) {
     const now = new Date();
-    const [courses, unreadPostNotices] = await Promise.all([
+    const [courses, noticeItems, noticeUnread] = await Promise.all([
       this.prisma.course.findMany({
         where: { enrollments: { some: { studentId: user.sub } } },
         orderBy: { name: 'asc' },
@@ -66,16 +70,18 @@ export class DashboardService {
               },
             },
           },
-          posts: {
-            orderBy: { createdAt: 'desc' },
-            take: 5,
-            select: { id: true, content: true, createdAt: true, author: { select: { fullName: true } } },
-          },
         },
       }),
+      // Panel «Avisos recientes»: avisos del tablón y cuestionarios nuevos, máximo 3.
+      // El resto se consulta en la pestaña Notificaciones.
       this.prisma.notification.findMany({
-        where: { userId: user.sub, type: 'POST_CREATED', readAt: null },
-        select: { link: true, createdAt: true },
+        where: { userId: user.sub, type: { in: NOTICE_TYPES } },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+        select: { id: true, type: true, title: true, link: true, readAt: true, createdAt: true },
+      }),
+      this.prisma.notification.count({
+        where: { userId: user.sub, type: { in: NOTICE_TYPES }, readAt: null },
       }),
     ]);
 
@@ -152,28 +158,10 @@ export class DashboardService {
       };
     });
 
-    // Un aviso está "sin leer" si su notificación sigue sin leer.
-    const isUnread = (courseId: string, createdAt: Date) =>
-      unreadPostNotices.some(
-        (notice) =>
-          notice.link === `/cursos/${courseId}` &&
-          Math.abs(notice.createdAt.getTime() - createdAt.getTime()) < 60_000,
-      );
-
-    const announcements = courses
-      .flatMap((course) =>
-        course.posts.map((post) => ({
-          id: post.id,
-          courseId: course.id,
-          courseName: course.name,
-          authorName: post.author.fullName,
-          content: post.content,
-          createdAt: post.createdAt,
-          unread: isUnread(course.id, post.createdAt),
-        })),
-      )
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 8);
+    const notices = {
+      items: noticeItems.map(({ readAt, ...notice }) => ({ ...notice, unread: readAt === null })),
+      unread: noticeUnread,
+    };
 
     const terms = [...new Set(courses.map((course) => course.term))];
 
@@ -183,7 +171,7 @@ export class DashboardService {
       courses: courseCards,
       pending: pending.sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime()),
       recentlySubmitted,
-      announcements,
+      notices,
       recentGrades: recentGrades
         .sort((a, b) => b.gradedAt.getTime() - a.gradedAt.getTime())
         .slice(0, 5),

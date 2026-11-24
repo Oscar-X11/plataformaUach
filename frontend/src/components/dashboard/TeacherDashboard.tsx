@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, CalendarClock } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarClock, CheckCircle2 } from "lucide-react";
 import { CourseTile } from "@/components/dashboard/primitives";
 import { CARD, FOCUS_RING, toneFor } from "@/components/dashboard/tone";
 import { BTN_PRIMARY } from "@/components/ui/styles";
@@ -30,7 +30,7 @@ export function TeacherDashboard({
     <div className="space-y-6 lg:space-y-8">
       <header>
         <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-uach-petrol sm:text-4xl">
-          {greetingFor(now)}, {firstName(fullName)} <span aria-hidden>👋</span>
+          {greetingFor(now)}, {firstName(fullName)}
         </h1>
         <p className="mt-2 text-[15px] text-uach-ink">{summary(toReviewTotal, data.upcoming.length)}</p>
         <p className="mt-1 text-sm text-uach-ink/75">{formatLongDate(now)}</p>
@@ -43,7 +43,10 @@ export function TeacherDashboard({
             <Link href="/entregas" className="text-sm font-medium text-white/80 hover:text-white">Ver todas</Link>
           </div>
           {data.toReview.length === 0 ? (
-            <p className="mt-5 text-2xl font-semibold tracking-tight">Nada pendiente 🎉</p>
+            <p className="mt-5 flex items-center gap-2.5 text-2xl font-semibold tracking-tight">
+              <CheckCircle2 className="h-7 w-7 shrink-0 text-white/85" strokeWidth={1.75} aria-hidden />
+              Nada pendiente
+            </p>
           ) : (
             <ul className="mt-3 space-y-1">
               {data.toReview.map((item) => (

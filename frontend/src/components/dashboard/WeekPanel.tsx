@@ -72,7 +72,7 @@ export function WeekPanel({
             Entregaste{" "}
             <CountUp value={doneCount} className="text-lg font-semibold text-uach-petrol" />
             <span className="font-medium text-uach-ink"> de {total}</span>
-            {doneCount === total ? " · ¡semana completa! 🎉" : ""}
+            {doneCount === total ? " · ¡semana completa!" : ""}
           </>
         )}
       </p>
@@ -148,7 +148,7 @@ export function WeekPanel({
             className="space-y-1"
           >
             {events.length === 0 ? (
-              <li className="py-3 text-sm text-uach-ink/75">Nada que entregar este día ✨</li>
+              <li className="py-3 text-sm text-uach-ink/75">Nada que entregar este día</li>
             ) : (
               events.map((item) => {
                 const urgency = dueUrgency(item.dueAt, now);
