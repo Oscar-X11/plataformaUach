@@ -2,6 +2,7 @@ import { NotificationType } from '@prisma/client';
 import { courseLabel } from '../courses/courses.service';
 import { Injectable } from '@nestjs/common';
 import { TokenPayload } from '../auth/token.service';
+import { AvailabilityService } from '../courses/availability.service';
 import { average, decimalToNumber, submissionState } from '../classwork/submission-state';
 import { PrismaService } from '../database/prisma.service';
 
@@ -41,7 +42,10 @@ const NOTICE_TYPES: NotificationType[] = ['POST_CREATED', 'QUIZ_PUBLISHED'];
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly availability: AvailabilityService,
+  ) {}
 
   async student(user: TokenPayload) {
     const now = new Date();
@@ -62,6 +66,9 @@ export class DashboardService {
               title: true,
               dueAt: true,
               points: true,
+              availableFrom: true,
+              requiresKind: true,
+              requiresId: true,
               submissions: {
                 where: { studentId: user.sub },
                 select: {
@@ -96,11 +103,28 @@ export class DashboardService {
           closesAt: true,
           courseId: true,
           course: { select: { name: true } },
+          requiresKind: true,
+          requiresId: true,
           questions: { select: { points: true } },
           attempts: { where: { studentId: user.sub }, select: { submittedAt: true } },
         },
       }),
     ]);
+
+    // Acceso condicional: lo bloqueado no aparece en «Lo que sigue» ni en la semana.
+    const allAssignments = courses.flatMap((course) => course.assignments);
+    const [assignmentOpen, quizOpen] = await Promise.all([
+      this.availability.availableMany(
+        user.sub,
+        allAssignments.map((row) => ({ from: row.availableFrom, requiresKind: row.requiresKind, requiresId: row.requiresId })),
+      ),
+      this.availability.availableMany(
+        user.sub,
+        quizzes.map((row) => ({ requiresKind: row.requiresKind, requiresId: row.requiresId })),
+      ),
+    ]);
+    const lockedAssignments = new Set(allAssignments.filter((_, index) => !assignmentOpen[index]).map((row) => row.id));
+    const lockedQuizzes = new Set(quizzes.filter((_, index) => !quizOpen[index]).map((row) => row.id));
 
     const pending: DashboardItem[] = [];
     const recentlySubmitted: DashboardItem[] = [];
@@ -129,7 +153,7 @@ export class DashboardService {
         };
 
         if (state === 'pending' || state === 'missing') {
-          if (assignment.dueAt) {
+          if (assignment.dueAt && !lockedAssignments.has(assignment.id)) {
             pending.push({ ...item, dueAt: assignment.dueAt, status: state === 'missing' ? 'LATE' : 'ASSIGNED' });
           }
         } else {
@@ -185,7 +209,7 @@ export class DashboardService {
     // Cuestionarios y encuestas con fecha de cierre: los abiertos sin responder van a
     // «Lo que sigue»; los ya enviados, a la semana. Los cerrados sin responder ya no se pueden hacer.
     for (const quiz of quizzes) {
-      if (!quiz.closesAt) continue;
+      if (!quiz.closesAt || lockedQuizzes.has(quiz.id)) continue;
       const submitted = quiz.attempts[0]?.submittedAt ?? null;
       const item = {
         id: quiz.id,

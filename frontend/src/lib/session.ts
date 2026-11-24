@@ -38,7 +38,8 @@ export const PUBLIC_ROUTES = [
 export const CHANGE_PASSWORD_ROUTE = "/cambiar-contrasena";
 
 /** Rutas abiertas con o sin sesión. */
-export const OPEN_ROUTES = ["/acceso-denegado", "/cerrar-sesion"];
+/** Accesibles con o sin sesión (también con contraseña temporal pendiente). */
+export const OPEN_ROUTES = ["/acceso-denegado", "/cerrar-sesion", "/ayuda", "/privacidad"];
 
 const ALL_ROLES: UserRole[] = ["STUDENT", "TEACHER", "ADMIN"];
 

@@ -6,10 +6,12 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -58,6 +60,17 @@ export class UpdateQuizDto {
   @IsOptional()
   @IsEnum(QuizResultsVisibility, { message: 'Opción de resultados inválida' })
   resultsVisibility?: QuizResultsVisibility;
+
+  /** Acceso condicional: completar antes otra actividad ("assignment" | "quiz"). */
+  @IsOptional()
+  @Transform(emptyToNull)
+  @IsIn(['assignment', 'quiz'], { message: 'Tipo de actividad requerida inválido' })
+  requiresKind?: string | null;
+
+  @IsOptional()
+  @Transform(emptyToNull)
+  @IsUUID('all', { message: 'Actividad requerida inválida' })
+  requiresId?: string | null;
 
   /** Lista completa de preguntas (reemplaza las anteriores). Solo mientras nadie haya respondido. */
   @IsOptional()

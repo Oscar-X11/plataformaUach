@@ -16,6 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { parseRequirement, requirementValue, RequirementSelect } from "@/components/classwork/ConditionsFields";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
@@ -116,6 +117,7 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
   const [closesAt, setClosesAt] = useState(toLocalInput(quiz?.closesAt ?? null));
   const [timeLimit, setTimeLimit] = useState(quiz?.timeLimitMinutes ? String(quiz.timeLimitMinutes) : "");
   const [visibility, setVisibility] = useState<QuizResultsVisibility>(quiz?.resultsVisibility ?? "ON_SUBMIT");
+  const [requirement, setRequirement] = useState(requirementValue(quiz?.requiresKind, quiz?.requiresId));
   const [questions, setQuestions] = useState<Draft[]>(quiz ? fromQuiz(quiz) : [blankQuestion()]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +146,7 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
       closesAt: fromLocalInput(closesAt),
       timeLimitMinutes: graded && timeLimit ? Number(timeLimit) : null,
       ...(graded ? { resultsVisibility: visibility } : {}),
+      ...parseRequirement(requirement),
       ...(locked ? {} : { questions: toPayload(kind, questions) }),
     };
     try {
@@ -237,6 +240,15 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
               </div>
             </>
           )}
+        </div>
+        <div className="max-w-md">
+          <RequirementSelect
+            id="quiz-requires"
+            courseId={courseId}
+            self={{ kind: "quiz", id: quiz?.id }}
+            value={requirement}
+            onChange={setRequirement}
+          />
         </div>
       </section>
 

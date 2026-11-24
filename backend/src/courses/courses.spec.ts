@@ -5,8 +5,10 @@ import {
 import { Prisma } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
+import { ActivityService } from '../activity/activity.service';
 import { TokenPayload } from '../auth/token.service';
 import { PrismaService } from '../database/prisma.service';
+import { StorageService } from '../files/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CourseAccessService } from './course-access.service';
 import { CoursesService, generateInvitationCode } from './courses.service';
@@ -59,13 +61,17 @@ function setup() {
     career: { findUnique: jest.fn() },
     academicTerm: { findUnique: jest.fn().mockResolvedValue({ code: '2026-2', closed: false, scheme: 'CUATRIMESTRAL' }) },
     user: { findUnique: jest.fn() },
-    enrollment: { upsert: jest.fn(), deleteMany: jest.fn() },
+    enrollment: { upsert: jest.fn(), deleteMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
   };
   const access = new CourseAccessService(prisma as unknown as PrismaService);
   const notify = jest.fn();
-  const service = new CoursesService(prisma as unknown as PrismaService, access, {
-    notify,
-  } as unknown as NotificationsService);
+  const service = new CoursesService(
+    prisma as unknown as PrismaService,
+    access,
+    { notify } as unknown as NotificationsService,
+    { copy: jest.fn() } as unknown as StorageService,
+    { log: jest.fn() } as unknown as ActivityService,
+  );
   /** Simula la consulta de pertenencia de CourseAccessService. */
   const membership = (enrolled: string[]) =>
     prisma.course.findUnique.mockImplementation(({ where }: { where: { id?: string } }) =>

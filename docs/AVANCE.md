@@ -15,10 +15,10 @@
 | Fase 0 | Bases: seguridad, sesión, layouts, infraestructura | ✅ Completada |
 | Fase 1 | MVP tipo Classroom (cursos, tareas, calificaciones) | ✅ Completa y probada con la base de datos real |
 | Fase 2 | Valor institucional (calendario, repositorio, administración) | ✅ Completa y probada con la base de datos real |
-| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, rúbricas, libro de calificaciones, progreso…) | 🔄 En proceso: cuestionarios y encuestas listos |
-| Fase 4 | Herramientas complementarias (reutilizar cursos, seguimiento, búsqueda, PWA…) | ⬜ Pendiente |
+| Fase 3 | Evaluación y seguimiento tipo Moodle (cuestionarios, rúbricas, libro de calificaciones, progreso…) | ✅ Completa y probada (2026-11-23) |
+| Fase 4 | Herramientas complementarias (reutilizar cursos, seguimiento, búsqueda, PWA…) | 🔄 Lo principal listo: reutilizar clase, seguimiento, búsqueda, app instalable, ayuda y privacidad |
 
-**Siguiente paso:** seguir la Fase 3 con rúbricas y el libro de calificaciones avanzado; instalar en el servidor Debian cuando se quiera usar con personas reales.
+**Siguiente paso:** revisar con el área jurídica el borrador del aviso de privacidad e instalar en el servidor Debian cuando se quiera usar con personas reales.
 
 ### Estado del entorno
 
@@ -132,15 +132,15 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 | --- | --- | --- | --- |
 | 1 | ✅ **Cuestionarios y encuestas** | Hecho (estilo Google Forms): opción múltiple, casillas, verdadero/falso, respuesta corta y párrafo; fechas de apertura y cierre, tiempo límite con envío automático, un intento, guardado automático, calificación automática, revisión manual, cuándo ve el alumno su resultado, resumen por pregunta y CSV. Las calificaciones van aparte. **No incluye** (decisión del usuario): varios intentos ni orden aleatorio. | Califica el backend; sin cálculos pesados. |
 | 2 | ~~**Asistencia**~~ | **No se implementa** (decisión del 2026-11-23). | — |
-| 3 | **Rúbricas y guías de evaluación** | Criterios con niveles y puntos; el docente califica una tarea marcando niveles; el alumno ve la rúbrica antes y después. | Ligero. |
-| 4 | **Libro de calificaciones avanzado** | Categorías con ponderación (tareas 40 %, exámenes 60 %…), escalas y letras, calificación final del periodo, ocultar/bloquear notas. | Amplía lo que ya existe. |
+| 3 | ✅ **Rúbricas** | Hecho: criterios con niveles y puntos (hasta 20 criterios y 6 niveles); la tarea vale la suma del mejor nivel de cada criterio; al calificar se eligen niveles y la nota se calcula sola; el alumno ve la rúbrica antes y su nivel después. Una rúbrica ya usada no se cambia. | Ligero. |
+| 4 | ✅ **Libro de calificaciones avanzado** | Hecho: tareas y cuestionarios con pesos por clase (60/40 por omisión), calificación final, aprueba según el nivel (preparatoria 6, licenciatura e ingeniería 7, editable en Carreras), CSV completo y notas bloqueadas con el periodo cerrado. **No incluye:** escalas con letras. | Amplía lo que ya existe. |
 | 5 | ~~**Foros por curso**~~ | **No se implementa** (decisión del 2026-11-23). ~~Foros con temas e hilos, suscripción, foro de preguntas y respuestas, calificar participación.~~ | — |
 | 6 | ~~**Mensajería directa**~~ | **No se implementa** (decisión del 2026-11-23). ~~Conversaciones docente ↔ alumno y entre compañeros del curso, avisos de mensaje nuevo.~~ | — |
 | 7 | ~~**Grupos dentro del curso**~~ | **No se implementa** (decisión del 2026-11-23). ~~Equipos/secciones, tareas por equipo (una entrega por equipo), material visible por grupo.~~ | — |
-| 8 | **Finalización y progreso** | Marcar actividades como completadas, barra de progreso del curso, condiciones (ver material, entregar, aprobar con X). | Ligero. |
-| 9 | **Acceso condicional** | Mostrar una actividad solo después de una fecha, de completar otra o de alcanzar una calificación. | Depende de #8. |
+| 8 | ✅ **Finalización y progreso** | Hecho: completada = tarea entregada, cuestionario enviado o material abierto; barra de progreso del alumno y pestaña «Seguimiento» del docente. | Ligero. |
+| 9 | ✅ **Acceso condicional** | Hecho: visible desde una fecha o después de completar otra tarea o cuestionario; se rechazan ciclos; lo bloqueado no aparece en «Lo que sigue», el calendario ni la búsqueda del alumno. **No incluye:** condición por calificación mínima. | Depende de #8. |
 | 10 | ~~**Videoclases**~~ | **No se implementa** (decisión del 2026-11-23). Los cursos y grupos de estudio tienen un campo libre de lugar y horario donde se puede pegar un enlace de Meet o Zoom. | — |
-| 11 | **Bitácora de actividad** | Quién vio o hizo qué (accesos, entregas, cambios de calificación) para docentes y administradores. | Purgar registros viejos para no llenar el disco. |
+| 11 | ✅ **Bitácora de actividad** | Hecho: inicios de sesión, cuentas, importaciones, clases, entregas, calificaciones, publicaciones, material, pesos y periodos. Página en administración (filtros y búsqueda) y por clase en «Seguimiento». | Se purgan solos los registros de más de 180 días. |
 
 ## Fase 4 — Actividades y herramientas complementarias de Moodle ⬜
 
@@ -149,9 +149,9 @@ Lo que más usan docentes y alumnos en Moodle. Orden sugerido por valor:
 | ~~**Actividades**~~ | **No se implementa** (decisión del 2026-11-23). ~~Taller (evaluación entre pares), wiki colaborativa, glosario del curso, lección con ramificaciones, libro (páginas de contenido), consulta (votación rápida), encuesta / retroalimentación anónima, base de datos de registros.~~ |
 | ~~**Contenido interactivo**~~ | **No se implementa** (decisión del 2026-11-23). ~~H5P (contenido interactivo) y paquetes SCORM / IMS.~~ |
 | ~~**Reconocimiento**~~ | **No se implementa** (decisión del 2026-11-23). ~~Insignias por logros y competencias / resultados de aprendizaje ligados a actividades.~~ |
-| **Gestión de cursos** | Reutilizar un curso en un periodo nuevo (copiar temas, material y tareas sin alumnos), plantillas de curso, archivar cursos de periodos cerrados, respaldo y restauración de un curso. |
-| **Seguimiento** | Informes de participación por curso, alumnos en riesgo (faltas y entregas atrasadas), detección de entregas duplicadas (mismo `sha256`). |
-| **Experiencia** | Búsqueda global (cursos, recursos y personas), calendario con eventos propios, instalación como app (PWA), centro de ayuda / preguntas frecuentes y aviso de privacidad. |
+| **Gestión de cursos** | ✅ Reutilizar una clase en un periodo nuevo (temas, material con archivos, tareas con rúbrica sin fecha y cuestionarios como borrador; sin alumnos). Pendiente: plantillas, archivar cursos de periodos cerrados, respaldo y restauración. |
+| **Seguimiento** | ✅ Pestaña «Seguimiento» por clase: avance, vencidas, final, última actividad y alumnos en riesgo (2 o más vencidas o promedio bajo el aprobatorio); entregas con el mismo archivo (`sha256`) marcadas al calificar. |
+| **Experiencia** | ✅ Búsqueda global (Ctrl+K: clases, tareas, cuestionarios, material; usuarios para la administración), app instalable (manifiesto e íconos, sin modo sin conexión), centro de ayuda (`/ayuda`) y aviso de privacidad (`/privacidad`, borrador). Pendiente: calendario con eventos propios y buscar en el repositorio desde la búsqueda global. |
 
 Fuera del alcance por las decisiones actuales: avisos por correo (no hay correo institucional), el rol `SECURITY`, videollamadas, asistencia, foros, mensajería directa, grupos dentro del curso, las actividades extra de Moodle (taller, wiki, glosario, lección, libro, consulta, retroalimentación, base de datos), H5P/SCORM e insignias/competencias.
 

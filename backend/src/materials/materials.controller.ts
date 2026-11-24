@@ -16,6 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskUpload } from '../files/disk-upload';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import type { UploadedFileData } from '../files/upload';
+import { ActivityService } from '../activity/activity.service';
 import { CreateMaterialDto, TopicDto } from './materials.dto';
 import { MAX_MATERIAL_BYTES, MaterialsService } from './materials.service';
 
@@ -23,7 +24,10 @@ const Id = (name: string) => Param(name, ParseUUIDPipe);
 
 @Controller()
 export class MaterialsController {
-  constructor(private readonly materials: MaterialsService) {}
+  constructor(
+    private readonly materials: MaterialsService,
+    private readonly activity: ActivityService,
+  ) {}
 
   @Get('courses/:courseId/materials')
   list(@Id('courseId') courseId: string, @Req() { user }: AuthenticatedRequest) {
@@ -33,13 +37,15 @@ export class MaterialsController {
   /** multipart: campo "file" opcional (si no, "url"). */
   @Post('courses/:courseId/materials')
   @UseInterceptors(FileInterceptor('file', diskUpload(MAX_MATERIAL_BYTES)))
-  create(
+  async create(
     @Id('courseId') courseId: string,
     @Body() dto: CreateMaterialDto,
     @UploadedFile() file: UploadedFileData | undefined,
     @Req() { user }: AuthenticatedRequest,
   ) {
-    return this.materials.create(courseId, dto, file, user);
+    const material = await this.materials.create(courseId, dto, file, user);
+    this.activity.log({ userId: user.sub, courseId, action: 'MATERIAL_ADDED', summary: `Agregó el material «${material.title}»` });
+    return material;
   }
 
   @HttpCode(204)

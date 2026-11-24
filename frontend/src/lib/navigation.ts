@@ -6,6 +6,7 @@ import {
   CalendarRange,
   ClipboardCheck,
   FolderTree,
+  History,
   LayoutDashboard,
   Library,
   School,
@@ -90,6 +91,7 @@ export function navigationForRole(role: UserRole): NavSection[] {
             { label: "Carreras", href: "/administracion/carreras", icon: FolderTree },
             { label: "Periodos", href: "/administracion/periodos", icon: CalendarRange },
             { label: "Reportes", href: "/administracion/reportes", icon: BarChart3 },
+            { label: "Bitácora", href: "/administracion/bitacora", icon: History },
           ],
         },
         {

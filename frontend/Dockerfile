@@ -18,6 +18,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 COPY --from=build /app/frontend/.next/standalone ./
 COPY --from=build /app/frontend/.next/static ./frontend/.next/static
+# Íconos de la app instalable (standalone no copia public/).
+COPY --from=build /app/frontend/public ./frontend/public
 USER node
 EXPOSE 3000
 CMD ["node", "frontend/server.js"]

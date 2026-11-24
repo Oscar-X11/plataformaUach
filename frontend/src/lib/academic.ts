@@ -51,6 +51,8 @@ export interface CatalogFaculty {
   name: string;
   code: string;
   scheme: TermScheme;
+  /** Calificación mínima aprobatoria (Decimal: llega como texto). */
+  passingGrade: string | number;
   _count: { users: number };
   careers: CatalogCareer[];
 }

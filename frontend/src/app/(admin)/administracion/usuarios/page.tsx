@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/server-session";
 
 export const metadata = { title: "Usuarios" };
 
-export default async function AdministracionUsuariosPage() {
+export default async function AdministracionUsuariosPage({ searchParams }: { searchParams: { q?: string } }) {
   const user = await requireUser(["ADMIN"]);
   return (
     <section className="space-y-6">
@@ -13,7 +13,7 @@ export default async function AdministracionUsuariosPage() {
           Importa alumnos desde Excel, da de alta al personal, restablece contraseñas olvidadas y activa o desactiva cuentas.
         </p>
       </header>
-      <UsersAdmin currentUserId={user.id} />
+      <UsersAdmin currentUserId={user.id} initialSearch={(searchParams.q ?? "").slice(0, 100)} />
     </section>
   );
 }

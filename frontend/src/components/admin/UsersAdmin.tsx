@@ -116,8 +116,8 @@ function CreateStaffForm({ onCreated, onCancel }: { onCreated: (row: AdminUserRo
   );
 }
 
-export function UsersAdmin({ currentUserId }: { currentUserId: string }) {
-  const [search, setSearch] = useState("");
+export function UsersAdmin({ currentUserId, initialSearch = "" }: { currentUserId: string; initialSearch?: string }) {
+  const [search, setSearch] = useState(initialSearch);
   const [role, setRole] = useState<"" | UserRole>("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<AdminUserPage | null>(null);

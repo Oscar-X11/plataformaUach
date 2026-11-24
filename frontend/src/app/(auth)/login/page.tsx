@@ -88,6 +88,11 @@ function LoginForm() {
           Cómo entrar
         </Link>
       </p>
+      <p className="mt-3 text-center text-xs text-uach-muted">
+        <Link href="/ayuda" className="hover:text-uach-ink">Ayuda</Link>
+        {" · "}
+        <Link href="/privacidad" className="hover:text-uach-ink">Aviso de privacidad</Link>
+      </p>
     </>
   );
 }

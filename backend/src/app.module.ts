@@ -20,8 +20,10 @@ import { MaterialsModule } from './materials/materials.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ProfileModule } from './profile/profile.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
+import { ActivityModule } from './activity/activity.module';
 import { ReportsModule } from './reports/reports.module';
 import { RepositoryModule } from './repository/repository.module';
+import { SearchModule } from './search/search.module';
 import { StreamModule } from './stream/stream.module';
 import { UsersModule } from './users/users.module';
 
@@ -47,6 +49,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     CoursesModule,
     ClassworkModule,
     QuizzesModule,
+    ActivityModule,
     NotificationsModule,
     StreamModule,
     ProfileModule,
@@ -55,6 +58,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     RepositoryModule,
     GroupsModule,
     ReportsModule,
+    SearchModule,
     FilesModule,
     UsersModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error

@@ -20,6 +20,7 @@ function statusChip(quiz: QuizListItem, manager: boolean): { label: string; tone
     return { label: "Enviado", tone: "bg-uach-emerald/10 text-uach-emerald" };
   }
   if (quiz.myStatus === "in_progress") return { label: "En curso", tone: "bg-amber-50 text-amber-800" };
+  if (quiz.lockedReason && quiz.window !== "closed") return { label: "Bloqueado", tone: "bg-uach-canvas text-uach-ink/75" };
   if (quiz.window === "closed") return { label: "Sin responder", tone: "bg-red-50 text-red-700" };
   if (quiz.window === "upcoming") return { label: "Próximamente", tone: "bg-uach-canvas text-uach-ink/75" };
   return { label: "Pendiente", tone: "bg-uach-subtle text-uach-tealDark" };
@@ -55,6 +56,9 @@ export function QuizList({ courseId, quizzes, manager }: { courseId: string; qui
                   {!survey && ` · ${quiz.totalPoints} pts`}
                   {quiz.timeLimitMinutes ? ` · ${quiz.timeLimitMinutes} min` : ""} · {when(quiz)}
                 </span>
+                {!manager && quiz.lockedReason && quiz.window !== "closed" && (
+                  <span className="mt-0.5 block truncate text-xs text-uach-ink/75">{quiz.lockedReason}</span>
+                )}
               </span>
               {manager && quiz.published && (
                 <span className="hidden shrink-0 text-right text-xs tabular-nums text-uach-ink/75 sm:block">

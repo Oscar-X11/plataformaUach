@@ -14,7 +14,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Roles } from '../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import { CoursesService } from './courses.service';
-import { CreateCourseDto, UpdateDescriptionDto, UpdateMeetingInfoDto } from './dto/create-course.dto';
+import { CopyCourseDto, CreateCourseDto, UpdateDescriptionDto, UpdateMeetingInfoDto } from './dto/create-course.dto';
 import { JoinCourseDto } from './dto/join-course.dto';
 import { ReassignTeacherDto } from './dto/reassign-teacher.dto';
 
@@ -60,6 +60,13 @@ export class CoursesController {
     @Req() { user }: AuthenticatedRequest,
   ) {
     return this.courses.regenerateInvitation(id, user);
+  }
+
+  /** Reutilizar la clase en otro periodo (sin alumnos). */
+  @Roles('TEACHER', 'ADMIN')
+  @Post(':id/copy')
+  copy(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CopyCourseDto, @Req() { user }: AuthenticatedRequest) {
+    return this.courses.copy(id, dto, user);
   }
 
   @Roles('TEACHER', 'ADMIN')

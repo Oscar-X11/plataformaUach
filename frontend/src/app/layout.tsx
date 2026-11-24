@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -16,6 +16,14 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Universidad de los Altos de Chiapas",
   description: "Plataforma institucional UACH",
+  applicationName: "Plataforma UACH",
+  // Instalable en el celular («Agregar a la pantalla de inicio»). Sin modo sin conexión.
+  appleWebApp: { capable: true, title: "UACH", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#083B46",
 };
 
 export default function RootLayout({

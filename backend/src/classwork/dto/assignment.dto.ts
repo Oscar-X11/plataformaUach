@@ -1,7 +1,10 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  IsArray,
   IsDateString,
+  IsIn,
   IsInt,
+  IsUUID,
   IsOptional,
   IsString,
   Max,
@@ -38,6 +41,23 @@ export class CreateAssignmentDto {
   @Min(1, { message: 'Los puntos deben ser al menos 1' })
   @Max(100, { message: 'Los puntos no pueden exceder 100' })
   points?: number;
+
+  /** Acceso condicional: visible desde esta fecha (ISO). null = siempre. */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString({}, { message: 'La fecha de disponibilidad no es válida' })
+  availableFrom?: string | null;
+
+  /** Acceso condicional: completar antes otra actividad ("assignment" | "quiz"). */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsIn(['assignment', 'quiz'], { message: 'Tipo de actividad requerida inválido' })
+  requiresKind?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsUUID('all', { message: 'Actividad requerida inválida' })
+  requiresId?: string | null;
 }
 
 /** Edición parcial: mismas reglas, todo opcional. */
@@ -66,4 +86,27 @@ export class UpdateAssignmentDto {
   @Min(1, { message: 'Los puntos deben ser al menos 1' })
   @Max(100, { message: 'Los puntos no pueden exceder 100' })
   points?: number;
+
+  /** Acceso condicional: visible desde esta fecha (ISO). null = siempre. */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsDateString({}, { message: 'La fecha de disponibilidad no es válida' })
+  availableFrom?: string | null;
+
+  /** Acceso condicional: completar antes otra actividad ("assignment" | "quiz"). */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsIn(['assignment', 'quiz'], { message: 'Tipo de actividad requerida inválido' })
+  requiresKind?: string | null;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsUUID('all', { message: 'Actividad requerida inválida' })
+  requiresId?: string | null;
+}
+
+/** Rúbrica completa (reemplaza la anterior). Lista vacía = quitar la rúbrica. */
+export class RubricDto {
+  @IsArray({ message: 'La rúbrica debe ser una lista de criterios' })
+  criteria!: unknown[];
 }

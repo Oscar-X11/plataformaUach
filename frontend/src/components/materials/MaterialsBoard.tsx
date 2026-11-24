@@ -119,6 +119,11 @@ function MaterialRow({ material, canManage, now }: { material: Material; canMana
   const href = material.kind === "FILE" && material.fileUrl ? fileHref(material.fileUrl) : (material.url ?? "#");
   const Icon = material.kind === "FILE" ? FileText : ExternalLink;
   const preview = previewFor(material);
+  // Alumno: abrir el material cuenta para su progreso (keepalive: llega aunque se abra otra pestaña).
+  const markViewed = () => {
+    if (canManage) return;
+    void api(`/materials/${material.id}/view`, { method: "POST", keepalive: true }).catch(() => undefined);
+  };
 
   async function remove() {
     if (!window.confirm(`¿Borrar «${material.title}»?`)) return;
@@ -142,6 +147,8 @@ function MaterialRow({ material, canManage, now }: { material: Material; canMana
           href={href}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={markViewed}
+          onAuxClick={markViewed}
           className="block truncate text-sm font-medium text-uach-ink hover:text-uach-tealDark hover:underline"
         >
           {material.title}
@@ -155,7 +162,11 @@ function MaterialRow({ material, canManage, now }: { material: Material; canMana
           {formatRelative(material.createdAt, now)}
         </p>
       </div>
-      {preview && <PreviewButton source={preview} title={material.title} openHref={href} compact />}
+      {preview && (
+        <span onClickCapture={markViewed} className="contents">
+          <PreviewButton source={preview} title={material.title} openHref={href} compact />
+        </span>
+      )}
       {canManage && (
         <button
           type="button"

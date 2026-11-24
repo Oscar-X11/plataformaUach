@@ -67,6 +67,29 @@ export class CreateCourseDto {
   meetingInfo?: string | null;
 }
 
+/** Reutilizar una clase en otro periodo (copia contenido, sin alumnos). */
+export class CopyCourseDto {
+  @Transform(trim)
+  @IsString()
+  @MinLength(3, { message: 'El nombre de la clase debe tener al menos 3 caracteres' })
+  @MaxLength(120, { message: 'El nombre de la clase no puede exceder 120 caracteres' })
+  name!: string;
+
+  @Transform(trim)
+  @IsString()
+  @MinLength(3, { message: 'Elige el periodo' })
+  @MaxLength(30)
+  term!: string;
+
+  /** Cuatrimestre o semestre de la nueva clase (por omisión, el mismo). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Elige el cuatrimestre o semestre' })
+  @Min(1)
+  @Max(12)
+  grade?: number;
+}
+
 /** Descripción de la clase (editable después de crearla). Vacío la borra. */
 export class UpdateDescriptionDto {
   @IsOptional()

@@ -89,7 +89,9 @@ function NotStarted({ quiz }: { quiz: QuizStudentView }) {
       </div>
       <Facts quiz={quiz} />
       {error && <FormAlert message={error} />}
-      {quiz.window === "open" ? (
+      {quiz.lockedReason && quiz.window === "open" ? (
+        <FormAlert tone="info" message={`Aún no disponible: ${quiz.lockedReason}.`} />
+      ) : quiz.window === "open" ? (
         <div className="space-y-2">
           <button type="button" onClick={start} disabled={busy} className={BTN_PRIMARY}>
             {busy && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}

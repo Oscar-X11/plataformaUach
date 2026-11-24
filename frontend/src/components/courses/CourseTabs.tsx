@@ -11,16 +11,17 @@ const TABS = [
   { label: "Personas", segment: "/personas" },
   { label: "Calificaciones", segment: "/calificaciones" },
   { label: "Recursos", segment: "/recursos" },
+  { label: "Seguimiento", segment: "/seguimiento", managerOnly: true },
 ];
 
-export function CourseTabs({ courseId }: { courseId: string }) {
+export function CourseTabs({ courseId, manager = false }: { courseId: string; manager?: boolean }) {
   const pathname = usePathname();
   const base = `/cursos/${courseId}`;
 
   return (
     <nav aria-label="Secciones del curso" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <ul className="flex min-w-max gap-1 border-b border-uach-ink/10">
-        {TABS.map(({ label, segment }) => {
+        {TABS.filter((tab) => manager || !tab.managerOnly).map(({ label, segment }) => {
           const href = `${base}${segment}`;
           const active = segment
             ? pathname === href || pathname.startsWith(`${href}/`)

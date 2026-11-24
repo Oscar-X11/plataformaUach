@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, FileText, LoaderCircle } from "lucide-react";
+import { ChevronDown, Copy, FileText, LoaderCircle } from "lucide-react";
 import { StateChip } from "@/components/classwork/StateChip";
 import { CARD } from "@/components/dashboard/tone";
 import { Avatar } from "@/components/ui/Avatar";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
 import { api, ApiError } from "@/lib/api";
-import { fileHref, formatBytes, type StudentSubmissionRow, type SubmissionView } from "@/lib/classwork";
+import { fileHref, formatBytes, type RubricCriterion, type StudentSubmissionRow, type SubmissionView } from "@/lib/classwork";
 import { formatDateTime } from "@/lib/dashboard/format";
 
 type Filter = "all" | "toReview" | "missing" | "returned";
@@ -28,20 +28,81 @@ const matches = (filter: Filter, row: StudentSubmissionRow) => {
   return true;
 };
 
+/** Calificar con rúbrica: un nivel por criterio; el total se calcula solo. */
+function RubricPicker({
+  rubric,
+  studentId,
+  selection,
+  onChange,
+}: {
+  rubric: RubricCriterion[];
+  studentId: string;
+  selection: Record<string, string>;
+  onChange: (selection: Record<string, string>) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {rubric.map((criterion) => (
+        <fieldset key={criterion.id}>
+          <legend className="mb-1.5 text-xs font-semibold text-uach-ink">{criterion.title}</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {criterion.levels.map((level) => {
+              const id = `r-${studentId}-${criterion.id}-${level.id}`;
+              const checked = selection[criterion.id] === level.id;
+              return (
+                <label
+                  key={level.id}
+                  htmlFor={id}
+                  title={level.description}
+                  className={`press-soft inline-flex min-h-[40px] cursor-pointer items-center gap-2 rounded-lg border px-3 text-xs transition-colors ${
+                    checked
+                      ? "border-uach-teal bg-uach-teal/10 font-medium text-uach-tealDark"
+                      : "border-uach-ink/15 text-uach-ink/80 hover:bg-uach-canvas"
+                  }`}
+                >
+                  <input
+                    id={id}
+                    type="radio"
+                    name={`rubric-${criterion.id}`}
+                    checked={checked}
+                    onChange={() => onChange({ ...selection, [criterion.id]: level.id })}
+                    className="sr-only"
+                  />
+                  {level.label}
+                  <span className="tabular-nums text-uach-ink/60">{level.points}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      ))}
+    </div>
+  );
+}
+
 function GradeForm({
   assignmentId,
   points,
+  rubric,
   row,
   onSaved,
 }: {
   assignmentId: string;
   points: number;
+  rubric: RubricCriterion[];
   row: StudentSubmissionRow;
   onSaved: (submission: SubmissionView) => void;
 }) {
   const [busy, setBusy] = useState<"save" | "return" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Record<string, string>>(row.submission.rubricSelection ?? {});
   const formRef = useRef<HTMLFormElement>(null);
+  const withRubric = rubric.length > 0;
+  const complete = withRubric && rubric.every((criterion) => selection[criterion.id]);
+  const rubricTotal = rubric.reduce(
+    (sum, criterion) => sum + (criterion.levels.find((level) => level.id === selection[criterion.id])?.points ?? 0),
+    0,
+  );
 
   async function save(giveBack: boolean) {
     if (!formRef.current) return;
@@ -53,7 +114,8 @@ function GradeForm({
       const saved = await api<SubmissionView>(`/assignments/${assignmentId}/submissions/${row.student.id}`, {
         method: "PATCH",
         body: {
-          grade: raw === "" ? null : Number(raw),
+          // Con rúbrica completa, el backend calcula la calificación con los niveles.
+          ...(complete ? { rubric: selection } : { grade: raw === "" ? null : Number(raw) }),
           feedback: String(form.get("feedback") ?? ""),
           return: giveBack,
         },
@@ -98,19 +160,40 @@ function GradeForm({
       {submission.submittedAt && (
         <p className="text-xs text-uach-ink/75">Entregada el {formatDateTime(submission.submittedAt)}</p>
       )}
+      {row.duplicateWith.length > 0 && (
+        <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+          Entregó un archivo idéntico al de {row.duplicateWith.join(", ")}.
+        </p>
+      )}
       {error && <FormAlert message={error} />}
+      {withRubric && (
+        <RubricPicker rubric={rubric} studentId={row.student.id} selection={selection} onChange={setSelection} />
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
         <div>
           <label className="mb-1 block text-xs font-medium text-uach-ink" htmlFor={`g-${row.student.id}`}>
             Calificación /{points}
           </label>
-          <input
-            id={`g-${row.student.id}`}
-            name="grade"
-            inputMode="decimal"
-            defaultValue={submission.grade ?? ""}
-            className={`${INPUT} tabular-nums`}
-          />
+          {complete ? (
+            <output
+              id={`g-${row.student.id}`}
+              className="flex h-[42px] items-center rounded-lg bg-uach-canvas px-3 text-sm font-semibold tabular-nums text-uach-ink"
+            >
+              {rubricTotal}
+            </output>
+          ) : (
+            <input
+              id={`g-${row.student.id}`}
+              name="grade"
+              inputMode="decimal"
+              defaultValue={submission.grade ?? ""}
+              className={`${INPUT} tabular-nums`}
+            />
+          )}
+          {withRubric && !complete && (
+            <p className="mt-1 text-xs text-uach-ink/75">Elige un nivel en cada criterio o escribe la calificación.</p>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-uach-ink" htmlFor={`f-${row.student.id}`}>
@@ -149,10 +232,12 @@ function GradeForm({
 export function ReviewPanel({
   assignmentId,
   points,
+  rubric = [],
   initial,
 }: {
   assignmentId: string;
   points: number;
+  rubric?: RubricCriterion[];
   initial: StudentSubmissionRow[];
 }) {
   const [rows, setRows] = useState(initial);
@@ -216,6 +301,7 @@ export function ReviewPanel({
                     <span className="block truncate text-sm font-medium text-uach-ink">{row.student.fullName}</span>
                     <span className="block truncate text-xs tabular-nums text-uach-ink/75">
                       {row.student.username} · {row.submission.files.length} archivo(s)
+                      {row.duplicateWith.length > 0 && <span className="text-amber-800"> · archivo repetido</span>}
                     </span>
                   </span>
                   {row.submission.grade !== null && (
@@ -233,6 +319,7 @@ export function ReviewPanel({
                   <GradeForm
                     assignmentId={assignmentId}
                     points={points}
+                    rubric={rubric}
                     row={row}
                     onSaved={(submission) => update(row.student.id, submission)}
                   />

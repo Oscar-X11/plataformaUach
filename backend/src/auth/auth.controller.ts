@@ -4,6 +4,7 @@ import type { CookieOptions, Response } from 'express';
 import { AllowPendingPassword } from '../common/decorators/allow-pending-password.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
+import { ActivityService } from '../activity/activity.service';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -17,6 +18,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly tokens: TokenService,
+    private readonly activity: ActivityService,
   ) {}
 
   // No hay registro abierto: las cuentas de alumnos solo se crean al importar el
@@ -30,6 +32,7 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const session = await this.authService.login(dto);
     this.setSessionCookie(res, session.accessToken, session.expiresAt);
+    this.activity.log({ userId: session.user.id, action: 'LOGIN', summary: 'Inició sesión' });
     return session;
   }
 
@@ -58,6 +61,7 @@ export class AuthController {
   ) {
     const session = await this.authService.changePassword(request.user.sub, dto);
     this.setSessionCookie(res, session.accessToken, session.expiresAt);
+    this.activity.log({ userId: request.user.sub, action: 'PASSWORD_CHANGED', summary: 'Cambió su contraseña' });
     return session;
   }
 

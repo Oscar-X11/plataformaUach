@@ -1,3 +1,4 @@
+import { CopyCourseButton } from "@/components/courses/CopyCourseButton";
 import { CourseDescription } from "@/components/courses/CourseDescription";
 import { CourseMeetingInfo } from "@/components/courses/CourseMeetingInfo";
 import { CourseTabs } from "@/components/courses/CourseTabs";
@@ -37,6 +38,7 @@ export default async function CursoLayout({
               initial={course.meetingInfo ?? null}
               canEdit={course.myRole !== "student"}
             />
+            {course.myRole !== "student" && <CopyCourseButton course={course} />}
           </div>
           {course.invitation && (
             <div className="lg:w-80">
@@ -46,7 +48,7 @@ export default async function CursoLayout({
         </div>
       </header>
 
-      <CourseTabs courseId={course.id} />
+      <CourseTabs courseId={course.id} manager={course.myRole !== "student"} />
       <div>{children}</div>
     </section>
   );

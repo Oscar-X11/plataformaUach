@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { mkdir, rename, unlink, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, rename, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join, posix } from 'node:path';
 import { FilesService } from './files.service';
 import type { UploadedFileData } from './upload';
@@ -28,6 +28,16 @@ export class StorageService {
       throw new Error('Archivo sin contenido');
     }
     return relativePath;
+  }
+
+  /** Copia un archivo de storage/ a otra carpeta (al reutilizar una clase). Copia en disco, sin usar RAM. */
+  async copy(relativePath: string, directory: string) {
+    const ext = relativePath.includes('.') ? relativePath.slice(relativePath.lastIndexOf('.') + 1) : 'bin';
+    const target = posix.join(directory, `${randomUUID()}.${ext}`);
+    const absoluteTarget = join(this.files.root, ...target.split('/'));
+    await mkdir(dirname(absoluteTarget), { recursive: true });
+    await copyFile(join(this.files.root, ...relativePath.split('/')), absoluteTarget);
+    return target;
   }
 
   /** Borrado tolerante: si el archivo ya no existe no es un error. */

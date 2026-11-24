@@ -50,6 +50,7 @@ export class CatalogService {
         name: true,
         code: true,
         scheme: true,
+        passingGrade: true,
         _count: { select: { users: true } },
         careers: {
           orderBy: { name: 'asc' },

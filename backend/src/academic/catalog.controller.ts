@@ -1,4 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, Req } from '@nestjs/common';
+import { ActivityService } from '../activity/activity.service';
+import type { AuthenticatedRequest } from '../common/types/auth-request';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CareerDto, FacultyDto, SubjectDto, TermDto, UpdateTermDto } from './catalog.dto';
 import { CatalogService } from './catalog.service';
@@ -9,7 +11,10 @@ import { CatalogService } from './catalog.service';
  */
 @Controller('academic')
 export class CatalogController {
-  constructor(private readonly catalog: CatalogService) {}
+  constructor(
+    private readonly catalog: CatalogService,
+    private readonly activity: ActivityService,
+  ) {}
 
   @Get('terms')
   terms() {
@@ -18,14 +23,24 @@ export class CatalogController {
 
   @Roles('ADMIN')
   @Post('terms')
-  createTerm(@Body() dto: TermDto) {
-    return this.catalog.createTerm(dto);
+  async createTerm(@Body() dto: TermDto, @Req() { user }: AuthenticatedRequest) {
+    const term = await this.catalog.createTerm(dto);
+    this.activity.log({ userId: user.sub, action: 'TERM_CHANGED', summary: `Creó el periodo ${term.code}` });
+    return term;
   }
 
   @Roles('ADMIN')
   @Patch('terms/:id')
-  updateTerm(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTermDto) {
-    return this.catalog.updateTerm(id, dto);
+  async updateTerm(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTermDto,
+    @Req() { user }: AuthenticatedRequest,
+  ) {
+    const term = await this.catalog.updateTerm(id, dto);
+    const what =
+      dto.closed === true ? 'Cerró' : dto.closed === false ? 'Reabrió' : dto.isCurrent ? 'Marcó como actual' : 'Editó';
+    this.activity.log({ userId: user.sub, action: 'TERM_CHANGED', summary: `${what} el periodo ${term.code}` });
+    return term;
   }
 
   @Roles('ADMIN')

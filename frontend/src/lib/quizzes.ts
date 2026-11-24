@@ -37,6 +37,9 @@ interface QuizBase {
   closesAt: string | null;
   timeLimitMinutes: number | null;
   resultsVisibility: QuizResultsVisibility;
+  /** Acceso condicional: completar antes otra actividad del curso. */
+  requiresKind: "assignment" | "quiz" | null;
+  requiresId: string | null;
   window: QuizWindow;
   questionCount: number;
   totalPoints: number;
@@ -55,6 +58,8 @@ export interface QuizManagerView extends QuizBase {
 export interface QuizStudentView extends QuizBase {
   myRole: "student";
   resultsVisible: boolean;
+  /** Requisito pendiente: por qué todavía no se puede responder. */
+  lockedReason: string | null;
   attempt: {
     status: "in_progress" | "submitted";
     startedAt: string;
@@ -87,6 +92,7 @@ export interface QuizListItem {
   myStatus?: "not_started" | "in_progress" | "submitted";
   myScore?: number | null;
   myNeedsReview?: boolean;
+  lockedReason?: string | null;
 }
 
 export interface QuizResults {

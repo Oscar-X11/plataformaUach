@@ -1,10 +1,14 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { ActivityService } from '../activity/activity.service';
 import { TokenPayload } from '../auth/token.service';
+import { AvailabilityService } from '../courses/availability.service';
 import { CourseAccessService } from '../courses/course-access.service';
 import { PrismaService } from '../database/prisma.service';
 import { StorageService } from '../files/storage.service';
@@ -12,6 +16,7 @@ import { inspectUpload, MB, SUBMISSION_EXTENSIONS, UploadedFileData } from '../f
 import { NotificationsService } from '../notifications/notifications.service';
 import { AssignmentsService, SUBMISSION_SELECT, submissionView } from './assignments.service';
 import { GradeSubmissionDto } from './dto/grade.dto';
+import { gradeWithRubric } from './rubric-rules';
 import { decimalToNumber, submissionState } from './submission-state';
 
 export const MAX_FILE_BYTES = 10 * MB;
@@ -25,6 +30,8 @@ export class SubmissionsService {
     private readonly assignments: AssignmentsService,
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
+    private readonly availability: AvailabilityService,
+    private readonly activity: ActivityService,
   ) {}
 
   // ───────────── Alumno: su propia entrega ─────────────
@@ -85,6 +92,12 @@ export class SubmissionsService {
       where: { id: submission.id },
       data: { status: 'SUBMITTED', submittedAt: new Date() },
     });
+    this.activity.log({
+      userId: user.sub,
+      courseId: assignment.courseId,
+      action: 'SUBMISSION_TURNED_IN',
+      summary: `Entregó «${assignment.title}»`,
+    });
     return this.mine(assignmentId, assignment.dueAt, user.sub);
   }
 
@@ -129,9 +142,30 @@ export class SubmissionsService {
     ]);
     const byStudent = new Map(submissions.map((row) => [row.studentId, row]));
 
+    // Entregas duplicadas: el mismo archivo (sha256) en entregas de alumnos distintos.
+    const files = await this.prisma.submissionFile.findMany({
+      where: { submission: { assignmentId } },
+      select: { sha256: true, submission: { select: { studentId: true } } },
+    });
+    const owners = new Map<string, Set<string>>();
+    for (const file of files) {
+      const set = owners.get(file.sha256) ?? new Set<string>();
+      set.add(file.submission.studentId);
+      owners.set(file.sha256, set);
+    }
+    const names = new Map(enrollments.map(({ student }) => [student.id, student.fullName]));
+    const duplicatesOf = (studentId: string) => {
+      const others = new Set<string>();
+      for (const set of owners.values()) {
+        if (set.size > 1 && set.has(studentId)) set.forEach((id) => id !== studentId && others.add(id));
+      }
+      return [...others].map((id) => names.get(id) ?? 'otro alumno');
+    };
+
     return enrollments.map(({ student }) => ({
       student,
       submission: submissionView(assignment.dueAt, byStudent.get(student.id) ?? null, false),
+      duplicateWith: duplicatesOf(student.id),
     }));
   }
 
@@ -144,13 +178,25 @@ export class SubmissionsService {
       select: { id: true },
     });
     if (!enrolled) throw new NotFoundException('El alumno no está inscrito en el curso');
-    if (dto.grade !== undefined && dto.grade !== null && dto.grade > assignment.points) {
+    await this.assertTermOpen(assignment.courseId);
+
+    // Con rúbrica, la calificación es la suma de los niveles elegidos.
+    let grade = dto.grade;
+    let rubricSelection: Prisma.InputJsonValue | undefined;
+    if (dto.rubric !== undefined) {
+      if (!assignment.rubric.length) throw new BadRequestException('Esta tarea no tiene rúbrica');
+      const result = gradeWithRubric(assignment.rubric, dto.rubric);
+      grade = result.grade;
+      rubricSelection = result.selection;
+    }
+    if (grade !== undefined && grade !== null && grade > assignment.points) {
       throw new BadRequestException(`La calificación máxima es ${assignment.points}`);
     }
 
     const data = {
-      grade: dto.grade,
+      grade,
       feedback: dto.feedback,
+      ...(rubricSelection !== undefined ? { rubricSelection } : {}),
       ...(dto.return ? { status: 'RETURNED' as const, returnedAt: new Date() } : {}),
     };
     const saved = await this.prisma.submission.upsert({
@@ -159,6 +205,18 @@ export class SubmissionsService {
       create: { assignmentId, studentId, ...data },
       select: SUBMISSION_SELECT,
     });
+
+    if (grade !== undefined || dto.return) {
+      const student = await this.prisma.user.findUnique({ where: { id: studentId }, select: { fullName: true } });
+      this.activity.log({
+        userId: user.sub,
+        courseId: assignment.courseId,
+        action: 'GRADE_CHANGED',
+        summary: `${dto.return ? 'Devolvió' : 'Calificó'} «${assignment.title}» de ${student?.fullName ?? 'un alumno'}${
+          grade !== undefined && grade !== null ? `: ${grade}/${assignment.points}` : ''
+        }`,
+      });
+    }
 
     if (dto.return) {
       const course = await this.prisma.course.findUnique({
@@ -244,7 +302,24 @@ export class SubmissionsService {
     if (resolved.role !== 'student') {
       throw new ForbiddenException('Solo los alumnos inscritos entregan tareas');
     }
+    const { assignment } = resolved;
+    await this.availability.assertAvailable(assignment.courseId, user.sub, {
+      from: assignment.availableFrom,
+      requiresKind: assignment.requiresKind,
+      requiresId: assignment.requiresId,
+    });
     return resolved;
+  }
+
+  /** Con el periodo cerrado, las calificaciones quedan bloqueadas. */
+  private async assertTermOpen(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { academicTerm: { select: { closed: true } } },
+    });
+    if (course?.academicTerm.closed) {
+      throw new ConflictException('El periodo está cerrado: las calificaciones ya no se pueden cambiar');
+    }
   }
 
   /** Crea la entrega si no existe y exige que se pueda modificar. */

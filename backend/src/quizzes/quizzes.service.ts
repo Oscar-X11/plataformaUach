@@ -6,7 +6,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, QuizKind } from '@prisma/client';
+import { ActivityService } from '../activity/activity.service';
 import { TokenPayload } from '../auth/token.service';
+import { AvailabilityService } from '../courses/availability.service';
 import { csvCell } from '../classwork/grades.service';
 import { decimalToNumber } from '../classwork/submission-state';
 import { CourseAccessService, CourseRole } from '../courses/course-access.service';
@@ -46,6 +48,8 @@ const QUIZ_SELECT = {
   closesAt: true,
   timeLimitMinutes: true,
   resultsVisibility: true,
+  requiresKind: true,
+  requiresId: true,
   published: true,
   publishedAt: true,
   createdAt: true,
@@ -92,6 +96,8 @@ export class QuizzesService {
     private readonly prisma: PrismaService,
     private readonly access: CourseAccessService,
     private readonly notifications: NotificationsService,
+    private readonly availability: AvailabilityService,
+    private readonly activity: ActivityService,
   ) {}
 
   // ───────────── Lista ─────────────
@@ -111,6 +117,8 @@ export class QuizzesService {
         closesAt: true,
         timeLimitMinutes: true,
         resultsVisibility: true,
+        requiresKind: true,
+        requiresId: true,
         createdAt: true,
         questions: { select: { points: true } },
         _count: { select: { attempts: { where: { submittedAt: { not: null } } } } },
@@ -121,6 +129,7 @@ export class QuizzesService {
     });
 
     const now = new Date();
+    const evaluate = manager ? null : await this.availability.evaluator(courseId, user.sub);
     const items = [];
     for (const quiz of quizzes) {
       const base = {
@@ -143,8 +152,11 @@ export class QuizzesService {
       const own = quiz.attempts[0] as AttemptRow | undefined;
       const attempt = own ? await this.finalizeIfExpired(own, now) : null;
       const visible = resultsVisible(quiz, Boolean(attempt?.submittedAt), now);
+      const availability = evaluate!({ requiresKind: quiz.requiresKind, requiresId: quiz.requiresId });
       items.push({
         ...base,
+        // Requisito pendiente: se muestra bloqueado con la razón (la fecha ya la cubre «window»).
+        lockedReason: !attempt && !availability.available ? availability.reason : null,
         myStatus: !attempt ? 'not_started' : attempt.submittedAt ? 'submitted' : 'in_progress',
         myScore: visible ? decimalToNumber(attempt?.score) : null,
         myNeedsReview: visible ? Boolean(attempt?.needsReview) : false,
@@ -159,12 +171,19 @@ export class QuizzesService {
     await this.access.assertCanManage(courseId, user);
     const settings = this.settingsFrom(dto, dto.kind, { opensAt: null, closesAt: null });
     const questions = normalizeQuestions(dto.kind, dto.questions ?? []);
+    const requirement = await this.availability.validateRequirement(
+      courseId,
+      { kind: 'quiz' },
+      dto.requiresKind,
+      dto.requiresId,
+    );
     const quiz = await this.prisma.quiz.create({
       data: {
         courseId,
         kind: dto.kind,
         title: dto.title,
         ...settings,
+        ...requirement,
         ...(dto.kind === 'SURVEY' ? { resultsVisibility: 'NEVER' as const } : {}),
         questions: { create: questions.map((q, position) => this.questionData(q, position)) },
       },
@@ -178,6 +197,12 @@ export class QuizzesService {
     const settings = this.settingsFrom(dto, quiz.kind, quiz);
     const data: Prisma.QuizUpdateInput = { ...settings };
     if (dto.title !== undefined) data.title = dto.title;
+    if (dto.requiresKind !== undefined || dto.requiresId !== undefined) {
+      Object.assign(
+        data,
+        await this.availability.validateRequirement(quiz.courseId, { kind: 'quiz', id: quizId }, dto.requiresKind, dto.requiresId),
+      );
+    }
 
     if (dto.questions !== undefined) {
       const responses = await this.prisma.quizAttempt.count({ where: { quizId } });
@@ -216,6 +241,12 @@ export class QuizzesService {
     });
 
     if (firstTime) {
+      this.activity.log({
+        userId: user.sub,
+        courseId: quiz.courseId,
+        action: 'QUIZ_PUBLISHED',
+        summary: `Publicó ${quiz.kind === 'SURVEY' ? 'la encuesta' : 'el cuestionario'} «${quiz.title}»`,
+      });
       const course = await this.prisma.course.findUniqueOrThrow({
         where: { id: quiz.courseId },
         select: { name: true, enrollments: { select: { studentId: true } } },
@@ -253,7 +284,9 @@ export class QuizzesService {
       select: ATTEMPT_SELECT,
     });
     const attempt = row ? await this.finalizeIfExpired(row) : null;
-    return this.studentView(quiz, attempt);
+    const evaluate = await this.availability.evaluator(quiz.courseId, user.sub);
+    const availability = evaluate({ requiresKind: quiz.requiresKind, requiresId: quiz.requiresId });
+    return { ...this.studentView(quiz, attempt), lockedReason: !attempt && !availability.available ? availability.reason : null };
   }
 
   private async managerView(quiz: QuizRow, role: CourseRole) {
@@ -324,6 +357,10 @@ export class QuizzesService {
     });
     if (!existing) {
       if (quizWindow(quiz) !== 'open') throw new BadRequestException('Este formulario no está abierto');
+      await this.availability.assertAvailable(quiz.courseId, user.sub, {
+        requiresKind: quiz.requiresKind,
+        requiresId: quiz.requiresId,
+      });
       if (quiz.questions.length === 0) throw new BadRequestException('Este formulario no tiene preguntas');
       const startedAt = new Date();
       await this.prisma.quizAttempt
@@ -370,6 +407,12 @@ export class QuizzesService {
     }
 
     await this.finalize(quiz, fresh, new Date());
+    this.activity.log({
+      userId: user.sub,
+      courseId: quiz.courseId,
+      action: 'QUIZ_SUBMITTED',
+      summary: `Respondió ${quiz.kind === 'SURVEY' ? 'la encuesta' : 'el cuestionario'} «${quiz.title}»`,
+    });
     return this.get(quizId, user);
   }
 
@@ -563,7 +606,21 @@ export class QuizzesService {
       select: {
         attemptId: true,
         question: { select: { points: true } },
-        attempt: { select: { submittedAt: true, quiz: { select: { id: true, courseId: true, kind: true } } } },
+        attempt: {
+          select: {
+            submittedAt: true,
+            student: { select: { fullName: true } },
+            quiz: {
+              select: {
+                id: true,
+                courseId: true,
+                kind: true,
+                title: true,
+                course: { select: { academicTerm: { select: { closed: true } } } },
+              },
+            },
+          },
+        },
       },
     });
     if (!answer) throw new NotFoundException('Respuesta no encontrada');
@@ -572,6 +629,9 @@ export class QuizzesService {
     if (!answer.attempt.submittedAt) throw new BadRequestException('El alumno todavía no envía sus respuestas');
     if (points > answer.question.points) {
       throw new BadRequestException(`La pregunta vale como máximo ${answer.question.points} puntos`);
+    }
+    if (answer.attempt.quiz.course.academicTerm.closed) {
+      throw new ConflictException('El periodo está cerrado: las calificaciones ya no se pueden cambiar');
     }
 
     await this.prisma.quizAnswer.update({ where: { id: answerId }, data: { points } });
@@ -585,6 +645,12 @@ export class QuizzesService {
         score: all.reduce((sum, item) => sum + (decimalToNumber(item.points) ?? 0), 0),
         needsReview: all.some((item) => item.points === null),
       },
+    });
+    this.activity.log({
+      userId: user.sub,
+      courseId: answer.attempt.quiz.courseId,
+      action: 'QUIZ_GRADED',
+      summary: `Calificó una respuesta de ${answer.attempt.student.fullName} en «${answer.attempt.quiz.title}»: ${points}/${answer.question.points}`,
     });
     return this.attemptDetail(answer.attempt.quiz.id, answer.attemptId, user);
   }
@@ -712,6 +778,8 @@ export class QuizzesService {
       window: quizWindow(quiz),
       questionCount: quiz.questions.length,
       totalPoints: totalPoints(quiz.questions),
+      requiresKind: quiz.requiresKind,
+      requiresId: quiz.requiresId,
     };
   }
 

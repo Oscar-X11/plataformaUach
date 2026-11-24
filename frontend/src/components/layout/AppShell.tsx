@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { GraduationCap, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { NotificationsMenu } from "@/components/layout/NotificationsMenu";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { navigationForRole, type NavItem } from "@/lib/navigation";
@@ -228,6 +229,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
 
               <div className="flex-1" />
 
+              <GlobalSearch />
               <NotificationsMenu />
               <UserMenu />
             </header>

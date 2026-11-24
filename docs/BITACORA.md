@@ -71,6 +71,19 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - Ojo al revisar HTML de Next.js: la página «no encontrado» viaja en los scripts de todas las páginas; hay que buscar solo en el contenido visible.
 - Commit `e300bb2`: cuestionarios en «Lo que sigue» y calendario, descripción editable, sesión deslizante, pruebas e2e y revisión completa.
 
+- **Rúbricas, progreso y bitácora** (migración `20261124160000_rubricas_progreso_bitacora`, ya aplicada). La preparatoria aprueba con 6; licenciaturas e ingenierías, con 7.
+  - **Rúbricas:** el docente las crea en la tarea («Crear rúbrica»): criterios con niveles y puntos. Califica eligiendo un nivel por criterio y la nota se calcula sola. El alumno ve la rúbrica antes y su nivel al devolverla. Una rúbrica con la que ya se calificó no se cambia.
+  - **Calificaciones:** incluye cuestionarios, pesos por clase («Cambiar pesos», 60/40 por omisión), promedio de tareas, de cuestionarios, final y situación (aprobado o no según el nivel). El CSV trae todo. Con el periodo cerrado, las notas quedan bloqueadas y se avisa en pantalla.
+  - **Acceso condicional:** en tareas («Condiciones de acceso») y cuestionarios: visible desde una fecha o después de completar otra actividad. Se rechazan ciclos. El alumno ve la actividad con candado y la razón; no aparece en «Lo que sigue», el calendario, «Próximas entregas» ni la búsqueda.
+  - **Progreso y seguimiento:** barra «Tu progreso» en el tablón del alumno. Pestaña **Seguimiento** (solo docente): avance, vencidas, final, última actividad, filtro «En riesgo» y bitácora de la clase. Al calificar se marcan las entregas con el mismo archivo que otro alumno.
+  - **Reutilizar clase** (botón en el encabezado): copia temas, material con archivos, tareas con rúbrica (sin fecha) y cuestionarios (borrador), sin alumnos.
+  - **Bitácora:** página `/administracion/bitacora` con filtro por acción y búsqueda. Se registran inicios de sesión, cambios de contraseña, altas y estados de usuarios, restablecimientos, importaciones, altas de clase, inscripciones, tareas, entregas, calificaciones, cuestionarios, material, pesos y periodos. Se purga a los 180 días.
+  - **Carreras:** cada nivel muestra y edita su calificación aprobatoria («Aprueba con»).
+- **Búsqueda global** (`GET /search`, botón «Buscar…» o Ctrl+K): clases, tareas, cuestionarios y material del usuario; la administración también encuentra usuarios (abre Usuarios con la búsqueda prellenada).
+- **App instalable:** `manifest.webmanifest`, íconos en `frontend/public/icons/` (generados con `frontend/scripts/generate-icons.mjs`) y color de tema. Sin modo sin conexión (decisión del usuario). El `Dockerfile` del frontend ahora copia `public/`.
+- **Centro de ayuda** (`/ayuda`) y **aviso de privacidad** (`/privacidad`, borrador con los datos reales de la UACH, pendiente de revisión jurídica). Se ven con o sin sesión; enlaces en el menú del usuario y en el acceso.
+- Pruebas: 110 unitarias (4 nuevas de acceso condicional) y 23 e2e (14 nuevas en `test/progress.e2e-spec.ts`: rúbricas, condiciones, duplicados, pesos y final, progreso y riesgo, aprobatoria, reutilizar, periodo cerrado, bitácora y búsqueda). Recorrido de pantallas con docente, alumno y administración contra la base de desarrollo; datos de prueba borrados.
+
 ### Decisiones
 - **Fuera del alcance (fases 3 y 4):** foros por curso, mensajería directa, grupos dentro del curso, actividades extra de Moodle (taller, wiki, glosario, lección, libro, consulta, retroalimentación anónima, base de datos), H5P/SCORM e insignias/competencias. Quedan tachados en `docs/AVANCE.md`.
 - **No se implementa asistencia** (decisión del usuario).
@@ -78,6 +91,9 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - El panel del inicio muestra solo avisos y cuestionarios; las tareas ya aparecen en «Lo que sigue» y en la semana.
 - La clase la define la **carrera** y el número de cuatrimestre o semestre; la materia es opcional (lo pidió el usuario).
 - **Solo alumnos importados:** no hay registro abierto; evita que alguien use la matrícula de otro.
+- La app instalable no funciona sin conexión (decisión del usuario): no hay service worker ni caché que ocupe RAM o disco.
+- El aviso de privacidad es un borrador con los datos reales; la versión oficial la da la universidad.
+- Una tarea devuelta con calificación cuenta como completada para el acceso condicional, aunque el alumno no la haya entregado.
 - Cuestionarios: exámenes y encuestas; fechas, tiempo límite y visibilidad del resultado; un intento; calificaciones aparte (decisiones del usuario).
 - **No se implementan videollamadas.** Las reuniones en línea se resuelven pegando el enlace en «Lugar y horario».
 - Licenciaturas e ingenierías: cuatrimestrales. Bachillerato: semestral (lo confirmó el usuario).
@@ -93,6 +109,9 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 
 ### Pendiente
 - Capturar las materias reales de cada carrera (pendiente por decisión del usuario).
+- Que el área jurídica revise el aviso de privacidad.
+- Fase 4 restante: plantillas, archivar cursos de periodos cerrados, respaldo y restauración de un curso, calendario con eventos propios y buscar en el repositorio desde la búsqueda global.
+- Las tareas con «Visible desde» futura no envían aviso al abrirse (no hay tareas programadas en el servidor).
 
 ---
 

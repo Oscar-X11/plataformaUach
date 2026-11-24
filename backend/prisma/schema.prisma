@@ -67,14 +67,16 @@ enum TermScheme {
 }
 
 model Faculty {
-  id        String     @id @default(uuid())
-  name      String     @unique @map("nombre")
-  code      String     @unique @map("clave")
+  id           String     @id @default(uuid())
+  name         String     @unique @map("nombre")
+  code         String     @unique @map("clave")
+  /// Calificación mínima aprobatoria (0-10): 7 en licenciaturas e ingenierías, 6 en preparatoria.
+  passingGrade Decimal    @default(7) @map("calificacion_aprobatoria") @db.Decimal(4, 2)
   /// Tipo de periodo de todas sus carreras: decide en qué periodos se abren sus cursos.
-  scheme    TermScheme @default(CUATRIMESTRAL) @map("tipo_periodo")
-  careers   Career[]
-  users     User[]
-  createdAt DateTime   @default(now()) @map("creado_en")
+  scheme       TermScheme @default(CUATRIMESTRAL) @map("tipo_periodo")
+  careers      Career[]
+  users        User[]
+  createdAt    DateTime   @default(now()) @map("creado_en")
 
   @@map("facultades")
 }
@@ -138,6 +140,8 @@ model User {
   assignments        Assignment[]       @relation("CreatedAssignments")
   submissions        Submission[]
   quizAttempts       QuizAttempt[]
+  materialViews      MaterialView[]
+  activityLogs       ActivityLog[]
   resources          Resource[]         @relation("ResourceAuthors")
   reviewedResources  Resource[]         @relation("ResourceReviewers")
   studyGroups        StudyGroup[]       @relation("GroupCreators")
@@ -170,33 +174,36 @@ model AcademicTerm {
 }
 
 model Course {
-  id           String           @id @default(uuid())
-  name         String           @map("nombre")
+  id                String           @id @default(uuid())
+  name              String           @map("nombre")
   /// Clave del periodo (AcademicTerm.code). Si se renombra la clave, se actualiza aquí.
-  term         String           @map("periodo")
-  academicTerm AcademicTerm     @relation(fields: [term], references: [code], onDelete: Restrict, onUpdate: Cascade)
-  invitation   String           @unique @map("codigo_invitacion")
+  term              String           @map("periodo")
+  academicTerm      AcademicTerm     @relation(fields: [term], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  invitation        String           @unique @map("codigo_invitacion")
+  /// Peso (%) de tareas y de cuestionarios en la calificación final; suman 100.
+  weightAssignments Int              @default(60) @map("peso_tareas")
+  weightQuizzes     Int              @default(40) @map("peso_cuestionarios")
   /// Descripción de la clase (como en Classroom). Opcional.
-  description  String?          @map("descripcion") @db.Text
+  description       String?          @map("descripcion") @db.Text
   /// Aula: salón y horario, o enlace de la reunión en línea (texto libre del docente).
-  meetingInfo  String?          @map("lugar_horario") @db.VarChar(200)
+  meetingInfo       String?          @map("lugar_horario") @db.VarChar(200)
   /// Carrera de la clase (como en Classroom: nivel → carrera → cuatrimestre o semestre).
-  careerId     String           @map("carrera_id")
-  career       Career           @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  careerId          String           @map("carrera_id")
+  career            Career           @relation(fields: [careerId], references: [id], onDelete: Restrict)
   /// Número de cuatrimestre o semestre (según el tipo de periodo del nivel).
-  grade        Int              @map("grado")
+  grade             Int              @map("grado")
   /// Materia del catálogo. Opcional: la clase puede existir sin materia.
-  subjectId    String?          @map("materia_id")
-  teacherId    String           @map("docente_id")
-  subject      Subject?         @relation(fields: [subjectId], references: [id], onDelete: Restrict)
-  teacher      User             @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
-  enrollments  Enrollment[]
-  posts        Post[]
-  assignments  Assignment[]
-  quizzes      Quiz[]
-  topics       CourseTopic[]
-  materials    CourseMaterial[]
-  createdAt    DateTime         @default(now()) @map("creado_en")
+  subjectId         String?          @map("materia_id")
+  teacherId         String           @map("docente_id")
+  subject           Subject?         @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  teacher           User             @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  enrollments       Enrollment[]
+  posts             Post[]
+  assignments       Assignment[]
+  quizzes           Quiz[]
+  topics            CourseTopic[]
+  materials         CourseMaterial[]
+  createdAt         DateTime         @default(now()) @map("creado_en")
 
   @@index([teacherId])
   @@index([subjectId])
@@ -244,38 +251,46 @@ model Comment {
 }
 
 model Assignment {
-  id           String       @id @default(uuid())
-  title        String       @map("titulo")
-  instructions String       @map("instrucciones") @db.Text
+  id            String            @id @default(uuid())
+  title         String            @map("titulo")
+  instructions  String            @map("instrucciones") @db.Text
   /// Sin fecha = se puede entregar cuando sea.
-  dueAt        DateTime?    @map("fecha_limite")
-  /// Puntaje máximo (la escala habitual es 10).
-  points       Int          @default(10) @map("puntos")
-  courseId     String       @map("curso_id")
-  teacherId    String       @map("docente_id")
-  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  teacher      User         @relation("CreatedAssignments", fields: [teacherId], references: [id], onDelete: Restrict)
-  submissions  Submission[]
-  createdAt    DateTime     @default(now()) @map("creado_en")
-  updatedAt    DateTime     @updatedAt @map("actualizado_en")
+  dueAt         DateTime?         @map("fecha_limite")
+  /// Puntaje máximo (la escala habitual es 10). Con rúbrica, es la suma de sus criterios.
+  points        Int               @default(10) @map("puntos")
+  /// Acceso condicional: visible para el alumno desde esta fecha (null = siempre).
+  availableFrom DateTime?         @map("disponible_desde")
+  /// Acceso condicional: requiere completar otra actividad ("assignment" | "quiz") del curso.
+  requiresKind  String?           @map("requiere_tipo") @db.VarChar(20)
+  requiresId    String?           @map("requiere_id") @db.VarChar(191)
+  rubric        RubricCriterion[]
+  courseId      String            @map("curso_id")
+  teacherId     String            @map("docente_id")
+  course        Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher       User              @relation("CreatedAssignments", fields: [teacherId], references: [id], onDelete: Restrict)
+  submissions   Submission[]
+  createdAt     DateTime          @default(now()) @map("creado_en")
+  updatedAt     DateTime          @updatedAt @map("actualizado_en")
 
   @@index([courseId, dueAt])
   @@map("tareas")
 }
 
 model Submission {
-  id           String           @id @default(uuid())
-  assignmentId String           @map("tarea_id")
-  studentId    String           @map("alumno_id")
-  status       SubmissionStatus @default(ASSIGNED) @map("estado")
-  grade        Decimal?         @map("calificacion") @db.Decimal(5, 2)
-  feedback     String?          @map("retroalimentacion") @db.Text
-  submittedAt  DateTime?        @map("entregada_en")
-  returnedAt   DateTime?        @map("devuelta_en")
-  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  student      User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  files        SubmissionFile[]
-  updatedAt    DateTime         @updatedAt @map("actualizado_en")
+  id              String           @id @default(uuid())
+  assignmentId    String           @map("tarea_id")
+  studentId       String           @map("alumno_id")
+  status          SubmissionStatus @default(ASSIGNED) @map("estado")
+  grade           Decimal?         @map("calificacion") @db.Decimal(5, 2)
+  feedback        String?          @map("retroalimentacion") @db.Text
+  /// Rúbrica: { criterioId: nivelId } elegido por el docente.
+  rubricSelection Json?            @map("seleccion_rubrica")
+  submittedAt     DateTime?        @map("entregada_en")
+  returnedAt      DateTime?        @map("devuelta_en")
+  assignment      Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student         User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  files           SubmissionFile[]
+  updatedAt       DateTime         @updatedAt @map("actualizado_en")
 
   @@unique([assignmentId, studentId])
   @@index([studentId, status])
@@ -359,23 +374,24 @@ model CourseTopic {
 
 /// Material del curso: un archivo (storage/classroom-drive/...) o un enlace.
 model CourseMaterial {
-  id           String       @id @default(uuid())
-  courseId     String       @map("curso_id")
-  topicId      String?      @map("tema_id")
-  title        String       @map("titulo") @db.VarChar(150)
-  description  String?      @map("descripcion") @db.Text
-  kind         MaterialKind @map("tipo")
-  fileUrl      String?      @unique @map("ruta_archivo")
-  url          String?      @db.VarChar(500)
-  originalName String?      @map("nombre_original")
-  mimeType     String?      @map("tipo_mime")
-  size         Int?         @map("tamano_bytes")
-  sha256       String?      @db.Char(64)
-  authorId     String       @map("autor_id")
-  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  topic        CourseTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt    DateTime     @default(now()) @map("creado_en")
+  id           String         @id @default(uuid())
+  courseId     String         @map("curso_id")
+  topicId      String?        @map("tema_id")
+  title        String         @map("titulo") @db.VarChar(150)
+  description  String?        @map("descripcion") @db.Text
+  kind         MaterialKind   @map("tipo")
+  fileUrl      String?        @unique @map("ruta_archivo")
+  url          String?        @db.VarChar(500)
+  originalName String?        @map("nombre_original")
+  mimeType     String?        @map("tipo_mime")
+  size         Int?           @map("tamano_bytes")
+  sha256       String?        @db.Char(64)
+  authorId     String         @map("autor_id")
+  course       Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topic        CourseTopic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  author       User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  views        MaterialView[]
+  createdAt    DateTime       @default(now()) @map("creado_en")
 
   @@index([courseId, topicId])
   @@map("materiales_curso")
@@ -447,6 +463,9 @@ model Quiz {
   /// Minutos para responder desde que el alumno empieza. Null = sin límite.
   timeLimitMinutes  Int?                  @map("limite_minutos")
   resultsVisibility QuizResultsVisibility @default(ON_SUBMIT) @map("ver_resultados")
+  /// Acceso condicional: requiere completar otra actividad ("assignment" | "quiz") del curso.
+  requiresKind      String?               @map("requiere_tipo") @db.VarChar(20)
+  requiresId        String?               @map("requiere_id") @db.VarChar(191)
   /// Borrador hasta que el docente lo publica; los alumnos solo ven los publicados.
   published         Boolean               @default(false) @map("publicado")
   publishedAt       DateTime?             @map("publicado_en")
@@ -515,4 +534,50 @@ model QuizAnswer {
   @@unique([attemptId, questionId])
   @@index([questionId])
   @@map("respuestas_cuestionario")
+}
+
+// ───────────── Rúbricas, progreso y bitácora ─────────────
+
+/// Criterio de la rúbrica de una tarea. Los niveles van en JSON: [{ id, label, points, description? }].
+model RubricCriterion {
+  id           String     @id @default(uuid())
+  assignmentId String     @map("tarea_id")
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  position     Int        @map("posicion")
+  title        String     @map("titulo") @db.VarChar(150)
+  description  String?    @map("descripcion") @db.Text
+  levels       Json       @map("niveles")
+
+  @@index([assignmentId, position])
+  @@map("criterios_rubrica")
+}
+
+/// El alumno abrió un material del curso (cuenta para su progreso).
+model MaterialView {
+  id         String         @id @default(uuid())
+  materialId String         @map("material_id")
+  material   CourseMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  studentId  String         @map("alumno_id")
+  student    User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  viewedAt   DateTime       @default(now()) @map("visto_en")
+
+  @@unique([materialId, studentId])
+  @@index([studentId])
+  @@map("materiales_vistos")
+}
+
+/// Bitácora de actividad: quién hizo qué y cuándo. Se purga después de 180 días.
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("usuario_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  courseId  String?  @map("curso_id") @db.VarChar(191)
+  action    String   @map("accion") @db.VarChar(40)
+  summary   String   @map("resumen") @db.VarChar(300)
+  createdAt DateTime @default(now()) @map("creado_en")
+
+  @@index([courseId, createdAt])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("bitacora_actividad")
 }

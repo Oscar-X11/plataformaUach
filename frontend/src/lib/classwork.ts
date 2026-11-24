@@ -19,10 +19,34 @@ export interface SubmissionView {
   state: SubmissionState;
   grade: number | null;
   feedback: string | null;
+  /** Rúbrica: { criterioId: nivelId } elegido por el docente. */
+  rubricSelection: Record<string, string> | null;
   submittedAt: string | null;
   returnedAt: string | null;
   files: SubmissionFileView[];
 }
+
+export interface RubricLevel {
+  id: string;
+  label: string;
+  points: number;
+  description?: string;
+}
+
+export interface RubricCriterion {
+  id: string;
+  title: string;
+  description: string | null;
+  levels: RubricLevel[];
+}
+
+/** Acceso condicional: si el alumno ya puede abrirla y, si no, por qué. */
+export interface Availability {
+  available: boolean;
+  reason: string | null;
+}
+
+export type RequirementKind = "assignment" | "quiz";
 
 export interface AssignmentView {
   id: string;
@@ -31,6 +55,11 @@ export interface AssignmentView {
   instructions: string;
   dueAt: string | null;
   points: number;
+  availableFrom: string | null;
+  requiresKind: RequirementKind | null;
+  requiresId: string | null;
+  rubric: RubricCriterion[];
+  availability: Availability;
   createdAt: string;
   updatedAt: string;
   myRole: CourseRole;
@@ -41,6 +70,8 @@ export interface AssignmentView {
 export interface StudentSubmissionRow {
   student: { id: string; fullName: string; username: string };
   submission: SubmissionView;
+  /** Alumnos con el mismo archivo entregado (posible copia). */
+  duplicateWith: string[];
 }
 
 export type ClassworkOverview =
@@ -69,8 +100,17 @@ export type ClassworkOverview =
       }[];
     };
 
+interface GradeBook {
+  /** Pesos (%) de tareas y cuestionarios en la final; suman 100. */
+  weights: { assignments: number; quizzes: number };
+  /** Calificación aprobatoria del nivel (6 preparatoria, 7 licenciatura). */
+  passing: number;
+  /** Periodo cerrado: ya no se pueden cambiar calificaciones. */
+  locked: boolean;
+}
+
 export type CourseGrades =
-  | {
+  | (GradeBook & {
       role: "student";
       assignments: {
         id: string;
@@ -81,19 +121,105 @@ export type CourseGrades =
         grade: number | null;
         feedback: string | null;
       }[];
+      quizzes: {
+        id: string;
+        title: string;
+        closesAt: string | null;
+        points: number;
+        status: "not_started" | "in_progress" | "submitted";
+        score: number | null;
+        needsReview: boolean;
+      }[];
       average: number | null;
-    }
-  | {
+      assignmentsAverage: number | null;
+      quizzesAverage: number | null;
+      final: number | null;
+      passed: boolean | null;
+    })
+  | (GradeBook & {
       role: "teacher" | "admin";
       assignments: { id: string; title: string; dueAt: string | null; points: number }[];
+      quizzes: { id: string; title: string; closesAt: string | null; points: number }[];
       students: {
         id: string;
         fullName: string;
         username: string;
         average: number | null;
+        assignmentsAverage: number | null;
+        quizzesAverage: number | null;
+        final: number | null;
+        passed: boolean | null;
         cells: { assignmentId: string; state: SubmissionState; grade: number | null; returned: boolean; points: number }[];
+        quizCells: { quizId: string; score: number | null; points: number; submitted: boolean; needsReview: boolean }[];
       }[];
-    };
+    });
+
+/** Progreso de un alumno en una clase (GET /courses/:id/progress y /tracking). */
+export interface StudentProgress {
+  student: { id: string; fullName: string; username: string };
+  completed: number;
+  total: number;
+  percent: number;
+  overdue: number;
+  assignmentsAverage: number | null;
+  quizzesAverage: number | null;
+  final: number | null;
+  passed: boolean | null;
+  risk: string[];
+  lastActivityAt: string | null;
+}
+
+export interface CourseTracking {
+  passing: number;
+  weights: { assignments: number; quizzes: number };
+  students: StudentProgress[];
+  atRisk: number;
+}
+
+export type MyProgress = StudentProgress & {
+  passingGrade: number;
+  weights: { assignments: number; quizzes: number };
+};
+
+/** Bitácora de actividad. */
+export interface ActivityEntry {
+  id: string;
+  action: string;
+  summary: string;
+  courseId: string | null;
+  createdAt: string;
+  user: { id: string; fullName: string; username: string; role: UserRole } | null;
+}
+
+export interface ActivityPage {
+  items: ActivityEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** Etiquetas de las acciones de la bitácora. */
+export const ACTIVITY_LABEL: Record<string, string> = {
+  LOGIN: "Inicio de sesión",
+  PASSWORD_CHANGED: "Cambio de contraseña",
+  USER_CREATED: "Alta de usuario",
+  USER_STATUS: "Estado de usuario",
+  PASSWORD_RESET: "Restablecimiento",
+  STUDENTS_IMPORTED: "Importación",
+  COURSE_CREATED: "Alta de clase",
+  COURSE_COPIED: "Clase reutilizada",
+  COURSE_JOINED: "Inscripción",
+  ASSIGNMENT_CREATED: "Tarea creada",
+  ASSIGNMENT_DELETED: "Tarea borrada",
+  SUBMISSION_TURNED_IN: "Entrega",
+  GRADE_CHANGED: "Calificación",
+  QUIZ_PUBLISHED: "Cuestionario publicado",
+  QUIZ_SUBMITTED: "Cuestionario respondido",
+  QUIZ_GRADED: "Cuestionario calificado",
+  MATERIAL_ADDED: "Material",
+  WEIGHTS_CHANGED: "Pesos",
+  TERM_CHANGED: "Periodo",
+};
 
 export interface Author {
   id: string;

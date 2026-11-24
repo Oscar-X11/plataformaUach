@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -48,6 +49,14 @@ export class FacultyDto extends NamedWithCode {
   @IsOptional()
   @IsEnum(TermScheme, { message: SCHEME_MESSAGE })
   scheme?: TermScheme;
+
+  /** Calificación mínima aprobatoria (0-10). Si se omite, se conserva (7 al crear). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 1 }, { message: 'La calificación aprobatoria admite un decimal' })
+  @Min(0, { message: 'La calificación aprobatoria va de 0 a 10' })
+  @Max(10, { message: 'La calificación aprobatoria va de 0 a 10' })
+  passingGrade?: number;
 }
 
 export class CareerDto extends NamedWithCode {

@@ -34,7 +34,7 @@ function EntityForm({
   onDone,
 }: {
   kind: Kind;
-  item?: { id: string; name: string; code: string; semester?: number; scheme?: TermScheme };
+  item?: { id: string; name: string; code: string; semester?: number; scheme?: TermScheme; passingGrade?: string | number };
   parent?: string;
   faculties?: CatalogFaculty[];
   /** Tipo de periodo del nivel: nombra el campo «Cuatrimestre» o «Semestre». */
@@ -51,7 +51,10 @@ function EntityForm({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const body: Record<string, unknown> = { name: form.get("name"), code: form.get("code") };
-    if (kind === "faculty") body.scheme = form.get("scheme");
+    if (kind === "faculty") {
+      body.scheme = form.get("scheme");
+      body.passingGrade = Number(String(form.get("passingGrade") ?? "7").replace(",", "."));
+    }
     if (kind === "career") body.facultyId = form.get("facultyId") ?? parent;
     if (kind === "subject") {
       body.careerId = parent;
@@ -73,7 +76,7 @@ function EntityForm({
     <form onSubmit={submit} noValidate className="space-y-3 rounded-xl bg-uach-canvas p-4">
       <p className="text-sm font-semibold text-uach-ink">{item ? `Editar ${meta.one}` : meta.newOne}</p>
       {error && <FormAlert message={error} />}
-      <div className={`grid grid-cols-1 gap-3 ${kind === "subject" ? "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_6rem]" : "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"}`}>
+      <div className={`grid grid-cols-1 gap-3 ${kind === "subject" ? "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_6rem]" : kind === "faculty" ? "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_8rem]" : "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"}`}>
         <div>
           <label htmlFor={`${prefix}-name`} className="mb-1 block text-xs font-medium text-uach-ink/75">Nombre</label>
           <input id={`${prefix}-name`} name="name" required maxLength={150} defaultValue={item?.name} placeholder={meta.namePlaceholder} autoFocus className={INPUT} />
@@ -108,6 +111,23 @@ function EntityForm({
                 </option>
               ))}
             </select>
+          </div>
+        )}
+        {kind === "faculty" && (
+          <div>
+            <label htmlFor={`${prefix}-passing`} className="mb-1 block text-xs font-medium text-uach-ink/75">Aprueba con</label>
+            <input
+              id={`${prefix}-passing`}
+              name="passingGrade"
+              type="number"
+              min={0}
+              max={10}
+              step={0.1}
+              inputMode="decimal"
+              required
+              defaultValue={item?.passingGrade !== undefined ? Number(item.passingGrade) : 7}
+              className={`${INPUT} tabular-nums`}
+            />
           </div>
         )}
         {kind === "career" && item && faculties && (
@@ -306,7 +326,7 @@ function FacultyCard({ faculty, faculties }: { faculty: CatalogFaculty; facultie
           <div className="min-w-0 flex-1">
             <h2 className="truncate font-semibold text-uach-ink">{faculty.name}</h2>
             <p className="text-xs tabular-nums text-uach-ink/60">
-              {faculty.code} · {SCHEME_TEXT[schemeOf(faculty)].label} · {faculty.careers.length}{" "}
+              {faculty.code} · {SCHEME_TEXT[schemeOf(faculty)].label} · Aprueba con {Number(faculty.passingGrade)} · {faculty.careers.length}{" "}
               {faculty.careers.length === 1 ? "carrera" : "carreras"}
             </p>
           </div>

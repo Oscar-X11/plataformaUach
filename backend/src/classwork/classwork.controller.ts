@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -21,9 +22,10 @@ import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import type { UploadedFileData } from '../files/upload';
 import { AssignmentsService } from './assignments.service';
-import { CreateAssignmentDto, UpdateAssignmentDto } from './dto/assignment.dto';
-import { GradeSubmissionDto } from './dto/grade.dto';
+import { CreateAssignmentDto, RubricDto, UpdateAssignmentDto } from './dto/assignment.dto';
+import { GradeSubmissionDto, WeightsDto } from './dto/grade.dto';
 import { GradesService } from './grades.service';
+import { ProgressService } from './progress.service';
 import { MAX_FILE_BYTES, SubmissionsService } from './submissions.service';
 
 const Id = (name: string) => Param(name, ParseUUIDPipe);
@@ -35,7 +37,36 @@ export class ClassworkController {
     private readonly assignments: AssignmentsService,
     private readonly submissions: SubmissionsService,
     private readonly grades: GradesService,
+    private readonly progress: ProgressService,
   ) {}
+
+  // Progreso, seguimiento y pesos
+  /** Docente: progreso, promedios y alumnos en riesgo de la clase. */
+  @Get('courses/:courseId/tracking')
+  tracking(@Id('courseId') courseId: string, @Req() { user }: AuthenticatedRequest) {
+    return this.progress.tracking(courseId, user);
+  }
+
+  /** Alumno: su progreso y su calificación final en la clase. */
+  @Get('courses/:courseId/progress')
+  myProgress(@Id('courseId') courseId: string, @Req() { user }: AuthenticatedRequest) {
+    return this.progress.mine(courseId, user);
+  }
+
+  @Patch('courses/:courseId/weights')
+  setWeights(@Id('courseId') courseId: string, @Body() dto: WeightsDto, @Req() { user }: AuthenticatedRequest) {
+    if (dto.weightAssignments + dto.weightQuizzes !== 100) {
+      throw new BadRequestException('Los pesos deben sumar 100 %');
+    }
+    return this.progress.setWeights(courseId, dto, user);
+  }
+
+  /** El alumno abrió un material (cuenta para su progreso). */
+  @HttpCode(200)
+  @Post('materials/:id/view')
+  viewMaterial(@Id('id') id: string, @Req() { user }: AuthenticatedRequest) {
+    return this.progress.markMaterialViewed(id, user);
+  }
 
   // Tareas
   @Get('courses/:courseId/assignments')
@@ -60,6 +91,12 @@ export class ClassworkController {
   @Patch('assignments/:id')
   update(@Id('id') id: string, @Body() dto: UpdateAssignmentDto, @Req() { user }: AuthenticatedRequest) {
     return this.assignments.update(id, dto, user);
+  }
+
+  /** Rúbrica de la tarea (reemplaza la anterior; lista vacía la quita). */
+  @Put('assignments/:id/rubric')
+  setRubric(@Id('id') id: string, @Body() dto: RubricDto, @Req() { user }: AuthenticatedRequest) {
+    return this.assignments.setRubric(id, dto.criteria, user);
   }
 
   @HttpCode(204)
