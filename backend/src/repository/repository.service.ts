@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TokenPayload } from '../auth/token.service';
 import { PrismaService } from '../database/prisma.service';
@@ -30,8 +30,8 @@ const RESOURCE_SELECT = {
 
 /**
  * Repositorio institucional: apuntes, guías de estudio, libros y lecturas.
- * Lo que sube un alumno queda PENDIENTE hasta que un admin lo aprueba;
- * lo de docentes y admins se publica directo.
+ * Todo lo que se sube (alumnos y docentes) queda PENDIENTE hasta que un
+ * administrador lo aprueba o lo rechaza; solo se revisa una vez.
  */
 @Injectable()
 export class RepositoryService {
@@ -114,9 +114,10 @@ export class RepositoryService {
   async review(resourceId: string, dto: ReviewResourceDto, admin: TokenPayload) {
     const resource = await this.prisma.resource.findUnique({
       where: { id: resourceId },
-      select: { authorId: true, title: true },
+      select: { authorId: true, title: true, status: true },
     });
     if (!resource) throw new NotFoundException('Recurso no encontrado');
+    if (resource.status !== 'PENDING') throw new ConflictException('Este recurso ya se revisó');
     if (!dto.approve && !dto.note) {
       throw new BadRequestException('Explica al autor por qué se rechaza');
     }

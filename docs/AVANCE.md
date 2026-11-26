@@ -26,7 +26,7 @@
 | --- | --- |
 | Base de datos MySQL | ✅ Local en Docker (puerto 3307), las 11 migraciones aplicadas (la última, `20261125120000_quitar_examen_resuelto`). Probada de punta a punta el 2026-11-25. |
 | Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer las fases 1 y 2 sin base de datos. No incluye cuestionarios ni lo de las fases 3 y 4. |
-| Pruebas del backend | ✅ 110 unitarias y 25 e2e contra una base de pruebas aparte (cuentas, sesiones, clases, tareas, rúbricas, condiciones, cuestionarios, calificaciones, progreso, reutilizar, bitácora, búsqueda, permisos del administrador, validaciones del docente y revisión del repositorio). |
+| Pruebas del backend | ✅ 111 unitarias y 25 e2e contra una base de pruebas aparte (cuentas, sesiones, clases, tareas, rúbricas, condiciones, cuestionarios, calificaciones, progreso, reutilizar, bitácora, búsqueda, permisos del administrador, validaciones del docente y revisión del repositorio). |
 | Despliegue (Docker / servidor) | 🔄 Compose ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado). Swap documentada en el README; `npm run docker:build` compila las imágenes de una en una y `npm run docker:up` arranca sin recompilar. Falta instalarlo en el servidor Debian. |
 
 ---
@@ -179,7 +179,7 @@ Las que siguen abiertas también están en [Lo que falta](#lo-que-falta).
 - ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
 - 🔄 Swap documentada en el README (falta aplicarla en el servidor). ⬜ Respaldos automáticos en el servidor Debian.
 - ✅ Validaciones para evitar errores del docente: tareas sin entrega en el pasado ni apertura posterior a la entrega; con el periodo cerrado no se crean actividades ni se cambian rúbricas, puntos o pesos; confirmación al cambiar pesos.
-- ✅ Pruebas automatizadas: 110 unitarias y 25 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
+- ✅ Pruebas automatizadas: 111 unitarias y 25 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
 
 ---
 

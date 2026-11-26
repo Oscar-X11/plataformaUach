@@ -43,6 +43,7 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Commit `e708178` (swap y scripts de Docker), subido a `origin/master`.
 - **Repositorio: todo pasa por revisión.** Lo que sube un docente ya no se publica solo: queda «En revisión» como lo de los alumnos (`RepositoryService.upload`). Prueba unitaria actualizada y e2e nueva.
 - `docs/AVANCE.md` al día: decisiones del 2026-11-25, reportes, validaciones, swap, 11 migraciones y 25 e2e.
+- **Revisión del commit `a828662`:** un recurso del repositorio se revisa una sola vez (`review()` responde 409 si ya no está «En revisión», sin volver a notificar al autor). Comentario de `RepositoryService` y riesgo de `REPORTE_2026-11-25.md` al día. Prueba unitaria nueva y la e2e del docente ahora cubre aprobar, ver publicado y el 409. 111 unitarias y 25 e2e pasan.
 
 ### Importante
 - El reporte calcula el riesgo curso por curso (secuencial) para no cargar todo en memoria en el servidor de 4 GB. Con muchos cursos la página tardará más; si se vuelve lenta, filtrar por periodo o carrera, o agregar los datos en SQL.

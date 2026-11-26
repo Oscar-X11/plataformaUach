@@ -102,10 +102,20 @@ describe('RepositoryService', () => {
 
   it('rechazar exige motivo y avisa al autor', async () => {
     const { service, prisma, notify } = setup();
-    prisma.resource.findUnique.mockResolvedValue({ authorId: 's1', title: 'Guía' });
+    prisma.resource.findUnique.mockResolvedValue({ authorId: 's1', title: 'Guía', status: 'PENDING' });
     await expect(service.review('r1', { approve: false }, admin)).rejects.toThrow(/por qué/);
     await service.review('r1', { approve: false, note: 'Archivo ilegible' }, admin);
     expect(notify).toHaveBeenCalledWith(['s1'], expect.objectContaining({ type: 'RESOURCE_REVIEWED' }));
+  });
+
+  it('un recurso ya revisado no se vuelve a revisar ni se avisa de nuevo', async () => {
+    const { service, prisma, notify } = setup();
+    for (const status of ['APPROVED', 'REJECTED']) {
+      prisma.resource.findUnique.mockResolvedValue({ authorId: 's1', title: 'Guía', status });
+      await expect(service.review('r1', { approve: true }, admin)).rejects.toBeInstanceOf(ConflictException);
+    }
+    expect(prisma.resource.update).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('solo el autor o un admin borran', async () => {

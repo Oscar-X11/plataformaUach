@@ -209,6 +209,13 @@ describe('Flujos principales (e2e)', () => {
     expect(shared.body.status).toBe('PENDING');
     const pending = await admin.get('/repository/pending').expect(200);
     expect(pending.body.map((item: { id: string }) => item.id)).toContain(shared.body.id);
+    // Solo se publica cuando el administrador lo aprueba, y no se revisa dos veces.
+    let explore = await teacher.get('/repository').expect(200);
+    expect(explore.body.items.map((item: { id: string }) => item.id)).not.toContain(shared.body.id);
+    await admin.patch(`/repository/${shared.body.id}/review`).send({ approve: true }).expect(200);
+    explore = await teacher.get('/repository').expect(200);
+    expect(explore.body.items.map((item: { id: string }) => item.id)).toContain(shared.body.id);
+    await admin.patch(`/repository/${shared.body.id}/review`).send({ approve: false, note: 'Otra vez' }).expect(409);
   });
 
   it('el administrador consulta y modera las clases, pero no crea contenido ni participa', async () => {
