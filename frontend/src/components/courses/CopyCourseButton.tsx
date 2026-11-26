@@ -9,7 +9,7 @@ import { api, ApiError } from "@/lib/api";
 import { schemeOf, type AcademicTerm, type TermScheme } from "@/lib/academic";
 import type { CourseSummary } from "@/lib/courses";
 
-const MAX_GRADE: Record<TermScheme, number> = { CUATRIMESTRAL: 12, SEMESTRAL: 6 };
+const MAX_GRADE: Record<TermScheme, number> = { CUATRIMESTRAL: 9, SEMESTRAL: 6 };
 
 /**
  * «Reutilizar clase»: copia temas, material, tareas (sin fecha) con su rúbrica

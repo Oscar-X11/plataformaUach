@@ -53,6 +53,25 @@ export function AssignmentForm({
       availableFrom: toIso(form.get("availableFrom")),
       ...parseRequirement(requirement),
     };
+    // Mismas reglas que el backend, avisadas antes de enviar.
+    const due = body.dueAt ? new Date(body.dueAt) : null;
+    const opens = body.availableFrom ? new Date(body.availableFrom) : null;
+    const dueChanged = (body.dueAt ?? null) !== (assignment?.dueAt ? new Date(assignment.dueAt).toISOString() : null);
+    const points = Number(form.get("points"));
+    const problem =
+      String(body.title ?? "").trim().length < 3
+        ? "El título debe tener al menos 3 caracteres."
+        : !rubricPoints && (!Number.isInteger(points) || points < 1 || points > 100)
+          ? "Los puntos deben ser un entero de 1 a 100."
+          : due && dueChanged && due.getTime() < Date.now()
+            ? "La fecha de entrega ya pasó: todos los alumnos quedarían con la tarea vencida."
+            : due && opens && opens >= due
+              ? "La tarea debe abrirse antes de su fecha de entrega."
+              : null;
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setError(null);
     setLoading(true);
     try {

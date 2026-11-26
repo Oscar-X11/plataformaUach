@@ -19,7 +19,33 @@ export function QuizManagerBar({ quiz }: { quiz: QuizManagerView }) {
   // Publicar u ocultar es del docente; el administrador solo puede borrar (moderación).
   const teacher = quiz.myRole === "teacher";
 
+  /** Revisión previa: lo mismo que valida el backend, explicado antes de enviar. */
+  function confirmPublish() {
+    const points = quiz.questions.reduce((sum, q) => sum + q.points, 0);
+    const problems = [
+      ...(quiz.questions.length === 0 ? ["Agrega al menos una pregunta."] : []),
+      ...(quiz.kind === "QUIZ" && quiz.questions.length > 0 && points === 0 ? ["El cuestionario vale 0 puntos."] : []),
+      ...(quiz.closesAt && new Date(quiz.closesAt) <= new Date() ? ["La fecha de cierre ya pasó."] : []),
+    ];
+    if (problems.length) {
+      window.alert(`Todavía no se puede publicar:\n\n- ${problems.join("\n- ")}`);
+      return false;
+    }
+    const manual = quiz.questions.filter(
+      (q) => q.type === "PARAGRAPH" || (q.type === "SHORT" && !(q.answerKey?.accepted ?? []).length),
+    ).length;
+    const lines = [
+      `Se avisará a ${quiz.students} ${quiz.students === 1 ? "alumno" : "alumnos"}.`,
+      `${quiz.questions.length} ${quiz.questions.length === 1 ? "pregunta" : "preguntas"}${quiz.kind === "QUIZ" ? ` · ${points} puntos` : ""}.`,
+      quiz.closesAt ? `Cierra el ${new Date(quiz.closesAt).toLocaleString("es-MX")}.` : "Sin fecha de cierre: seguirá abierto hasta que la pongas.",
+      ...(quiz.kind === "QUIZ" && manual > 0 ? [`${manual} ${manual === 1 ? "pregunta se califica" : "preguntas se califican"} a mano.`] : []),
+      "En cuanto alguien responda, las preguntas ya no se podrán cambiar.",
+    ];
+    return window.confirm(`¿Publicar «${quiz.title}»?\n\n${lines.join("\n")}`);
+  }
+
   async function publish(published: boolean) {
+    if (published && !confirmPublish()) return;
     setBusy(true);
     try {
       await api(`/quizzes/${quiz.id}/publish`, { method: "POST", body: { published } });

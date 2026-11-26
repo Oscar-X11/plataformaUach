@@ -43,7 +43,6 @@ enum NotificationType {
 enum ResourceType {
   NOTE
   STUDY_GUIDE
-  EXAM
   BOOK
   OTHER
 }

@@ -26,6 +26,17 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
   - Conserva: ver todo el contenido de los cursos, Seguimiento, libro de calificaciones y exportaciones, resultados de cuestionarios, Personas; borrar avisos, comentarios, tareas, cuestionarios, material, temas, grupos y recursos; revisar el repositorio; administrar cursos (docente, alumnos, código, descripción, lugar y horario, copia).
   - Frontend: se ocultan los botones y formularios. Cuestionarios y calificación de entregas se ven en modo consulta. Nuevos indicadores del backend: `canComment` y `canModerate` (tablón), `canCreate` (material) y `canJoin` (grupos). Helper `canTeach` en `lib/courses.ts`.
   - Prueba e2e nueva en `flows.e2e-spec.ts`. 110 pruebas unitarias y 24 e2e.
+- Commit `663765c` (reportes y permisos del ADMIN), subido a `origin/master`.
+- **Permisos del docente revisados:** solo actúa en sus propias clases; requisitos y temas deben ser de la misma clase; sin acceso a usuarios, catálogo ni reportes. No hubo que cambiar permisos.
+- **Validaciones para evitar errores del docente** (backend y, en vivo, frontend):
+  - Tareas: no se aceptan fechas de entrega en el pasado (margen de 5 min) ni aperturas posteriores a la entrega.
+  - Rúbricas: niveles con los mismos puntos o el mismo nombre, criterios repetidos y criterios cuyo mejor nivel vale 0 se rechazan. El editor marca cada problema, avisa que la rúbrica se congela al calificar y confirma si cambian los puntos de la tarea.
+  - Cuestionarios y encuestas: no se publica uno que vale 0 puntos o cuyo cierre ya pasó; un borrador no acepta cierre en el pasado; las encuestas no llevan tiempo límite. El editor lista errores por pregunta (opciones vacías o repetidas, sin respuesta correcta) y avisos (preguntas que se califican a mano, 0 puntos, todas correctas). Publicar pide confirmación con el resumen.
+  - Pesos: confirmación antes de recalcular la calificación final.
+  - Con el periodo cerrado no se crean tareas ni cuestionarios ni se cambian rúbricas, puntos o pesos (`CourseAccessService.assertTermOpen`, compartido).
+- **Máximo 9 cuatrimestres** (el bachillerato sigue en 6 semestres) en clases, copia de clases y materias; la materia valida el máximo según el nivel de su carrera.
+- **Repositorio sin «Examen resuelto»** (migración `20261125120000_quitar_examen_resuelto`): los recursos existentes de ese tipo pasan a «Otro».
+- Reporte del día en `docs/REPORTE_2026-11-25.md`. 110 pruebas unitarias y 25 e2e.
 
 ### Importante
 - El reporte calcula el riesgo curso por curso (secuencial) para no cargar todo en memoria en el servidor de 4 GB. Con muchos cursos la página tardará más; si se vuelve lenta, filtrar por periodo o carrera, o agregar los datos en SQL.

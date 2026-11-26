@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -178,7 +177,7 @@ export class SubmissionsService {
       select: { id: true },
     });
     if (!enrolled) throw new NotFoundException('El alumno no está inscrito en el curso');
-    await this.assertTermOpen(assignment.courseId);
+    await this.access.assertTermOpen(assignment.courseId);
 
     // Con rúbrica, la calificación es la suma de los niveles elegidos.
     let grade = dto.grade;
@@ -312,16 +311,6 @@ export class SubmissionsService {
   }
 
   /** Con el periodo cerrado, las calificaciones quedan bloqueadas. */
-  private async assertTermOpen(courseId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-      select: { academicTerm: { select: { closed: true } } },
-    });
-    if (course?.academicTerm.closed) {
-      throw new ConflictException('El periodo está cerrado: las calificaciones ya no se pueden cambiar');
-    }
-  }
-
   /** Crea la entrega si no existe y exige que se pueda modificar. */
   private async ensureDraft(assignmentId: string, studentId: string) {
     const submission = await this.prisma.submission.upsert({

@@ -213,6 +213,7 @@ export class ProgressService {
   /** Pesos del libro de calificaciones de la clase (suman 100). */
   async setWeights(courseId: string, weights: { weightAssignments: number; weightQuizzes: number }, user: TokenPayload) {
     await this.access.assertCanManage(courseId, user);
+    await this.access.assertTermOpen(courseId, 'los pesos ya no se pueden cambiar');
     await this.prisma.course.update({ where: { id: courseId }, data: weights });
     this.activity.log({
       userId: user.sub,

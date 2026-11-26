@@ -48,13 +48,12 @@ export interface MaterialsView {
   materials: Material[];
 }
 
-export type ResourceType = "NOTE" | "STUDY_GUIDE" | "EXAM" | "BOOK" | "OTHER";
+export type ResourceType = "NOTE" | "STUDY_GUIDE" | "BOOK" | "OTHER";
 export type ResourceStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
   NOTE: "Apuntes",
   STUDY_GUIDE: "Guía de estudio",
-  EXAM: "Examen resuelto",
   BOOK: "Libro o lectura",
   OTHER: "Otro",
 };

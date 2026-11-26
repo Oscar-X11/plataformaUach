@@ -29,6 +29,7 @@ export function normalizeRubric(input: unknown): RubricCriterionData[] {
   if (!Array.isArray(input)) throw new BadRequestException('La rúbrica debe ser una lista de criterios');
   if (input.length > MAX_CRITERIA) throw new BadRequestException(`Una rúbrica admite como máximo ${MAX_CRITERIA} criterios`);
 
+  const titles = new Set<string>();
   return input.map((raw, index) => {
     const fail = (message: string): never => {
       throw new BadRequestException(`Criterio ${index + 1}: ${message}`);
@@ -37,6 +38,8 @@ export function normalizeRubric(input: unknown): RubricCriterionData[] {
     const title = clean(item.title);
     if (!title) fail('escribe el nombre del criterio');
     if (title.length > 150) fail('el nombre es demasiado largo');
+    if (titles.has(title.toLowerCase())) fail(`ya hay otro criterio llamado «${title}»`);
+    titles.add(title.toLowerCase());
     const description = clean(item.description) || null;
     if (description && description.length > 500) fail('la descripción es demasiado larga');
 
@@ -58,6 +61,14 @@ export function normalizeRubric(input: unknown): RubricCriterionData[] {
     if (levels.length < 2) fail('necesita al menos 2 niveles');
     if (levels.length > MAX_LEVELS) fail(`admite como máximo ${MAX_LEVELS} niveles`);
     if (new Set(levels.map((level) => level.id)).size !== levels.length) fail('hay niveles repetidos');
+    // Errores comunes al armar una rúbrica: niveles que no se distinguen o un criterio que no vale nada.
+    if (new Set(levels.map((level) => level.label.toLowerCase())).size !== levels.length) {
+      fail('dos niveles tienen el mismo nombre');
+    }
+    if (new Set(levels.map((level) => level.points)).size !== levels.length) {
+      fail('dos niveles valen los mismos puntos; cada nivel debe valer distinto');
+    }
+    if (Math.max(...levels.map((level) => level.points)) === 0) fail('el mejor nivel debe valer más de 0 puntos');
     levels.sort((a, b) => b.points - a.points);
     return { title, description, levels };
   });

@@ -67,8 +67,8 @@ export class CareerDto extends NamedWithCode {
 export class SubjectDto extends NamedWithCode {
   @Type(() => Number)
   @IsInt({ message: 'El cuatrimestre o semestre debe ser un número entero' })
-  @Min(1, { message: 'El cuatrimestre o semestre va de 1 a 12' })
-  @Max(12, { message: 'El cuatrimestre o semestre va de 1 a 12' })
+  @Min(1, { message: 'El cuatrimestre o semestre va de 1 a 9' })
+  @Max(9, { message: 'El cuatrimestre o semestre va de 1 a 9' })
   semester!: number;
 
   @IsUUID('all', { message: 'Selecciona una carrera' })

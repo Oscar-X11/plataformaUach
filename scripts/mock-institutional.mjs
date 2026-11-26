@@ -9,7 +9,7 @@ import { average, extOf, parseMultipart, readRaw, submissionState } from "./mock
 const DAY = 86_400_000;
 const MB = 1024 * 1024;
 const ALLOWED = ["pdf", "png", "jpg", "jpeg", "webp", "docx", "xlsx", "pptx", "doc", "xls", "ppt", "zip", "txt", "csv"];
-const RESOURCE_TYPES = ["NOTE", "STUDY_GUIDE", "EXAM", "BOOK", "OTHER"];
+const RESOURCE_TYPES = ["NOTE", "STUDY_GUIDE", "BOOK", "OTHER"];
 
 const fields = (parts) =>
   Object.fromEntries(parts.filter((p) => !p.filename).map((p) => [p.name, p.data.toString("utf8").trim()]));

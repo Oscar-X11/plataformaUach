@@ -29,6 +29,14 @@ export function WeightsEditor({
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
+    if (tasks === weights.assignments) {
+      setOpen(false);
+      return;
+    }
+    const confirmed = window.confirm(
+      `La calificación final de todos los alumnos se recalculará con tareas ${tasks} % y cuestionarios ${100 - tasks} %. ¿Guardar?`,
+    );
+    if (!confirmed) return;
     setBusy(true);
     setError(null);
     try {

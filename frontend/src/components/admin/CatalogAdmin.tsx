@@ -98,7 +98,7 @@ function EntityForm({
         {kind === "subject" && (
           <div>
             <label htmlFor={`${prefix}-semester`} className="mb-1 block text-xs font-medium text-uach-ink/75">{scheme === "SEMESTRAL" ? "Semestre" : "Cuatrimestre"}</label>
-            <input id={`${prefix}-semester`} name="semester" type="number" min={1} max={12} required defaultValue={item?.semester ?? 1} className={INPUT} />
+            <input id={`${prefix}-semester`} name="semester" type="number" min={1} max={9} required defaultValue={item?.semester ?? 1} className={INPUT} />
           </div>
         )}
         {kind === "faculty" && (

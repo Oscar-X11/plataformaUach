@@ -18,7 +18,7 @@ export default async function RepositorioPage({ searchParams }: { searchParams: 
       <header className="rounded-2xl bg-uach-petrol p-5 text-white sm:p-6">
         <h1 className="text-2xl font-semibold tracking-tight">Repositorio institucional</h1>
         <p className="mt-1.5 max-w-2xl text-sm text-white/80">
-          Apuntes, guías, exámenes resueltos y lecturas de la comunidad UACH, organizados por materia.
+          Apuntes, guías de estudio y lecturas de la comunidad UACH, organizados por materia.
           {user.role === "STUDENT" ? " Lo que compartas se revisa antes de publicarse." : ""}
         </p>
       </header>

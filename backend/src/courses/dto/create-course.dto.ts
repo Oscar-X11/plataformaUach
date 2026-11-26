@@ -44,7 +44,7 @@ export class CreateCourseDto {
   @Type(() => Number)
   @IsInt({ message: 'Elige el cuatrimestre o semestre' })
   @Min(1, { message: 'Elige el cuatrimestre o semestre' })
-  @Max(12, { message: 'El cuatrimestre o semestre va de 1 a 12' })
+  @Max(9, { message: 'El cuatrimestre o semestre va de 1 a 9' })
   grade!: number;
 
   /** Materia del catálogo (opcional). Debe ser de la misma carrera. */
@@ -86,7 +86,7 @@ export class CopyCourseDto {
   @Type(() => Number)
   @IsInt({ message: 'Elige el cuatrimestre o semestre' })
   @Min(1)
-  @Max(12)
+  @Max(9, { message: 'El cuatrimestre o semestre va de 1 a 9' })
   grade?: number;
 }
 

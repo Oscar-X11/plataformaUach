@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { MAX_GRADE } from '../courses/courses.service';
 import { PrismaService } from '../database/prisma.service';
 import { CareerDto, FacultyDto, SubjectDto, TermDto, UpdateTermDto } from './catalog.dto';
 
@@ -136,13 +137,27 @@ export class CatalogService {
   // ───────────── Materias ─────────────
 
   async createSubject(dto: SubjectDto) {
-    await this.assertExists('career', dto.careerId, 'La carrera no existe');
+    await this.assertSubjectSemester(dto);
     return this.prisma.subject.create({ data: dto }).catch((e) => friendly(e, 'una materia'));
   }
 
   async updateSubject(id: string, dto: SubjectDto) {
-    await this.assertExists('career', dto.careerId, 'La carrera no existe');
+    await this.assertSubjectSemester(dto);
     return this.prisma.subject.update({ where: { id }, data: dto }).catch((e) => friendly(e, 'una materia'));
+  }
+
+  /** La carrera existe y el semestre no rebasa los de su nivel (9 cuatrimestres o 6 semestres). */
+  private async assertSubjectSemester(dto: SubjectDto) {
+    const career = await this.prisma.career.findUnique({
+      where: { id: dto.careerId },
+      select: { faculty: { select: { scheme: true } } },
+    });
+    if (!career) throw new NotFoundException('La carrera no existe');
+    const max = MAX_GRADE[career.faculty.scheme];
+    if (dto.semester > max) {
+      const unit = career.faculty.scheme === 'SEMESTRAL' ? 'semestre' : 'cuatrimestre';
+      throw new BadRequestException(`El ${unit} va de 1 a ${max} en esta carrera`);
+    }
   }
 
   async deleteSubject(id: string) {

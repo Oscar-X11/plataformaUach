@@ -63,6 +63,23 @@ export function submissionView(dueAt: Date | null, row: SubmissionRow | null, fo
   };
 }
 
+/** Margen para no rechazar una fecha de «ahora mismo» por segundos de diferencia. */
+const PAST_TOLERANCE_MS = 5 * 60_000;
+const isPast = (date: Date | null | undefined) => Boolean(date && date.getTime() < Date.now() - PAST_TOLERANCE_MS);
+
+/**
+ * Reglas de fechas para que el docente no deje una tarea imposible de entregar:
+ * la entrega no puede estar en el pasado y debe ser posterior a la apertura.
+ */
+function assertAssignmentDates(dueAt: Date | null, availableFrom: Date | null, dueChanged: boolean) {
+  if (dueChanged && isPast(dueAt)) {
+    throw new BadRequestException('La fecha de entrega ya pasó: todos los alumnos quedarían con la tarea vencida');
+  }
+  if (dueAt && availableFrom && availableFrom >= dueAt) {
+    throw new BadRequestException('La tarea debe abrirse antes de su fecha de entrega');
+  }
+}
+
 const parseDue = (value: string | null | undefined) => {
   if (value === undefined) return undefined;
   if (value === null) return null;
@@ -111,10 +128,12 @@ export class AssignmentsService {
 
   async create(courseId: string, dto: CreateAssignmentDto, user: TokenPayload) {
     await this.access.assertCanManage(courseId, user);
+    await this.access.assertTermOpen(courseId, 'ya no se pueden crear tareas');
     const course = await this.prisma.course.findUniqueOrThrow({
       where: { id: courseId },
       select: { name: true, teacherId: true, enrollments: { select: { studentId: true } } },
     });
+    const dueAt = parseDue(dto.dueAt) ?? null;
 
     const requirement = await this.availability.validateRequirement(
       courseId,
@@ -123,6 +142,7 @@ export class AssignmentsService {
       dto.requiresId,
     );
     const availableFrom = parseDue(dto.availableFrom) ?? null;
+    assertAssignmentDates(dueAt, availableFrom, true);
     const assignment = await this.prisma.assignment.create({
       data: {
         courseId,
@@ -130,7 +150,7 @@ export class AssignmentsService {
         teacherId: course.teacherId,
         title: dto.title,
         instructions: dto.instructions ?? '',
-        dueAt: parseDue(dto.dueAt) ?? null,
+        dueAt,
         points: dto.points ?? 10,
         availableFrom,
         ...requirement,
@@ -161,7 +181,16 @@ export class AssignmentsService {
     const { assignment } = await this.resolve(assignmentId, user);
     await this.access.assertCanManage(assignment.courseId, user);
 
-    if (dto.points !== undefined) {
+    const dueAt = parseDue(dto.dueAt);
+    const availableFrom = parseDue(dto.availableFrom);
+    assertAssignmentDates(
+      dueAt === undefined ? assignment.dueAt : dueAt,
+      availableFrom === undefined ? assignment.availableFrom : availableFrom,
+      dueAt !== undefined && dueAt?.getTime() !== assignment.dueAt?.getTime(),
+    );
+
+    if (dto.points !== undefined && dto.points !== assignment.points) {
+      await this.access.assertTermOpen(assignment.courseId, 'los puntos ya no se pueden cambiar');
       const highest = await this.prisma.submission.aggregate({
         where: { assignmentId },
         _max: { grade: true },
@@ -174,7 +203,7 @@ export class AssignmentsService {
       }
     }
 
-    if (dto.points !== undefined && assignment.rubric.length) {
+    if (dto.points !== undefined && dto.points !== assignment.points && assignment.rubric.length) {
       throw new BadRequestException('Con rúbrica, los puntos son la suma de sus criterios');
     }
     const requirement =
@@ -192,9 +221,9 @@ export class AssignmentsService {
       data: {
         title: dto.title,
         instructions: dto.instructions,
-        dueAt: parseDue(dto.dueAt),
+        dueAt,
         points: dto.points,
-        availableFrom: parseDue(dto.availableFrom),
+        availableFrom,
         ...requirement,
       },
     });
@@ -226,6 +255,7 @@ export class AssignmentsService {
   async setRubric(assignmentId: string, input: unknown[], user: TokenPayload) {
     const { assignment } = await this.resolve(assignmentId, user);
     await this.access.assertCanManage(assignment.courseId, user);
+    await this.access.assertTermOpen(assignment.courseId, 'la rúbrica ya no se puede cambiar');
     const criteria = normalizeRubric(input);
     const used = await this.prisma.submission.count({
       where: { assignmentId, rubricSelection: { not: Prisma.AnyNull } },

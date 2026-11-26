@@ -44,7 +44,8 @@ const COURSE_SELECT = {
 type CourseRow = Prisma.CourseGetPayload<{ select: typeof COURSE_SELECT }>;
 
 /** Cuatrimestres o semestres que puede tener una carrera según su nivel. */
-export const MAX_GRADE = { CUATRIMESTRAL: 12, SEMESTRAL: 6 } as const;
+/** Licenciaturas e ingenierías: 9 cuatrimestres. Bachillerato: 6 semestres. */
+export const MAX_GRADE = { CUATRIMESTRAL: 9, SEMESTRAL: 6 } as const;
 
 /** "ISC · 4.º cuat" — etiqueta corta de la clase para listas y paneles. */
 export function courseLabel(course: { grade: number; career: { code: string; faculty: { scheme: string } } }) {

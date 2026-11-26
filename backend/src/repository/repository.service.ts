@@ -29,7 +29,7 @@ const RESOURCE_SELECT = {
 } satisfies Prisma.ResourceSelect;
 
 /**
- * Repositorio institucional: apuntes, guías, exámenes resueltos, libros.
+ * Repositorio institucional: apuntes, guías de estudio, libros y lecturas.
  * Lo que sube un alumno queda PENDIENTE hasta que un admin lo aprueba;
  * lo de docentes y admins se publica directo.
  */

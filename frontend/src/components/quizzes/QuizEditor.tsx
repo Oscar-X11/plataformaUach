@@ -94,6 +94,36 @@ function toPayload(kind: QuizKind, drafts: Draft[]) {
   });
 }
 
+/**
+ * Revisión de una pregunta con las reglas del backend. `errors` impiden guardar;
+ * `notes` avisan de algo que probablemente no es lo que el docente quería.
+ */
+function questionIssues(kind: QuizKind, d: Draft) {
+  const graded = kind === "QUIZ";
+  const errors: string[] = [];
+  const notes: string[] = [];
+  if (!d.prompt.trim()) errors.push("Escribe la pregunta.");
+  if (CHOICE.includes(d.type)) {
+    const texts = d.options.map((option) => option.text.trim().toLowerCase());
+    if (texts.length < 2) errors.push("Necesita al menos 2 opciones.");
+    if (texts.some((text) => !text)) errors.push("Hay opciones vacías.");
+    else if (new Set(texts).size !== texts.length) errors.push("Hay dos opciones con el mismo texto.");
+  }
+  if (graded) {
+    const choice = CHOICE.includes(d.type) || d.type === "TRUE_FALSE";
+    if (choice && d.correct.length === 0) errors.push("Marca la respuesta correcta.");
+    if (d.type === "MULTIPLE" && d.options.length > 1 && d.correct.length === d.options.length) {
+      notes.push("Marcaste todas las opciones como correctas.");
+    }
+    if (!Number.isInteger(Number(d.points)) || Number(d.points) < 0) errors.push("Los puntos deben ser un entero de 0 o más.");
+    else if (Number(d.points) === 0) notes.push("Vale 0 puntos: no cuenta para la calificación.");
+    if (d.type === "PARAGRAPH" || (d.type === "SHORT" && !d.accepted.trim())) {
+      notes.push("No se califica sola: tendrás que calificarla a mano en Respuestas.");
+    }
+  }
+  return { errors, notes };
+}
+
 /** ISO → valor de <input type="datetime-local"> en la hora local del navegador. */
 function toLocalInput(iso: string | null) {
   if (!iso) return "";
@@ -126,6 +156,21 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
   const [saved, setSaved] = useState(false);
 
   const total = graded ? questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0) : 0;
+  const review = questions.map((q) => questionIssues(kind, q));
+  const opensDate = opensAt ? new Date(opensAt) : null;
+  const closesDate = closesAt ? new Date(closesAt) : null;
+  const settingsErrors = [
+    ...(title.trim().length < 3 ? ["El título debe tener al menos 3 caracteres."] : []),
+    ...(opensDate && closesDate && closesDate <= opensDate ? ["La fecha de cierre debe ser posterior a la de apertura."] : []),
+    ...(closesDate && closesDate < new Date() && !quiz?.published && !locked
+      ? ["La fecha de cierre ya pasó: los alumnos no podrían responder."]
+      : []),
+    ...(graded && visibility === "AFTER_CLOSE" && !closesDate ? ["Para mostrar resultados después del cierre, indica la fecha de cierre."] : []),
+  ];
+  const questionErrors = locked
+    ? []
+    : review.flatMap((item, index) => item.errors.map((message) => `Pregunta ${index + 1}: ${message}`));
+  const blocking = [...settingsErrors, ...questionErrors];
 
   const update = (key: string, patch: Partial<Draft>) =>
     setQuestions((list) => list.map((q) => (q.key === key ? { ...q, ...patch } : q)));
@@ -138,6 +183,7 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
     });
 
   async function save() {
+    if (blocking.length) return;
     setBusy(true);
     setError(null);
     setSaved(false);
@@ -291,6 +337,16 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
               }
               onRemove={() => setQuestions((list) => list.filter((item) => item.key !== q.key))}
             />
+            {!readOnly && (review[index].errors.length > 0 || review[index].notes.length > 0) && (
+              <ul className="mt-2 space-y-0.5 rounded-lg px-3 py-2 text-xs" aria-live="polite">
+                {review[index].errors.map((message) => (
+                  <li key={message} className="text-red-700">{message}</li>
+                ))}
+                {review[index].notes.map((message) => (
+                  <li key={message} className="text-amber-800">{message}</li>
+                ))}
+              </ul>
+            )}
           </li>
         ))}
       </ol>
@@ -304,6 +360,19 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
 
       {error && <FormAlert message={error} />}
       {saved && <FormAlert tone="info" message="Cambios guardados." />}
+      {!readOnly && blocking.length > 0 && (
+        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" role="status">
+          <p className="font-medium">Antes de guardar, corrige:</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">
+            {blocking.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!readOnly && graded && total === 0 && questions.length > 0 && (
+        <FormAlert tone="info" message="El cuestionario vale 0 puntos. Así no se podrá publicar: asigna puntos a sus preguntas." />
+      )}
 
       <div className="sticky bottom-3 z-10 flex flex-col-reverse gap-2 rounded-2xl bg-uach-surface p-3 shadow-sm ring-1 ring-uach-ink/[0.06] sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-uach-ink/75 tabular-nums">
@@ -315,7 +384,7 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
             {quiz ? "Volver" : "Cancelar"}
           </button>
           {!readOnly && (
-            <button type="button" onClick={save} disabled={busy} className={BTN_PRIMARY}>
+            <button type="button" onClick={save} disabled={busy || blocking.length > 0} className={BTN_PRIMARY}>
               {busy && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
               {quiz ? "Guardar cambios" : `Crear ${KIND_LABEL[kind].one}`}
             </button>

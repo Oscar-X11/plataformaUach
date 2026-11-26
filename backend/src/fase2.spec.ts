@@ -1,5 +1,4 @@
 import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { TokenPayload } from './auth/token.service';
 import { CourseAccessService } from './courses/course-access.service';
 import { ProgressService } from './classwork/progress.service';

@@ -19,7 +19,7 @@ interface LevelOption {
 }
 
 /** Cuatrimestres o semestres que se pueden elegir (igual que el backend). */
-const MAX_GRADE: Record<TermScheme, number> = { CUATRIMESTRAL: 12, SEMESTRAL: 6 };
+const MAX_GRADE: Record<TermScheme, number> = { CUATRIMESTRAL: 9, SEMESTRAL: 6 };
 const capitalize = (text: string) => text.replace(/^./, (c) => c.toUpperCase());
 
 /**

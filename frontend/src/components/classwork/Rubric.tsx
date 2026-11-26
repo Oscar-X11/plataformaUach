@@ -23,6 +23,28 @@ interface CriterionDraft {
   levels: LevelDraft[];
 }
 
+/**
+ * Revisión en vivo de un criterio, con las mismas reglas que el backend, para que
+ * el docente vea el problema mientras arma la rúbrica y no al guardar.
+ */
+function criterionIssues(criterion: CriterionDraft, others: CriterionDraft[]): string[] {
+  const issues: string[] = [];
+  const title = criterion.title.trim().toLowerCase();
+  if (!title) issues.push("Escribe el nombre del criterio.");
+  else if (others.some((other) => other.title.trim().toLowerCase() === title)) issues.push("Ya hay otro criterio con este nombre.");
+  const labels = criterion.levels.map((level) => level.label.trim().toLowerCase());
+  if (labels.some((label) => !label)) issues.push("Hay niveles sin nombre.");
+  else if (new Set(labels).size !== labels.length) issues.push("Dos niveles tienen el mismo nombre.");
+  const points = criterion.levels.map((level) => Number(level.points));
+  if (points.some((value) => !Number.isInteger(value) || value < 0 || value > 100)) {
+    issues.push("Los puntos de cada nivel deben ser un entero de 0 a 100.");
+  } else {
+    if (new Set(points).size !== points.length) issues.push("Dos niveles valen lo mismo: cada nivel debe valer distinto.");
+    if (Math.max(...points) === 0) issues.push("El mejor nivel debe valer más de 0 puntos.");
+  }
+  return issues;
+}
+
 let seq = 0;
 const nextKey = () => `k${++seq}`;
 
@@ -126,6 +148,10 @@ export function RubricEditor({ assignment, onDone }: { assignment: AssignmentVie
   const [busy, setBusy] = useState<"save" | "remove" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const total = criteria.reduce((sum, criterion) => sum + maxOf(criterion.levels), 0);
+  const issues = criteria.map((criterion) => criterionIssues(criterion, criteria.filter((other) => other.key !== criterion.key)));
+  const totalIssue = criteria.length && (total < 1 || total > 100) ? "La suma de los mejores niveles debe estar entre 1 y 100 puntos." : null;
+  const valid = criteria.length > 0 && !totalIssue && issues.every((list) => list.length === 0);
+  const pointsChange = criteria.length > 0 && total !== assignment.points;
 
   const patch = (key: string, change: Partial<CriterionDraft>) =>
     setCriteria((list) => list.map((item) => (item.key === key ? { ...item, ...change } : item)));
@@ -168,8 +194,23 @@ export function RubricEditor({ assignment, onDone }: { assignment: AssignmentVie
     }
   }
 
+  function removeRubric() {
+    if (!window.confirm(`¿Quitar la rúbrica? La tarea conservará ${assignment.points} puntos y calificarás escribiendo la nota.`)) return;
+    void send([], "remove");
+  }
+
+  function save() {
+    if (!valid) return;
+    if (pointsChange && !window.confirm(`Con esta rúbrica la tarea pasará de ${assignment.points} a ${total} puntos. ¿Guardar?`)) return;
+    void send(criteria, "save");
+  }
+
   return (
     <div className="space-y-4">
+      <FormAlert
+        tone="info"
+        message="Revisa la rúbrica antes de calificar: en cuanto califiques a un alumno con ella ya no se podrá cambiar. Los puntos de la tarea serán la suma del mejor nivel de cada criterio."
+      />
       {error && <FormAlert message={error} />}
       {criteria.map((criterion, index) => (
         <fieldset key={criterion.key} className="space-y-3 rounded-xl border border-uach-ink/10 p-4">
@@ -275,6 +316,13 @@ export function RubricEditor({ assignment, onDone }: { assignment: AssignmentVie
               Nivel
             </button>
           )}
+          {issues[index].length > 0 && (
+            <ul className="space-y-0.5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900" aria-live="polite">
+              {issues[index].map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          )}
         </fieldset>
       ))}
 
@@ -286,19 +334,21 @@ export function RubricEditor({ assignment, onDone }: { assignment: AssignmentVie
               Agregar criterio
             </button>
           )}
-          <span className="text-sm text-uach-ink/75">
+          <span className={`text-sm ${totalIssue ? "text-red-700" : "text-uach-ink/75"}`}>
             La tarea valdrá <span className="font-semibold tabular-nums text-uach-ink">{total}</span> puntos
+            {pointsChange && !totalIssue && <span> (ahora vale {assignment.points})</span>}
+            {totalIssue && <span className="block text-xs">{totalIssue}</span>}
           </span>
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row">
           {assignment.rubric.length > 0 && (
-            <button type="button" disabled={busy !== null} onClick={() => void send([], "remove")} className={BTN_DANGER}>
+            <button type="button" disabled={busy !== null} onClick={removeRubric} className={BTN_DANGER}>
               {busy === "remove" && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
               Quitar rúbrica
             </button>
           )}
           <button type="button" onClick={onDone} className={BTN_GHOST}>Cancelar</button>
-          <button type="button" disabled={busy !== null || criteria.length === 0} onClick={() => void send(criteria, "save")} className={BTN_PRIMARY}>
+          <button type="button" disabled={busy !== null || !valid} onClick={save} className={BTN_PRIMARY}>
             {busy === "save" && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
             Guardar rúbrica
           </button>

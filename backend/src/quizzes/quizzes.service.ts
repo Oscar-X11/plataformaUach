@@ -169,7 +169,8 @@ export class QuizzesService {
 
   async create(courseId: string, dto: CreateQuizDto, user: TokenPayload) {
     await this.access.assertCanManage(courseId, user);
-    const settings = this.settingsFrom(dto, dto.kind, { opensAt: null, closesAt: null });
+    await this.access.assertTermOpen(courseId, 'ya no se pueden crear cuestionarios ni encuestas');
+    const settings = this.settingsFrom(dto, dto.kind, { opensAt: null, closesAt: null, published: false });
     const questions = normalizeQuestions(dto.kind, dto.questions ?? []);
     const requirement = await this.availability.validateRequirement(
       courseId,
@@ -225,8 +226,16 @@ export class QuizzesService {
 
   async setPublished(quizId: string, published: boolean, user: TokenPayload) {
     const quiz = await this.loadForManager(quizId, user);
-    if (published && quiz.questions.length === 0) {
-      throw new BadRequestException('Agrega al menos una pregunta antes de publicar');
+    if (published) {
+      // Revisión previa para que el docente no publique algo que los alumnos no puedan responder.
+      if (quiz.questions.length === 0) throw new BadRequestException('Agrega al menos una pregunta antes de publicar');
+      if (quiz.kind === 'QUIZ' && totalPoints(quiz.questions) === 0) {
+        throw new BadRequestException('El cuestionario vale 0 puntos: asigna puntos a sus preguntas antes de publicar');
+      }
+      if (quiz.closesAt && quiz.closesAt <= new Date()) {
+        throw new BadRequestException('La fecha de cierre ya pasó: los alumnos no podrían responder. Cámbiala antes de publicar');
+      }
+      if (!quiz.publishedAt) await this.access.assertTermOpen(quiz.courseId, 'ya no se puede publicar');
     }
     if (!published) {
       const responses = await this.prisma.quizAttempt.count({ where: { quizId } });
@@ -729,7 +738,7 @@ export class QuizzesService {
   private settingsFrom(
     dto: UpdateQuizDto,
     kind: QuizKind,
-    current: { opensAt: Date | null; closesAt: Date | null; resultsVisibility?: string },
+    current: { opensAt: Date | null; closesAt: Date | null; resultsVisibility?: string; published: boolean },
   ) {
     const opensAt = parseDate(dto.opensAt, 'apertura');
     const closesAt = parseDate(dto.closesAt, 'cierre');
@@ -737,6 +746,11 @@ export class QuizzesService {
     const finalCloses = closesAt === undefined ? current.closesAt : closesAt;
     if (finalOpens && finalCloses && finalCloses <= finalOpens) {
       throw new BadRequestException('La fecha de cierre debe ser posterior a la de apertura');
+    }
+    // En un borrador, un cierre en el pasado es un error. Publicado, sirve para cerrarlo antes.
+    const closesChanged = closesAt !== undefined && closesAt?.getTime() !== current.closesAt?.getTime();
+    if (closesChanged && closesAt && !current.published && closesAt.getTime() < Date.now() - 5 * 60_000) {
+      throw new BadRequestException('La fecha de cierre ya pasó: los alumnos no podrían responder');
     }
     const visibility = dto.resultsVisibility ?? current.resultsVisibility;
     if (kind === 'QUIZ' && visibility === 'AFTER_CLOSE' && !finalCloses) {
@@ -746,7 +760,8 @@ export class QuizzesService {
       ...(dto.description !== undefined ? { description: dto.description } : {}),
       ...(opensAt !== undefined ? { opensAt } : {}),
       ...(closesAt !== undefined ? { closesAt } : {}),
-      ...(dto.timeLimitMinutes !== undefined ? { timeLimitMinutes: dto.timeLimitMinutes } : {}),
+      // Las encuestas no tienen tiempo límite.
+      ...(kind === 'SURVEY' ? { timeLimitMinutes: null } : dto.timeLimitMinutes !== undefined ? { timeLimitMinutes: dto.timeLimitMinutes } : {}),
       // Las encuestas no tienen resultados para el alumno.
       ...(dto.resultsVisibility !== undefined ? { resultsVisibility: kind === 'SURVEY' ? 'NEVER' : dto.resultsVisibility } : {}),
     } as const;

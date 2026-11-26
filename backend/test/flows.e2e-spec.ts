@@ -88,6 +88,8 @@ describe('Flujos principales (e2e)', () => {
     expect(course.body).toMatchObject({ grade: 4, subject: null, career: { code: 'ISC' } });
 
     await teacher.post('/courses').send({ name: 'Mala', careerId: catalog.careerId, grade: 13, term: catalog.term }).expect(400);
+    // Licenciaturas e ingenierías llegan hasta el 9.º cuatrimestre.
+    await teacher.post('/courses').send({ name: 'Mala', careerId: catalog.careerId, grade: 10, term: catalog.term }).expect(400);
     await student.post('/courses/join').send({ code: course.body.invitation }).expect(200);
 
     await teacher.patch(`/courses/${courseId}/description`).send({ description: 'Nueva descripción' }).expect(200);
@@ -163,6 +165,35 @@ describe('Flujos principales (e2e)', () => {
     await student.post(`/notifications/${first.id}/read`).expect(204);
     const after = await student.get('/notifications').expect(200);
     expect(after.body.unreadCount).toBe(unread - 1);
+  });
+
+  it('el docente no puede dejar actividades imposibles de responder', async () => {
+    const ago = new Date(Date.now() - 2 * 86_400_000).toISOString();
+    // Tarea con entrega en el pasado, o que abre después de su entrega.
+    await teacher.post(`/courses/${courseId}/assignments`).send({ title: 'Vencida', dueAt: ago }).expect(400);
+    await teacher
+      .post(`/courses/${courseId}/assignments`)
+      .send({ title: 'Al revés', dueAt: inDays(2), availableFrom: inDays(3) })
+      .expect(400);
+    // Rúbrica con dos niveles que valen lo mismo.
+    const task = await teacher.post(`/courses/${courseId}/assignments`).send({ title: 'Ensayo', dueAt: inDays(5) }).expect(201);
+    await teacher
+      .put(`/assignments/${task.body.id}/rubric`)
+      .send({ criteria: [{ title: 'Contenido', levels: [{ label: 'Bien', points: 5 }, { label: 'Regular', points: 5 }] }] })
+      .expect(400);
+    // Cuestionario: cierre en el pasado o sin puntos.
+    await teacher.post(`/courses/${courseId}/quizzes`).send({ title: 'Viejo', kind: 'QUIZ', closesAt: ago }).expect(400);
+    const zero = await teacher
+      .post(`/courses/${courseId}/quizzes`)
+      .send({
+        title: 'Sin puntos',
+        kind: 'QUIZ',
+        questions: [{ type: 'TRUE_FALSE', prompt: '¿Sí?', points: 0, answerKey: { option: 'true' } }],
+      })
+      .expect(201);
+    await teacher.post(`/quizzes/${zero.body.id}/publish`).send({ published: true }).expect(400);
+    // El repositorio ya no tiene «Examen resuelto».
+    await teacher.post('/repository').field('title', 'Examen').field('type', 'EXAM').field('url', 'https://drive.google.com/x').expect(400);
   });
 
   it('el administrador consulta y modera las clases, pero no crea contenido ni participa', async () => {

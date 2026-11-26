@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -46,5 +47,19 @@ export class CourseAccessService {
       throw new ForbiddenException('Solo el docente del curso puede hacer esto');
     }
     return role;
+  }
+
+  /**
+   * Con el periodo cerrado ya no se cambia nada que afecte calificaciones:
+   * crear tareas o cuestionarios, rúbricas, puntos, pesos ni calificar.
+   */
+  async assertTermOpen(courseId: string, action = 'las calificaciones ya no se pueden cambiar') {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { academicTerm: { select: { closed: true } } },
+    });
+    if (course?.academicTerm.closed) {
+      throw new ConflictException(`El periodo está cerrado: ${action}`);
+    }
   }
 }
