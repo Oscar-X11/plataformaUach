@@ -85,10 +85,10 @@ describe('RepositoryService', () => {
   }
   const dto = { title: 'Guía de SQL', type: 'STUDY_GUIDE' as const, subjectId: 'sub' };
 
-  it('lo de alumnos queda pendiente; lo de docentes se publica', async () => {
+  it('todo lo que se sube, de alumnos y de docentes, queda pendiente de revisión', async () => {
     const { service } = setup();
     await expect(service.upload(dto, pdf, student)).resolves.toMatchObject({ status: 'PENDING' });
-    await expect(service.upload(dto, pdf, teacher)).resolves.toMatchObject({ status: 'APPROVED' });
+    await expect(service.upload(dto, pdf, teacher)).resolves.toMatchObject({ status: 'PENDING' });
   });
 
   it('acepta un enlace en lugar del archivo, pero no ambos ni ninguno', async () => {

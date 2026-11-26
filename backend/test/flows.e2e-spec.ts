@@ -194,6 +194,21 @@ describe('Flujos principales (e2e)', () => {
     await teacher.post(`/quizzes/${zero.body.id}/publish`).send({ published: true }).expect(400);
     // El repositorio ya no tiene «Examen resuelto».
     await teacher.post('/repository').field('title', 'Examen').field('type', 'EXAM').field('url', 'https://drive.google.com/x').expect(400);
+    // Lo que sube un docente también espera revisión.
+    const subject = await admin
+      .post('/academic/subjects')
+      .send({ code: 'ISC-E2E', name: 'Materia E2E', semester: 1, careerId: catalog.careerId })
+      .expect(201);
+    const shared = await teacher
+      .post('/repository')
+      .field('title', 'Guía del parcial')
+      .field('type', 'STUDY_GUIDE')
+      .field('subjectId', subject.body.id)
+      .field('url', 'https://drive.google.com/guia')
+      .expect(201);
+    expect(shared.body.status).toBe('PENDING');
+    const pending = await admin.get('/repository/pending').expect(200);
+    expect(pending.body.map((item: { id: string }) => item.id)).toContain(shared.body.id);
   });
 
   it('el administrador consulta y modera las clases, pero no crea contenido ni participa', async () => {

@@ -1,6 +1,6 @@
 # Avance del proyecto — Plataforma UACH
 
-> Última actualización: 2026-11-23
+> Última actualización: 2026-11-25
 >
 > Leyenda: ✅ Hecho · 🔄 En proceso · ⬜ Pendiente · ❓ Por decidir
 >
@@ -24,10 +24,10 @@
 
 | Elemento | Estado |
 | --- | --- |
-| Base de datos MySQL | ✅ Local en Docker (puerto 3307), las 10 migraciones aplicadas (la última, `20261124160000_rubricas_progreso_bitacora`). Probada de punta a punta el 2026-11-23. |
+| Base de datos MySQL | ✅ Local en Docker (puerto 3307), las 11 migraciones aplicadas (la última, `20261125120000_quitar_examen_resuelto`). Probada de punta a punta el 2026-11-25. |
 | Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer las fases 1 y 2 sin base de datos. No incluye cuestionarios ni lo de las fases 3 y 4. |
-| Pruebas del backend | ✅ 110 unitarias y 23 e2e contra una base de pruebas aparte (cuentas, sesiones, clases, tareas, rúbricas, condiciones, cuestionarios, calificaciones, progreso, reutilizar, bitácora y búsqueda). |
-| Despliegue (Docker / servidor) | 🔄 Compose ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado). Falta instalarlo en el servidor Debian. |
+| Pruebas del backend | ✅ 110 unitarias y 25 e2e contra una base de pruebas aparte (cuentas, sesiones, clases, tareas, rúbricas, condiciones, cuestionarios, calificaciones, progreso, reutilizar, bitácora, búsqueda, permisos del administrador, validaciones del docente y revisión del repositorio). |
+| Despliegue (Docker / servidor) | 🔄 Compose ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado). Swap documentada en el README; `npm run docker:build` compila las imágenes de una en una y `npm run docker:up` arranca sin recompilar. Falta instalarlo en el servidor Debian. |
 
 ---
 
@@ -52,6 +52,11 @@
 | 2026-11-23 | ✅ La app instalable **no funciona sin conexión**: sin service worker ni caché, para no gastar RAM ni disco del servidor. |
 | 2026-11-23 | ✅ El aviso de privacidad es un **borrador** con los datos reales de la UACH; la versión oficial la da la universidad. |
 | 2026-11-23 | ✅ Una tarea devuelta con calificación cuenta como completada para el acceso condicional, aunque el alumno no la haya entregado. |
+| 2026-11-25 | ✅ El **administrador consulta y modera, pero no crea contenido**: no publica ni comenta avisos, no crea tareas, rúbricas, cuestionarios ni material, no califica ni cambia pesos, no se une a clases ni a grupos de estudio y no sube al repositorio. Conserva ver todo, borrar y administrar cursos (incluidos descripción, horario y borrar tareas o cuestionarios con calificaciones). |
+| 2026-11-25 | ✅ Licenciaturas e ingenierías llegan hasta el **9.º cuatrimestre**; el bachillerato, hasta el 6.º semestre. |
+| 2026-11-25 | ✅ El repositorio ya no tiene el tipo «Examen resuelto». |
+| 2026-11-25 | ✅ **Todo lo que se sube al repositorio pasa por revisión** de un administrador, también lo de los docentes. |
+| 2026-11-25 | ✅ Reportes sin columna Promedio (no coincidía con la calificación real del libro). |
 
 ---
 
@@ -118,11 +123,11 @@ Todos los entregables se probaron con el backend simulado y después con la base
 
 - ✅ Calendario de entregas (`/calendario`): mes en cuadrícula y agenda en móvil.
 - ✅ Temas/unidades y material del curso (`/cursos/[cursoId]/recursos`): archivos y enlaces, solo para miembros.
-- ✅ Repositorio institucional con búsqueda y moderación (`/repositorio`); archivo subido o enlace de Google Drive.
+- ✅ Repositorio institucional con búsqueda y moderación (`/repositorio`); archivo subido o enlace de Google Drive. Todo lo que se sube (alumnos y docentes) espera la revisión de un administrador.
 - ✅ Vista previa de PDF, imágenes y enlaces de Drive en material y repositorio.
 - ✅ Grupos de estudio con miembros y cupo (`/grupos-estudio`).
 - ✅ Lugar y horario del curso: texto libre del docente (salón, horario o enlace de reunión) en el encabezado del curso; los enlaces se abren con un clic. También en los grupos de estudio.
-- ✅ Reportes por curso con exportación CSV (`/administracion/reportes`).
+- ✅ Reportes (`/administracion/reportes`): por curso (% entrega, sin calificar y alumnos en riesgo, con enlace al Seguimiento) y vista de alumnos en riesgo en varias clases; filtros por periodo y carrera, CSV de ambas vistas y aviso de que los números dependen del uso de la plataforma.
 - ✅ Administración: usuarios, panel con métricas y reportes.
 - ✅ Carreras (`/administracion/carreras`, antes «Catálogos»): niveles → carreras → materias, con alta, edición y borrado (solo de lo que no se usa). En la web no se usa la palabra «facultad».
 - ✅ Periodos (`/administracion/periodos`): alta con fechas, periodo actual, cerrar y reabrir. Los cursos solo se crean en periodos abiertos.
@@ -135,9 +140,9 @@ Lo que más usan docentes y alumnos en Moodle. Todo lo que se decidió implement
 
 | # | Funcionalidad | Qué incluye | Notas para el servidor de 4 GB |
 | --- | --- | --- | --- |
-| 1 | ✅ **Cuestionarios y encuestas** | Hecho (estilo Google Forms): opción múltiple, casillas, verdadero/falso, respuesta corta y párrafo; fechas de apertura y cierre, tiempo límite con envío automático, un intento, guardado automático, calificación automática, revisión manual, cuándo ve el alumno su resultado, resumen por pregunta y CSV. Las calificaciones van aparte. **No incluye** (decisión del usuario): varios intentos ni orden aleatorio. | Califica el backend; sin cálculos pesados. |
+| 1 | ✅ **Cuestionarios y encuestas** | Hecho (estilo Google Forms): opción múltiple, casillas, verdadero/falso, respuesta corta y párrafo; fechas de apertura y cierre, tiempo límite con envío automático, un intento, guardado automático, calificación automática, revisión manual, cuándo ve el alumno su resultado, resumen por pregunta y CSV. Las calificaciones van aparte. No se publica uno que vale 0 puntos o con el cierre vencido; el editor revisa cada pregunta y publicar pide confirmación con un resumen. **No incluye** (decisión del usuario): varios intentos ni orden aleatorio. | Califica el backend; sin cálculos pesados. |
 | 2 | ~~**Asistencia**~~ | **No se implementa** (decisión del 2026-11-23). | — |
-| 3 | ✅ **Rúbricas** | Hecho: criterios con niveles y puntos (hasta 20 criterios y 6 niveles); la tarea vale la suma del mejor nivel de cada criterio; al calificar se eligen niveles y la nota se calcula sola; el alumno ve la rúbrica antes y su nivel después. Una rúbrica ya usada no se cambia. | Ligero. |
+| 3 | ✅ **Rúbricas** | Hecho: criterios con niveles y puntos (hasta 20 criterios y 6 niveles); la tarea vale la suma del mejor nivel de cada criterio; al calificar se eligen niveles y la nota se calcula sola; el alumno ve la rúbrica antes y su nivel después. Una rúbrica ya usada no se cambia. Se rechazan niveles con los mismos puntos o nombre, criterios repetidos y criterios que valen 0; el editor marca cada problema en vivo. | Ligero. |
 | 4 | ✅ **Libro de calificaciones avanzado** | Hecho: tareas y cuestionarios con pesos por clase (60/40 por omisión), calificación final, aprueba según el nivel (preparatoria 6, licenciatura e ingeniería 7, editable en Carreras), CSV completo y notas bloqueadas con el periodo cerrado. **No incluye:** escalas con letras. | Amplía lo que ya existe. |
 | 5 | ~~**Foros por curso**~~ | **No se implementa** (decisión del 2026-11-23). ~~Foros con temas e hilos, suscripción, foro de preguntas y respuestas, calificar participación.~~ | — |
 | 6 | ~~**Mensajería directa**~~ | **No se implementa** (decisión del 2026-11-23). ~~Conversaciones docente ↔ alumno y entre compañeros del curso, avisos de mensaje nuevo.~~ | — |
@@ -172,19 +177,20 @@ Las que siguen abiertas también están en [Lo que falta](#lo-que-falta).
 - ✅ Sesión deslizante: la cookie se renueva sola mientras el usuario está activo (cada token dura 8 h; límite absoluto `SESSION_MAX_DAYS`, 14 días). Respeta la revocación por `sessionVersion`.
 - ✅ Invalidar las sesiones abiertas al desactivar una cuenta o restablecer o cambiar su contraseña (`sessionVersion`).
 - ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
-- ⬜ Swap y respaldos automáticos en el servidor Debian.
-- ✅ Pruebas automatizadas: 110 unitarias y 23 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
+- 🔄 Swap documentada en el README (falta aplicarla en el servidor). ⬜ Respaldos automáticos en el servidor Debian.
+- ✅ Validaciones para evitar errores del docente: tareas sin entrega en el pasado ni apertura posterior a la entrega; con el periodo cerrado no se crean actividades ni se cambian rúbricas, puntos o pesos; confirmación al cambiar pesos.
+- ✅ Pruebas automatizadas: 110 unitarias y 25 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
 
 ---
 
 ## Lo que falta
 
-Revisado el 2026-11-23. Orden sugerido: primero lo que impide usarla con personas reales.
+Revisado el 2026-11-25. Orden sugerido: primero lo que impide usarla con personas reales.
 
 ### 1. Antes de usarla con personas reales
-- ⬜ **Revisión a mano** de lo nuevo de las fases 3 y 4 como docente y como alumno: rúbricas, condiciones, pesos, Seguimiento, Reutilizar clase, búsqueda y app instalable.
-- ⬜ **Instalar en el servidor Debian** (4 GB): Docker Compose con Nginx, imágenes construidas fuera del servidor, HTTPS con `COOKIE_SECURE=true` y `CORS_ORIGINS` del dominio real.
-- ⬜ **Swap** de 2 a 4 GB en el servidor.
+- ⬜ **Revisión a mano** de lo nuevo de las fases 3 y 4 como docente y como alumno: rúbricas y cuestionarios (con los avisos y confirmaciones del 2026-11-25), condiciones, pesos, Seguimiento, Reutilizar clase, búsqueda y app instalable. También los permisos del administrador y la revisión del repositorio.
+- ⬜ **Instalar en el servidor Debian** (4 GB): Docker Compose con Nginx (`npm run docker:build` y `npm run docker:up`), migraciones con `prisma migrate deploy`, HTTPS con `COOKIE_SECURE=true` y `CORS_ORIGINS` del dominio real.
+- ⬜ **Swap** de 4 GB en el servidor, antes de compilar: pasos en el README («Servidor Debian: swap»).
 - ⬜ **Respaldos automáticos** de la base de datos y de `storage/` a otro disco, y probar una restauración.
 - ⬜ **Probar desde otra computadora y desde un celular**, incluida la instalación como app (Android e iPhone).
 
@@ -199,7 +205,8 @@ Revisado el 2026-11-23. Orden sugerido: primero lo que impide usarla con persona
 - ⬜ Descargas con el **nombre original** del archivo (`Content-Disposition`); hoy se bajan con el nombre aleatorio.
 - ⬜ Borrar o archivar los archivos de periodos cerrados para no llenar el disco.
 - ⬜ Aviso a los alumnos cuando se abre una tarea con «Visible desde» futura (hoy no se avisa: no hay tareas programadas en el servidor).
-- ⬜ Mostrar en Reportes cuántos alumnos en riesgo tiene cada clase (`ProgressService.atRiskByCourse` ya existe, pero calcula clase por clase; optimizarlo antes de usarlo con muchas clases).
+- ⬜ Optimizar Reportes con muchas clases: el riesgo se calcula clase por clase (`ProgressService.studentRows`); agregarlo en SQL si la página se vuelve lenta.
+- ⬜ Revisar las rúbricas creadas antes del 2026-11-25: si alguna tiene niveles con el mismo puntaje, habrá que corregirla al editarla.
 - ⬜ Agregar a `npm run dev:demo` (backend simulado) los cuestionarios y lo de las fases 3 y 4, si se quiere seguir usando para demostraciones.
 
 ### 4. Funciones opcionales (solo si se necesitan)

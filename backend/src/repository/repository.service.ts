@@ -96,15 +96,13 @@ export class RepositoryService {
     } else {
       content = { url: safeUrl(dto.url!) };
     }
-    const autoApprove = user.role !== 'STUDENT';
+    // Todo lo que se sube, de alumnos y de docentes, espera la revisión de un administrador.
     return this.prisma.resource.create({
       data: {
         title: dto.title,
         description: dto.description || null,
         type: dto.type,
-        status: autoApprove ? 'APPROVED' : 'PENDING',
-        reviewedById: autoApprove ? user.sub : null,
-        reviewedAt: autoApprove ? new Date() : null,
+        status: 'PENDING',
         ...content,
         subjectId: dto.subjectId,
         authorId: user.sub,

@@ -28,7 +28,7 @@ const STATUS: Record<ResourceStatus, { label: string; chip: string }> = {
   REJECTED: { label: "No publicado", chip: "bg-red-50 text-red-700" },
 };
 
-function UploadForm({ subjects, role, onDone }: { subjects: SubjectOptionLite[]; role: UserRole; onDone: (uploaded: boolean) => void }) {
+function UploadForm({ subjects, onDone }: { subjects: SubjectOptionLite[]; onDone: (uploaded: boolean) => void }) {
   const [kind, setKind] = useState<"FILE" | "LINK">("FILE");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,9 +59,7 @@ function UploadForm({ subjects, role, onDone }: { subjects: SubjectOptionLite[];
       <div>
         <h2 className="text-base font-semibold text-uach-ink">Compartir un recurso</h2>
         <p className="text-sm text-uach-ink/75">
-          {role === "STUDENT"
-            ? "Un administrador lo revisará antes de publicarlo. Comparte solo material propio o con permiso."
-            : "Como docente o administrador se publica de inmediato."}
+          Un administrador lo revisará antes de publicarlo. Comparte solo material propio o con permiso.
         </p>
       </div>
       {error && <FormAlert message={error} />}
@@ -331,11 +329,10 @@ export function RepositoryBrowser({
       {uploading && !isAdmin && (
         <UploadForm
           subjects={subjects}
-          role={role}
           onDone={(uploaded) => {
             setUploading(false);
             if (uploaded) {
-              setNotice(role === "STUDENT" ? "¡Gracias! Tu recurso quedó en revisión; te avisaremos cuando se publique." : "Recurso publicado.");
+              setNotice("¡Gracias! Tu recurso quedó en revisión; te avisaremos cuando se publique.");
               setView("mine");
               load();
             }
