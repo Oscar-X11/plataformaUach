@@ -16,6 +16,8 @@ export function QuizManagerBar({ quiz }: { quiz: QuizManagerView }) {
   const [busy, setBusy] = useState(false);
   const base = `/cursos/${quiz.courseId}/cuestionarios/${quiz.id}`;
   const label = KIND_LABEL[quiz.kind].one;
+  // Publicar u ocultar es del docente; el administrador solo puede borrar (moderación).
+  const teacher = quiz.myRole === "teacher";
 
   async function publish(published: boolean) {
     setBusy(true);
@@ -64,7 +66,7 @@ export function QuizManagerBar({ quiz }: { quiz: QuizManagerView }) {
           )}
         </p>
         <div className="flex flex-wrap gap-2">
-          {quiz.published ? (
+          {!teacher ? null : quiz.published ? (
             quiz.responses === 0 && (
               <button type="button" onClick={() => publish(false)} disabled={busy} className={BTN_SECONDARY}>
                 <EyeOff className="h-4 w-4" strokeWidth={1.75} aria-hidden />

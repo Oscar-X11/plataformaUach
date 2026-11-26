@@ -253,7 +253,9 @@ export function RepositoryBrowser({
   initialView: View;
 }) {
   const isAdmin = role === "ADMIN";
-  const [view, setView] = useState<View>(initialView === "review" && !isAdmin ? "explore" : initialView);
+  const [view, setView] = useState<View>(
+    (initialView === "review" && !isAdmin) || (initialView === "mine" && isAdmin) ? "explore" : initialView,
+  );
   const [search, setSearch] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [type, setType] = useState<"" | ResourceType>("");
@@ -293,7 +295,8 @@ export function RepositoryBrowser({
 
   const tabs: { id: View; label: string }[] = [
     { id: "explore", label: "Explorar" },
-    { id: "mine", label: "Mis aportes" },
+    // El administrador revisa y modera, pero no comparte recursos propios.
+    ...(isAdmin ? [] : [{ id: "mine" as const, label: "Mis aportes" }]),
     ...(isAdmin ? [{ id: "review" as const, label: "Por revisar" }] : []),
   ];
 
@@ -316,7 +319,7 @@ export function RepositoryBrowser({
             </button>
           ))}
         </div>
-        {!uploading && (
+        {!uploading && !isAdmin && (
           <button type="button" onClick={() => setUploading(true)} className={BTN_PRIMARY}>
             <Upload className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             Compartir recurso
@@ -325,7 +328,7 @@ export function RepositoryBrowser({
       </div>
 
       {notice && <FormAlert tone="info" message={notice} />}
-      {uploading && (
+      {uploading && !isAdmin && (
         <UploadForm
           subjects={subjects}
           role={role}
@@ -371,7 +374,9 @@ export function RepositoryBrowser({
       ) : items.length === 0 ? (
         <p className={`${CARD} px-6 py-12 text-center text-sm text-uach-ink/75`}>
           {view === "explore"
-            ? "No encontramos recursos con esos filtros. ¿Tienes buenos apuntes? Compártelos."
+            ? isAdmin
+              ? "No encontramos recursos con esos filtros."
+              : "No encontramos recursos con esos filtros. ¿Tienes buenos apuntes? Compártelos."
             : view === "mine"
               ? "Todavía no has compartido recursos."
               : "No hay recursos esperando revisión."}

@@ -3,7 +3,7 @@ import { AssignmentList } from "@/components/classwork/AssignmentList";
 import { NewAssignmentButton } from "@/components/classwork/NewAssignmentButton";
 import { CARD } from "@/components/dashboard/tone";
 import type { AssignmentView } from "@/lib/classwork";
-import { canManage } from "@/lib/courses";
+import { canTeach } from "@/lib/courses";
 import { getCourse } from "@/lib/courses-server";
 import { serverApi } from "@/lib/server-session";
 
@@ -14,15 +14,15 @@ export default async function TareasCursoPage({ params }: { params: { cursoId: s
     getCourse(params.cursoId),
     serverApi<AssignmentView[]>(`/courses/${encodeURIComponent(params.cursoId)}/assignments`),
   ]);
-  const manager = canManage(course);
+  const teacher = canTeach(course);
 
   return (
     <div className="space-y-4">
-      {manager && assignments.length > 0 && <NewAssignmentButton courseId={course.id} />}
+      {teacher && assignments.length > 0 && <NewAssignmentButton courseId={course.id} />}
 
       {assignments.length > 0 ? (
         <AssignmentList assignments={assignments} />
-      ) : manager ? (
+      ) : teacher ? (
         <NewAssignmentButton courseId={course.id} startOpen />
       ) : (
         <div className={`${CARD} flex flex-col items-center px-6 py-14 text-center`}>
@@ -31,7 +31,9 @@ export default async function TareasCursoPage({ params }: { params: { cursoId: s
           </span>
           <h2 className="mt-4 text-base font-semibold text-uach-ink">Sin tareas por ahora</h2>
           <p className="mt-1 max-w-sm text-sm text-uach-ink/75">
-            Cuando tu docente asigne trabajo, aparecerá aquí con su fecha de entrega.
+            {course.myRole === "admin"
+              ? "El docente todavía no asigna trabajo en esta clase."
+              : "Cuando tu docente asigne trabajo, aparecerá aquí con su fecha de entrega."}
           </p>
         </div>
       )}

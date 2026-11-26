@@ -243,7 +243,12 @@ export interface PostView {
 }
 
 export interface StreamView {
+  /** Solo el docente publica avisos. */
   canPost: boolean;
+  /** El administrador no comenta. */
+  canComment: boolean;
+  /** Docente o administrador: borra avisos y comentarios de otros. */
+  canModerate: boolean;
   posts: PostView[];
 }
 

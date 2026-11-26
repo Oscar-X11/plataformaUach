@@ -55,7 +55,8 @@ export default async function IntentoPage({
         {attempt.questions.map((q, index) => (
           <li key={q.id}>
             <ResultCard question={q} index={index}>
-              {graded && q.answerId && q.points > 0 && (
+              {/* Solo el docente ajusta puntos; el administrador ve el resultado. */}
+              {graded && quiz.myRole === "teacher" && q.answerId && q.points > 0 && (
                 <GradeAnswerForm answerId={q.answerId} max={q.points} current={q.earned ?? null} />
               )}
             </ResultCard>

@@ -38,7 +38,8 @@ export class StreamService {
       take: 50,
       select: POST_SELECT,
     });
-    return { canPost: role !== 'student', posts };
+    // El administrador modera (borra avisos y comentarios) pero no publica ni comenta.
+    return { canPost: role === 'teacher', canComment: role !== 'admin', canModerate: role !== 'student', posts };
   }
 
   async create(courseId: string, dto: CreatePostDto, user: TokenPayload) {

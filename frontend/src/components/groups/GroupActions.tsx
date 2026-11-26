@@ -27,7 +27,7 @@ export function GroupActions({ group }: { group: StudyGroupDetail }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {!group.isMember && (
+      {!group.isMember && group.canJoin && (
         <button
           type="button"
           disabled={busy !== null || full}

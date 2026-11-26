@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Qu
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import { CreateGroupDto, ListGroupsQuery } from './groups.dto';
 import { GroupsService } from './groups.service';
+import { Roles } from '../common/decorators/roles.decorator';
 
 const Id = () => Param('id', ParseUUIDPipe);
 
@@ -14,6 +15,7 @@ export class GroupsController {
     return this.groups.list(query, user);
   }
 
+  @Roles('TEACHER', 'STUDENT')
   @Post()
   create(@Body() dto: CreateGroupDto, @Req() { user }: AuthenticatedRequest) {
     return this.groups.create(dto, user);
@@ -25,6 +27,7 @@ export class GroupsController {
   }
 
   @HttpCode(200)
+  @Roles('TEACHER', 'STUDENT')
   @Post(':id/join')
   join(@Id() id: string, @Req() { user }: AuthenticatedRequest) {
     return this.groups.join(id, user);

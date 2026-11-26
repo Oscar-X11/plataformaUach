@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { QuizEditor } from "@/components/quizzes/QuizEditor";
-import { canManage } from "@/lib/courses";
+import { canTeach } from "@/lib/courses";
 import { getCourse } from "@/lib/courses-server";
 import { KIND_LABEL, type QuizKind } from "@/lib/quizzes";
 
@@ -14,7 +14,7 @@ export default async function NuevoCuestionarioPage({
   searchParams: { tipo?: string };
 }) {
   const course = await getCourse(params.cursoId);
-  if (!canManage(course)) notFound();
+  if (!canTeach(course)) notFound();
   const kind: QuizKind = searchParams.tipo === "SURVEY" ? "SURVEY" : "QUIZ";
 
   return (

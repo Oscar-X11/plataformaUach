@@ -85,7 +85,8 @@ function CreateGroupForm({ subjects, onCancel }: { subjects: SubjectOptionLite[]
   );
 }
 
-export function GroupsBrowser({ subjects }: { subjects: SubjectOptionLite[] }) {
+/** `canCreate` es falso para el administrador: ve y modera los grupos, pero no participa. */
+export function GroupsBrowser({ subjects, canCreate }: { subjects: SubjectOptionLite[]; canCreate: boolean }) {
   const [search, setSearch] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [mine, setMine] = useState(false);
@@ -107,7 +108,7 @@ export function GroupsBrowser({ subjects }: { subjects: SubjectOptionLite[] }) {
 
   return (
     <div className="space-y-4">
-      {creating ? (
+      {creating && canCreate ? (
         <CreateGroupForm subjects={subjects} onCancel={() => setCreating(false)} />
       ) : (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto] lg:items-center">
@@ -123,14 +124,18 @@ export function GroupsBrowser({ subjects }: { subjects: SubjectOptionLite[] }) {
               <option key={subject.id} value={subject.id}>{subject.code} · {subject.name}</option>
             ))}
           </select>
-          <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl px-2 text-sm text-uach-ink">
-            <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="h-4 w-4 accent-uach-teal" />
-            Solo mis grupos
-          </label>
-          <button type="button" onClick={() => setCreating(true)} className={BTN_PRIMARY}>
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Crear grupo
-          </button>
+          {canCreate && (
+            <>
+              <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl px-2 text-sm text-uach-ink">
+                <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="h-4 w-4 accent-uach-teal" />
+                Solo mis grupos
+              </label>
+              <button type="button" onClick={() => setCreating(true)} className={BTN_PRIMARY}>
+                <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+                Crear grupo
+              </button>
+            </>
+          )}
         </div>
       )}
 

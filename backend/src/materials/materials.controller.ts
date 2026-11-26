@@ -19,6 +19,7 @@ import type { UploadedFileData } from '../files/upload';
 import { ActivityService } from '../activity/activity.service';
 import { CreateMaterialDto, TopicDto } from './materials.dto';
 import { MAX_MATERIAL_BYTES, MaterialsService } from './materials.service';
+import { Roles } from '../common/decorators/roles.decorator';
 
 const Id = (name: string) => Param(name, ParseUUIDPipe);
 
@@ -35,6 +36,7 @@ export class MaterialsController {
   }
 
   /** multipart: campo "file" opcional (si no, "url"). */
+  @Roles('TEACHER')
   @Post('courses/:courseId/materials')
   @UseInterceptors(FileInterceptor('file', diskUpload(MAX_MATERIAL_BYTES)))
   async create(
@@ -54,11 +56,13 @@ export class MaterialsController {
     await this.materials.remove(id, user);
   }
 
+  @Roles('TEACHER')
   @Post('courses/:courseId/topics')
   createTopic(@Id('courseId') courseId: string, @Body() dto: TopicDto, @Req() { user }: AuthenticatedRequest) {
     return this.materials.createTopic(courseId, dto, user);
   }
 
+  @Roles('TEACHER')
   @Patch('topics/:id')
   renameTopic(@Id('id') id: string, @Body() dto: TopicDto, @Req() { user }: AuthenticatedRequest) {
     return this.materials.renameTopic(id, dto, user);

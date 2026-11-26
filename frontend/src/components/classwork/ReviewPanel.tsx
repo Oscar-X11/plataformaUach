@@ -86,12 +86,14 @@ function GradeForm({
   rubric,
   row,
   onSaved,
+  readOnly,
 }: {
   assignmentId: string;
   points: number;
   rubric: RubricCriterion[];
   row: StudentSubmissionRow;
   onSaved: (submission: SubmissionView) => void;
+  readOnly: boolean;
 }) {
   const [busy, setBusy] = useState<"save" | "return" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -167,6 +169,7 @@ function GradeForm({
         </p>
       )}
       {error && <FormAlert message={error} />}
+      <fieldset disabled={readOnly} className="contents">
       {withRubric && (
         <RubricPicker rubric={rubric} studentId={row.student.id} selection={selection} onChange={setSelection} />
       )}
@@ -209,6 +212,10 @@ function GradeForm({
           />
         </div>
       </div>
+      </fieldset>
+      {readOnly ? (
+        <p className="text-xs text-uach-ink/75">Vista de consulta: solo el docente de la clase califica y devuelve.</p>
+      ) : (
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
@@ -224,6 +231,7 @@ function GradeForm({
           {submission.status === "RETURNED" ? "Actualizar y devolver" : "Devolver al alumno"}
         </button>
       </div>
+      )}
     </form>
   );
 }
@@ -234,11 +242,14 @@ export function ReviewPanel({
   points,
   rubric = [],
   initial,
+  readOnly = false,
 }: {
   assignmentId: string;
   points: number;
   rubric?: RubricCriterion[];
   initial: StudentSubmissionRow[];
+  /** Administrador: ve entregas y calificaciones, no califica. */
+  readOnly?: boolean;
 }) {
   const [rows, setRows] = useState(initial);
   const [filter, setFilter] = useState<Filter>("all");
@@ -278,7 +289,7 @@ export function ReviewPanel({
 
       {rows.length === 0 ? (
         <p className="rounded-xl bg-uach-canvas px-4 py-6 text-center text-sm text-uach-ink/75">
-          Aún no hay alumnos inscritos. Comparte el código del curso.
+          {readOnly ? "Aún no hay alumnos inscritos." : "Aún no hay alumnos inscritos. Comparte el código del curso."}
         </p>
       ) : visible.length === 0 ? (
         <p className="rounded-xl bg-uach-canvas px-4 py-6 text-center text-sm text-uach-ink/75">
@@ -322,6 +333,7 @@ export function ReviewPanel({
                     rubric={rubric}
                     row={row}
                     onSaved={(submission) => update(row.student.id, submission)}
+                    readOnly={readOnly}
                   />
                 )}
               </li>

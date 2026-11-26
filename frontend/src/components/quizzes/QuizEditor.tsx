@@ -110,7 +110,9 @@ const fromLocalInput = (value: string) => (value ? new Date(value).toISOString()
 export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: QuizKind; quiz?: QuizManagerView }) {
   const router = useRouter();
   const graded = kind === "QUIZ";
-  const locked = Boolean(quiz?.locked);
+  // El administrador solo consulta: ve las preguntas, no las cambia.
+  const readOnly = quiz?.myRole === "admin";
+  const locked = readOnly || Boolean(quiz?.locked);
   const [title, setTitle] = useState(quiz?.title ?? "");
   const [description, setDescription] = useState(quiz?.description ?? "");
   const [opensAt, setOpensAt] = useState(toLocalInput(quiz?.opensAt ?? null));
@@ -171,6 +173,10 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
 
   return (
     <div className="space-y-4">
+      {readOnly && (
+        <FormAlert tone="info" message="Vista de consulta: solo el docente de la clase puede editar o publicar." />
+      )}
+      <fieldset disabled={readOnly} className="contents">
       <section className={`${CARD} space-y-4 p-5`}>
         <div>
           <label htmlFor="quiz-title" className="mb-1.5 block text-sm font-medium text-uach-ink">Título</label>
@@ -251,8 +257,9 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
           />
         </div>
       </section>
+      </fieldset>
 
-      {locked && (
+      {locked && !readOnly && (
         <FormAlert
           tone="info"
           message="Ya hay alumnos que empezaron a responder: las preguntas quedan fijas. Puedes cambiar el título, las instrucciones y las fechas."
@@ -307,10 +314,12 @@ export function QuizEditor({ courseId, kind, quiz }: { courseId: string; kind: Q
           <button type="button" onClick={() => router.back()} className={BTN_GHOST}>
             {quiz ? "Volver" : "Cancelar"}
           </button>
-          <button type="button" onClick={save} disabled={busy} className={BTN_PRIMARY}>
-            {busy && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
-            {quiz ? "Guardar cambios" : `Crear ${KIND_LABEL[kind].one}`}
-          </button>
+          {!readOnly && (
+            <button type="button" onClick={save} disabled={busy} className={BTN_PRIMARY}>
+              {busy && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
+              {quiz ? "Guardar cambios" : `Crear ${KIND_LABEL[kind].one}`}
+            </button>
+          )}
         </div>
       </div>
     </div>

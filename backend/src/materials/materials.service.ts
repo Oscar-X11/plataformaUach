@@ -60,7 +60,8 @@ export class MaterialsService {
         select: MATERIAL_SELECT,
       }),
     ]);
-    return { canManage: role !== 'student', topics, materials };
+    // canManage: borrar (docente o administrador). canCreate: subir material y temas (solo el docente).
+    return { canManage: role !== 'student', canCreate: role === 'teacher', topics, materials };
   }
 
   async createTopic(courseId: string, dto: TopicDto, user: TokenPayload) {

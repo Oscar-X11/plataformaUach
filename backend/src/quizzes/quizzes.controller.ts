@@ -22,6 +22,7 @@ import {
   UpdateQuizDto,
 } from './quiz.dto';
 import { QuizzesService } from './quizzes.service';
+import { Roles } from '../common/decorators/roles.decorator';
 
 const Id = (name: string) => Param(name, ParseUUIDPipe);
 
@@ -35,6 +36,7 @@ export class QuizzesController {
     return this.quizzes.list(courseId, user);
   }
 
+  @Roles('TEACHER')
   @Post('courses/:courseId/quizzes')
   create(@Id('courseId') courseId: string, @Body() dto: CreateQuizDto, @Req() { user }: AuthenticatedRequest) {
     return this.quizzes.create(courseId, dto, user);
@@ -45,12 +47,14 @@ export class QuizzesController {
     return this.quizzes.get(id, user);
   }
 
+  @Roles('TEACHER')
   @Patch('quizzes/:id')
   update(@Id('id') id: string, @Body() dto: UpdateQuizDto, @Req() { user }: AuthenticatedRequest) {
     return this.quizzes.update(id, dto, user);
   }
 
   @HttpCode(200)
+  @Roles('TEACHER')
   @Post('quizzes/:id/publish')
   publish(@Id('id') id: string, @Body() dto: PublishQuizDto, @Req() { user }: AuthenticatedRequest) {
     return this.quizzes.setPublished(id, dto.published, user);
@@ -100,6 +104,7 @@ export class QuizzesController {
     return this.quizzes.attemptDetail(id, attemptId, user);
   }
 
+  @Roles('TEACHER')
   @Patch('quiz-answers/:answerId')
   grade(@Id('answerId') answerId: string, @Body() dto: GradeQuizAnswerDto, @Req() { user }: AuthenticatedRequest) {
     return this.quizzes.gradeAnswer(answerId, dto.points, user);

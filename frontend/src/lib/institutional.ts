@@ -40,7 +40,10 @@ export interface Material {
 }
 
 export interface MaterialsView {
+  /** Docente o administrador: puede borrar material y temas. */
   canManage: boolean;
+  /** Solo el docente sube material y crea o renombra temas. */
+  canCreate: boolean;
   topics: Topic[];
   materials: Material[];
 }
@@ -94,6 +97,8 @@ export interface StudyGroup {
   isMember: boolean;
   isCreator: boolean;
   canDelete: boolean;
+  /** El administrador no se une a grupos. */
+  canJoin: boolean;
 }
 
 export interface StudyGroupDetail extends StudyGroup {
@@ -110,12 +115,27 @@ export interface CourseReportRow {
   teacherName: string;
   students: number;
   assignments: number;
+  /** % de entregas sobre tareas ya vencidas. */
   deliveryRate: number | null;
   onTime: number;
-  average: number | null;
+  /** Entregas que el docente aún no califica. */
+  ungraded: number;
+  atRisk: number;
 }
 
-export interface CourseReport {
+export interface ReportOptions {
   terms: string[];
+  careers: { id: string; code: string; name: string }[];
+}
+
+export interface CourseReport extends ReportOptions {
   rows: CourseReportRow[];
+}
+
+export interface StudentRiskReport extends ReportOptions {
+  coursesChecked: number;
+  students: {
+    student: { id: string; fullName: string; username: string };
+    courses: { id: string; name: string; label: string; term: string; overdue: number; final: number | null; risk: string[] }[];
+  }[];
 }

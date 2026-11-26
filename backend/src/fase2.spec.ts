@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException } from '@nes
 import { Prisma } from '@prisma/client';
 import { TokenPayload } from './auth/token.service';
 import { CourseAccessService } from './courses/course-access.service';
+import { ProgressService } from './classwork/progress.service';
 import { PrismaService } from './database/prisma.service';
 import { StorageService } from './files/storage.service';
 import { GroupsService } from './groups/groups.service';
@@ -162,28 +163,37 @@ describe('GroupsService', () => {
 });
 
 describe('ReportsService', () => {
-  it('calcula % de entrega sobre tareas vencidas y el promedio devuelto', async () => {
+  it('calcula % de entrega sobre tareas vencidas, entregas sin calificar y alumnos en riesgo', async () => {
     const past = new Date(Date.now() - 86_400_000);
     const findMany = jest
       .fn()
       .mockResolvedValueOnce([
         {
           id: 'c1', name: 'BD', term: '2026-2', grade: 3, career: { code: 'ISC', name: 'Ingeniería en Sistemas Computacionales', faculty: { scheme: 'CUATRIMESTRAL' } },
-          teacher: { fullName: 'Laura' }, _count: { enrollments: 2 },
+          teacher: { fullName: 'Laura' }, _count: { enrollments: 3 },
           assignments: [
             {
-              dueAt: past, points: 10,
+              dueAt: past,
               submissions: [
-                { status: 'RETURNED', submittedAt: new Date(past.getTime() - 1000), grade: new Prisma.Decimal(8) },
+                { status: 'RETURNED', submittedAt: new Date(past.getTime() - 1000) },
+                { status: 'SUBMITTED', submittedAt: new Date(past.getTime() + 1000) },
               ],
             },
           ],
         },
       ])
       .mockResolvedValueOnce([{ term: '2026-2' }]);
-    const reports = new ReportsService({ course: { findMany } } as unknown as PrismaService);
-    const { rows, terms } = await reports.courses();
+    const careers = jest.fn().mockResolvedValue([{ id: 'k1', code: 'ISC', name: 'ISC' }]);
+    const studentRows = jest.fn().mockResolvedValue([{ risk: ['2 actividades vencidas sin entregar'] }, { risk: [] }, { risk: [] }]);
+    const reports = new ReportsService(
+      { course: { findMany }, career: { findMany: careers } } as unknown as PrismaService,
+      { studentRows } as unknown as ProgressService,
+    );
+    const { rows, terms, careers: options } = await reports.courses({});
     expect(terms).toEqual(['2026-2']);
-    expect(rows[0]).toMatchObject({ students: 2, deliveryRate: 50, onTime: 1, average: 8 });
+    expect(options).toHaveLength(1);
+    expect(studentRows).toHaveBeenCalledWith('c1');
+    // 2 de 3 entregaron (una tarde); la tardía sigue sin calificar.
+    expect(rows[0]).toMatchObject({ students: 3, deliveryRate: 67, onTime: 1, ungraded: 1, atRisk: 1 });
   });
 });

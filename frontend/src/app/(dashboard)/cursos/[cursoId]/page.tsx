@@ -33,6 +33,8 @@ export default async function CursoTablonPage({ params }: { params: { cursoId: s
         courseId={params.cursoId}
         userId={user.id}
         canPost={stream.canPost}
+        canComment={stream.canComment}
+        canModerate={stream.canModerate}
         initialPosts={stream.posts}
         nowIso={now.toISOString()}
       />

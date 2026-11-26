@@ -12,10 +12,13 @@ export function WeightsEditor({
   courseId,
   weights,
   passing,
+  readOnly = false,
 }: {
   courseId: string;
   weights: { assignments: number; quizzes: number };
   passing: number;
+  /** Administrador: ve los pesos pero no los cambia. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -50,10 +53,12 @@ export function WeightsEditor({
           cuestionarios <span className="font-semibold tabular-nums text-uach-ink">{weights.quizzes} %</span> · aprueba
           con <span className="font-semibold tabular-nums text-uach-ink">{passing}</span>
         </span>
-        <button type="button" onClick={() => setOpen(true)} className={`${BTN_GHOST} h-9 px-2 text-xs`}>
-          <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-          Cambiar pesos
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={() => setOpen(true)} className={`${BTN_GHOST} h-9 px-2 text-xs`}>
+            <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+            Cambiar pesos
+          </button>
+        )}
       </div>
     );
   }

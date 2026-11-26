@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Re
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import { CreateCommentDto, CreatePostDto } from './stream.dto';
 import { StreamService } from './stream.service';
+import { Roles } from '../common/decorators/roles.decorator';
 
 const Id = (name: string) => Param(name, ParseUUIDPipe);
 
@@ -14,6 +15,7 @@ export class StreamController {
     return this.stream.list(courseId, user);
   }
 
+  @Roles('TEACHER')
   @Post('courses/:courseId/posts')
   create(@Id('courseId') courseId: string, @Body() dto: CreatePostDto, @Req() { user }: AuthenticatedRequest) {
     return this.stream.create(courseId, dto, user);
@@ -25,6 +27,7 @@ export class StreamController {
     await this.stream.remove(id, user);
   }
 
+  @Roles('TEACHER', 'STUDENT')
   @Post('posts/:id/comments')
   comment(@Id('id') id: string, @Body() dto: CreateCommentDto, @Req() { user }: AuthenticatedRequest) {
     return this.stream.comment(id, dto, user);

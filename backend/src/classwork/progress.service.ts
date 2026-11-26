@@ -66,18 +66,17 @@ export class ProgressService {
     return { ...row, passingGrade: course.passing, weights: course.weights };
   }
 
-  /** Cuántos alumnos en riesgo tiene cada clase (reportes de administración). */
-  async atRiskByCourse(courseIds: string[]) {
-    const result = new Map<string, number>();
-    for (const courseId of courseIds) {
-      const enrollments = await this.prisma.enrollment.findMany({
-        where: { courseId },
-        select: { student: { select: { id: true, fullName: true, username: true } } },
-      });
-      const rows = await this.compute(courseId, enrollments.map((row) => row.student), false);
-      result.set(courseId, rows.filter((row) => row.risk.length > 0).length);
-    }
-    return result;
+  /**
+   * Progreso de todos los alumnos de una clase, sin comprobar permisos
+   * (reportes de administración; el controlador ya exige ADMIN).
+   */
+  async studentRows(courseId: string) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { courseId },
+      orderBy: { student: { fullName: 'asc' } },
+      select: { student: { select: { id: true, fullName: true, username: true } } },
+    });
+    return this.compute(courseId, enrollments.map((row) => row.student), false);
   }
 
   /** El alumno abrió un material: cuenta para su progreso. */

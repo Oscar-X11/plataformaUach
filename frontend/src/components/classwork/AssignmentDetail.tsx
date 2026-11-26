@@ -26,6 +26,8 @@ export function AssignmentDetail({
   const [editingRubric, setEditingRubric] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const manager = assignment.myRole !== "student";
+  // Editar la tarea o su rúbrica es del docente; el administrador solo consulta y puede borrar.
+  const teacher = assignment.myRole === "teacher";
   const locked = !manager && !assignment.availability.available;
   const opensLater = assignment.availableFrom && new Date(assignment.availableFrom) > new Date();
 
@@ -94,14 +96,14 @@ export function AssignmentDetail({
         )}
       </div>
 
-      {(assignment.rubric.length > 0 || manager) && !locked && (
+      {(assignment.rubric.length > 0 || teacher) && !locked && (
         <section aria-labelledby="rubrica" className="mt-5 border-t border-uach-ink/[0.06] pt-5">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h3 id="rubrica" className="flex items-center gap-2 text-sm font-semibold text-uach-ink">
               <Table2 className="h-4 w-4 text-uach-teal" strokeWidth={1.75} aria-hidden />
               Rúbrica
             </h3>
-            {manager && !editingRubric && (
+            {teacher && !editingRubric && (
               <button type="button" onClick={() => setEditingRubric(true)} className={BTN_GHOST}>
                 <Pencil className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                 {assignment.rubric.length ? "Editar rúbrica" : "Crear rúbrica"}
@@ -122,10 +124,12 @@ export function AssignmentDetail({
 
       {manager && (
         <div className="mt-5 flex flex-wrap gap-2 border-t border-uach-ink/[0.06] pt-4">
-          <button type="button" onClick={() => setEditing(true)} className={BTN_GHOST}>
-            <Pencil className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-            Editar
-          </button>
+          {teacher && (
+            <button type="button" onClick={() => setEditing(true)} className={BTN_GHOST}>
+              <Pencil className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              Editar
+            </button>
+          )}
           <button type="button" onClick={remove} disabled={deleting} className={BTN_DANGER}>
             <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             {deleting ? "Borrando…" : "Borrar"}

@@ -8,6 +8,37 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 
 ---
 
+## 2026-11-25
+
+### Qué se hizo
+- **Reportes del administrador rehechos** (`/administracion/reportes`):
+  - Se quitó la columna **Promedio**: solo sumaba tareas devueltas, ignoraba cuestionarios y pesos del libro, y no coincidía con la calificación real.
+  - Nuevas columnas **Sin calificar** (entregas que el docente no ha calificado ni devuelto) y **En riesgo** (mismo criterio que la pestaña Seguimiento del docente).
+  - El nombre del curso lleva a su **Seguimiento**; el número de «En riesgo» lleva al seguimiento filtrado.
+  - **Filtro por carrera** además del periodo (formulario GET con «Aplicar»; no necesita JavaScript).
+  - Nueva vista **Alumnos en riesgo**: alumnos en riesgo en al menos una clase, ordenados por cuántas clases, con el motivo en cada una. Endpoint `GET /reports/students` y su CSV `GET /reports/students/export`.
+  - Aviso en la página: los números solo reflejan lo registrado en la plataforma.
+  - El CSV de cursos cambia: sin promedio, con «Sin calificar» y «Alumnos en riesgo»; «Entregas a tiempo» ahora cuenta solo tareas vencidas, igual que «% entrega».
+- `ProgressService.studentRows` reemplaza a `atRiskByCourse`, que no se usaba.
+- Se restableció la contraseña del usuario `ADMIN` en la base de desarrollo (valor de `SEED_ADMIN_PASSWORD`).
+- **Permisos del ADMIN restringidos:** consulta y modera, pero no crea contenido académico ni participa.
+  - Backend, con `@Roles` en la ruta (el guard actúa antes de guardar archivos): avisos y comentarios, tareas (crear, editar, rúbrica, calificar), pesos, cuestionarios (crear, editar, publicar, calificar respuestas), material y temas (subir, crear, renombrar), crear o unirse a grupos de estudio y subir al repositorio. Unirse a una clase ya era solo de alumnos.
+  - Conserva: ver todo el contenido de los cursos, Seguimiento, libro de calificaciones y exportaciones, resultados de cuestionarios, Personas; borrar avisos, comentarios, tareas, cuestionarios, material, temas, grupos y recursos; revisar el repositorio; administrar cursos (docente, alumnos, código, descripción, lugar y horario, copia).
+  - Frontend: se ocultan los botones y formularios. Cuestionarios y calificación de entregas se ven en modo consulta. Nuevos indicadores del backend: `canComment` y `canModerate` (tablón), `canCreate` (material) y `canJoin` (grupos). Helper `canTeach` en `lib/courses.ts`.
+  - Prueba e2e nueva en `flows.e2e-spec.ts`. 110 pruebas unitarias y 24 e2e.
+
+### Importante
+- El reporte calcula el riesgo curso por curso (secuencial) para no cargar todo en memoria en el servidor de 4 GB. Con muchos cursos la página tardará más; si se vuelve lenta, filtrar por periodo o carrera, o agregar los datos en SQL.
+
+---
+
+## 2026-11-24
+
+### Qué se hizo
+- **Menú lateral colapsado:** la barra de desplazamiento de la lista de navegación ya no queda flotando sobre el contenido al contraer el menú (se notaba con el administrador, que tiene más entradas). Colapsado, la barra se oculta y la lista se sigue desplazando con la rueda o el teclado (`AppShell.tsx`).
+
+---
+
 ## 2026-11-23
 
 ### Qué se hizo

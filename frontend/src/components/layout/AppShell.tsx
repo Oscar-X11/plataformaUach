@@ -71,7 +71,14 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           </div>
         </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+        {/* Colapsado, el panel visible mide 72px pero la lista conserva su ancho:
+            la barra de desplazamiento quedaría flotando sobre el contenido, así que
+            se oculta (la lista sigue desplazándose con rueda o teclado). */}
+        <div
+          className={`flex-1 space-y-6 overflow-y-auto px-3 py-4 ${
+            hide ? "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : ""
+          }`}
+        >
           {sections.map((section, index) => (
             <div key={section.title ?? index}>
               {section.title && (

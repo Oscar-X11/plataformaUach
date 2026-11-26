@@ -182,7 +182,7 @@ function MaterialRow({ material, canManage, now }: { material: Material; canMana
   );
 }
 
-function TopicHeader({ topic, canManage }: { topic: Topic; canManage: boolean }) {
+function TopicHeader({ topic, canManage, canRename }: { topic: Topic; canManage: boolean; canRename: boolean }) {
   const router = useRouter();
 
   async function rename() {
@@ -211,9 +211,11 @@ function TopicHeader({ topic, canManage }: { topic: Topic; canManage: boolean })
       <h2 className="min-w-0 flex-1 truncate text-lg font-semibold text-uach-petrol">{topic.title}</h2>
       {canManage && (
         <>
-          <button type="button" onClick={rename} aria-label={`Renombrar ${topic.title}`} className="press grid h-10 w-10 place-items-center rounded-xl text-uach-ink/50 hover:bg-uach-canvas hover:text-uach-ink">
-            <Pencil className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-          </button>
+          {canRename && (
+            <button type="button" onClick={rename} aria-label={`Renombrar ${topic.title}`} className="press grid h-10 w-10 place-items-center rounded-xl text-uach-ink/50 hover:bg-uach-canvas hover:text-uach-ink">
+              <Pencil className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            </button>
+          )}
           <button type="button" onClick={remove} aria-label={`Borrar tema ${topic.title}`} className="press grid h-10 w-10 place-items-center rounded-xl text-uach-ink/50 hover:bg-red-50 hover:text-red-700">
             <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
           </button>
@@ -246,7 +248,7 @@ export function MaterialsBoard({ courseId, data, nowIso }: { courseId: string; d
 
   return (
     <div className="space-y-4">
-      {data.canManage &&
+      {data.canCreate &&
         (adding ? (
           <MaterialForm courseId={courseId} topics={data.topics} onDone={() => setAdding(false)} />
         ) : (
@@ -269,16 +271,18 @@ export function MaterialsBoard({ courseId, data, nowIso }: { courseId: string; d
           </span>
           <h2 className="mt-4 text-base font-semibold text-uach-ink">Aún no hay material</h2>
           <p className="mt-1 max-w-sm text-sm text-uach-ink/75">
-            {data.canManage
+            {data.canCreate
               ? "Organiza tus presentaciones, lecturas y enlaces por tema o unidad."
-              : "Aquí encontrarás las presentaciones, lecturas y enlaces que comparta tu docente."}
+              : data.canManage
+                ? "El docente todavía no comparte material en esta clase."
+                : "Aquí encontrarás las presentaciones, lecturas y enlaces que comparta tu docente."}
           </p>
         </div>
       ) : (
         sections.map(({ topic, items }) => (
           <section key={topic?.id ?? "sin-tema"} className={`${CARD} p-4 sm:p-5`}>
             {topic ? (
-              <TopicHeader topic={topic} canManage={data.canManage} />
+              <TopicHeader topic={topic} canManage={data.canManage} canRename={data.canCreate} />
             ) : (
               <h2 className="border-b border-uach-ink/[0.08] pb-2 text-lg font-semibold text-uach-petrol">
                 {data.topics.length ? "Sin tema" : "Material del curso"}

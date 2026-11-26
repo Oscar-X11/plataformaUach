@@ -46,7 +46,7 @@ export default async function TareaDetallePage({
   return (
     <div className="space-y-4">
       <AssignmentDetail assignment={assignment} requirementTitle={required} />
-      <ReviewPanel assignmentId={assignment.id} points={assignment.points} rubric={assignment.rubric} initial={rows} />
+      <ReviewPanel assignmentId={assignment.id} points={assignment.points} rubric={assignment.rubric} initial={rows} readOnly={assignment.myRole === "admin"} />
     </div>
   );
 }

@@ -56,4 +56,10 @@ export function gradeText(course: Pick<CourseSummary, "career" | "grade">) {
   return `${course.grade}.º ${course.career.faculty.scheme === "SEMESTRAL" ? "semestre" : "cuatrimestre"}`;
 }
 
+/** Docente o administrador: ve el seguimiento, las entregas y modera. */
 export const canManage = (course: Pick<CourseSummary, "myRole">) => course.myRole !== "student";
+/**
+ * Solo el docente crea contenido académico (avisos, tareas, cuestionarios,
+ * material) y califica. El administrador consulta y modera.
+ */
+export const canTeach = (course: Pick<CourseSummary, "myRole">) => course.myRole === "teacher";

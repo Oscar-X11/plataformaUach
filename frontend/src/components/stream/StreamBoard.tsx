@@ -61,6 +61,7 @@ function PostCard({
   now,
   userId,
   canModerate,
+  canComment,
   onChange,
   onRemove,
 }: {
@@ -68,6 +69,7 @@ function PostCard({
   now: Date;
   userId: string;
   canModerate: boolean;
+  canComment: boolean;
   onChange: (post: PostView) => void;
   onRemove: () => void;
 }) {
@@ -162,6 +164,7 @@ function PostCard({
           </ul>
         )}
         {error && <div className="mb-2"><FormAlert message={error} /></div>}
+        {canComment && (
         <form onSubmit={sendComment} className="flex gap-2">
           <label htmlFor={`c-${post.id}`} className="sr-only">Escribe un comentario</label>
           <input
@@ -181,6 +184,7 @@ function PostCard({
             {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
           </button>
         </form>
+        )}
       </div>
     </article>
   );
@@ -190,12 +194,16 @@ export function StreamBoard({
   courseId,
   userId,
   canPost,
+  canComment,
+  canModerate,
   initialPosts,
   nowIso,
 }: {
   courseId: string;
   userId: string;
   canPost: boolean;
+  canComment: boolean;
+  canModerate: boolean;
   initialPosts: PostView[];
   nowIso: string;
 }) {
@@ -212,7 +220,11 @@ export function StreamBoard({
           </span>
           <h2 className="mt-4 text-base font-semibold text-uach-ink">El tablón está tranquilo</h2>
           <p className="mt-1 max-w-sm text-sm text-uach-ink/75">
-            {canPost ? "Publica el primer aviso para tu grupo." : "Aquí aparecerán los avisos de tu docente."}
+            {canPost
+              ? "Publica el primer aviso para tu grupo."
+              : canModerate
+                ? "El docente todavía no publica avisos."
+                : "Aquí aparecerán los avisos de tu docente."}
           </p>
         </div>
       ) : (
@@ -222,7 +234,8 @@ export function StreamBoard({
             post={post}
             now={now}
             userId={userId}
-            canModerate={canPost}
+            canModerate={canModerate}
+            canComment={canComment}
             onChange={(updated) => setPosts((list) => list.map((item) => (item.id === updated.id ? updated : item)))}
             onRemove={() => setPosts((list) => list.filter((item) => item.id !== post.id))}
           />

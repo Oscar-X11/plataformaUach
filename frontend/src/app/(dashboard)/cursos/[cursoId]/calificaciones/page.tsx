@@ -141,7 +141,7 @@ export default async function CalificacionesPage({ params }: { params: { cursoId
           <p className="text-xs text-uach-ink/75">
             Las cifras en gris aún no se devuelven al alumno. Los promedios solo cuentan lo devuelto.
           </p>
-          <WeightsEditor courseId={params.cursoId} weights={data.weights} passing={data.passing} />
+          <WeightsEditor courseId={params.cursoId} weights={data.weights} passing={data.passing} readOnly={data.role === "admin"} />
         </div>
         {/* Enlace normal: la cookie de sesión viaja con la descarga. */}
         <a href={`/api/courses/${id}/grades/export`} className={`${BTN_SECONDARY} shrink-0`} download>

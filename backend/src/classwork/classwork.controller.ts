@@ -27,6 +27,7 @@ import { GradeSubmissionDto, WeightsDto } from './dto/grade.dto';
 import { GradesService } from './grades.service';
 import { ProgressService } from './progress.service';
 import { MAX_FILE_BYTES, SubmissionsService } from './submissions.service';
+import { Roles } from '../common/decorators/roles.decorator';
 
 const Id = (name: string) => Param(name, ParseUUIDPipe);
 
@@ -53,6 +54,7 @@ export class ClassworkController {
     return this.progress.mine(courseId, user);
   }
 
+  @Roles('TEACHER')
   @Patch('courses/:courseId/weights')
   setWeights(@Id('courseId') courseId: string, @Body() dto: WeightsDto, @Req() { user }: AuthenticatedRequest) {
     if (dto.weightAssignments + dto.weightQuizzes !== 100) {
@@ -74,6 +76,7 @@ export class ClassworkController {
     return this.assignments.list(courseId, user);
   }
 
+  @Roles('TEACHER')
   @Post('courses/:courseId/assignments')
   create(
     @Id('courseId') courseId: string,
@@ -88,12 +91,14 @@ export class ClassworkController {
     return this.assignments.get(id, user);
   }
 
+  @Roles('TEACHER')
   @Patch('assignments/:id')
   update(@Id('id') id: string, @Body() dto: UpdateAssignmentDto, @Req() { user }: AuthenticatedRequest) {
     return this.assignments.update(id, dto, user);
   }
 
   /** Rúbrica de la tarea (reemplaza la anterior; lista vacía la quita). */
+  @Roles('TEACHER')
   @Put('assignments/:id/rubric')
   setRubric(@Id('id') id: string, @Body() dto: RubricDto, @Req() { user }: AuthenticatedRequest) {
     return this.assignments.setRubric(id, dto.criteria, user);
@@ -143,6 +148,7 @@ export class ClassworkController {
     return this.submissions.listForAssignment(id, user);
   }
 
+  @Roles('TEACHER')
   @Patch('assignments/:id/submissions/:studentId')
   grade(
     @Id('id') id: string,

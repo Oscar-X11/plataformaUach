@@ -41,6 +41,7 @@ export class RepositoryController {
     return this.repository.pending();
   }
 
+  @Roles('TEACHER', 'STUDENT')
   @Post()
   @UseInterceptors(FileInterceptor('file', diskUpload(MAX_RESOURCE_BYTES)))
   upload(

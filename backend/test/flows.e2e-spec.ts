@@ -165,6 +165,31 @@ describe('Flujos principales (e2e)', () => {
     expect(after.body.unreadCount).toBe(unread - 1);
   });
 
+  it('el administrador consulta y modera las clases, pero no crea contenido ni participa', async () => {
+    // Consulta: ve el tablón, el trabajo, el seguimiento y el libro.
+    const stream = await admin.get(`/courses/${courseId}/posts`).expect(200);
+    expect(stream.body).toMatchObject({ canPost: false, canComment: false, canModerate: true });
+    await admin.get(`/courses/${courseId}/assignments`).expect(200);
+    await admin.get(`/courses/${courseId}/tracking`).expect(200);
+    await admin.get(`/courses/${courseId}/grades`).expect(200);
+    await admin.get(`/quizzes/${quizId}/results`).expect(200);
+
+    // No crea ni califica.
+    await admin.post(`/courses/${courseId}/posts`).send({ content: 'Aviso' }).expect(403);
+    await admin.post(`/courses/${courseId}/assignments`).send({ title: 'Tarea', points: 10 }).expect(403);
+    await admin.post(`/courses/${courseId}/quizzes`).send({ title: 'Examen', kind: 'QUIZ' }).expect(403);
+    await admin.post(`/quizzes/${quizId}/publish`).send({ published: false }).expect(403);
+    await admin.post(`/courses/${courseId}/topics`).send({ title: 'Unidad 1' }).expect(403);
+    await admin.patch(`/courses/${courseId}/weights`).send({ weightAssignments: 50, weightQuizzes: 50 }).expect(403);
+    await admin.post('/courses/join').send({ code: 'ABC123' }).expect(403);
+    await admin.post('/study-groups').send({ title: 'Grupo', capacity: 5 }).expect(403);
+    await admin.post('/repository').send({ title: 'Apuntes' }).expect(403);
+
+    // Modera: borra un aviso del docente.
+    const post = await teacher.post(`/courses/${courseId}/posts`).send({ content: 'Aviso a moderar' }).expect(201);
+    await admin.delete(`/posts/${post.body.id}`).expect(204);
+  });
+
   it('restablecer la contraseña o desactivar la cuenta cierra las sesiones abiertas', async () => {
     await student.get('/auth/me').expect(200);
     await admin.post(`/users/${studentId}/reset-password`).expect(200);

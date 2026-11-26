@@ -136,6 +136,8 @@ export class GroupsService {
       isMember,
       isCreator: creatorId === user.sub,
       canDelete: creatorId === user.sub || user.role === 'ADMIN',
+      // El administrador ve y modera los grupos, pero no se une.
+      canJoin: user.role !== 'ADMIN',
     };
   }
 }
