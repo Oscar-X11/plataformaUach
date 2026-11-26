@@ -2,8 +2,9 @@ import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, P
 import { ActivityService } from '../activity/activity.service';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CareerDto, FacultyDto, SubjectDto, TermDto, UpdateTermDto } from './catalog.dto';
+import { CareerDto, FacultyDto, PurgeTermFilesDto, SubjectDto, TermDto, UpdateTermDto } from './catalog.dto';
 import { CatalogService } from './catalog.service';
+import { formatBytes, TermFilesService } from './term-files.service';
 
 /**
  * Administración de catálogos y periodos. La lectura de periodos la usan también
@@ -14,6 +15,7 @@ export class CatalogController {
   constructor(
     private readonly catalog: CatalogService,
     private readonly activity: ActivityService,
+    private readonly termFiles: TermFilesService,
   ) {}
 
   @Get('terms')
@@ -41,6 +43,31 @@ export class CatalogController {
       dto.closed === true ? 'Cerró' : dto.closed === false ? 'Reabrió' : dto.isCurrent ? 'Marcó como actual' : 'Editó';
     this.activity.log({ userId: user.sub, action: 'TERM_CHANGED', summary: `${what} el periodo ${term.code}` });
     return term;
+  }
+
+  /** Cuántos archivos (entregas y material) guardan los cursos del periodo. */
+  @Roles('ADMIN')
+  @Get('terms/:id/files')
+  termFilesSummary(@Param('id', ParseUUIDPipe) id: string) {
+    return this.termFiles.summary(id);
+  }
+
+  /** Borra del disco los archivos de un periodo cerrado; los registros se conservan. */
+  @Roles('ADMIN')
+  @Post('terms/:id/files/purge')
+  @HttpCode(200)
+  async purgeTermFiles(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: PurgeTermFilesDto,
+    @Req() { user }: AuthenticatedRequest,
+  ) {
+    const result = await this.termFiles.purge(id, dto.confirm);
+    this.activity.log({
+      userId: user.sub,
+      action: 'TERM_CHANGED',
+      summary: `Borró los archivos del periodo ${result.code}: ${result.files} archivos, ${formatBytes(result.bytes)}`,
+    });
+    return result;
   }
 
   @Roles('ADMIN')

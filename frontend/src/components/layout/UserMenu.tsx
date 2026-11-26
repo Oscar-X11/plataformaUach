@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, LifeBuoy, LoaderCircle, LogOut, ShieldCheck, User } from "lucide-react";
+import { ChevronDown, LifeBuoy, LoaderCircle, LogOut, MessageSquareWarning, ShieldCheck, User } from "lucide-react";
 import { EASE_OUT } from "@/lib/motion";
 import { useSession } from "@/components/providers/SessionProvider";
 import { Avatar } from "@/components/ui/Avatar";
+import { ReportProblemDialog } from "@/components/layout/ReportProblemDialog";
 import { ROLE_LABELS } from "@/lib/session";
 
 export function UserMenu() {
   const { user, logout, loggingOut } = useSession();
   const [open, setOpen] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const closeReport = useCallback(() => setReporting(false), []);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,6 +82,20 @@ export function UserMenu() {
             <LifeBuoy className="h-4 w-4 text-uach-soft" aria-hidden />
             Centro de ayuda
           </Link>
+          {user.role !== "ADMIN" && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setReporting(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-uach-ink hover:bg-uach-canvas"
+            >
+              <MessageSquareWarning className="h-4 w-4 text-uach-soft" aria-hidden />
+              Reportar un problema
+            </button>
+          )}
           <Link
             href="/privacidad"
             role="menuitem"
@@ -105,6 +122,7 @@ export function UserMenu() {
         </motion.div>
       )}
       </AnimatePresence>
+      {user.role !== "ADMIN" && <ReportProblemDialog open={reporting} onClose={closeReport} />}
     </div>
   );
 }

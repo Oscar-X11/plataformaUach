@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../common/types/auth-request';
-import { FilesService } from './files.service';
+import { contentDisposition, FilesService } from './files.service';
 
 /**
  * Descarga de archivos de storage/ con autenticación y permisos.
@@ -22,6 +22,8 @@ export class FilesController {
 
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Se descarga con el nombre original, no con el aleatorio de storage/.
+    res.setHeader('Content-Disposition', contentDisposition(file.downloadName, file.relativePath));
 
     if (this.files.useAccelRedirect) {
       // Nginx entrega el archivo desde la ubicación interna /protected-storage/

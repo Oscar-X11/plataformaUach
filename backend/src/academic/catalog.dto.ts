@@ -136,3 +136,10 @@ export class UpdateTermDto {
   @IsBoolean()
   closed?: boolean;
 }
+
+/** Borrar los archivos de un periodo cerrado: se confirma escribiendo su clave. */
+export class PurgeTermFilesDto {
+  @IsString()
+  @MaxLength(30)
+  confirm!: string;
+}

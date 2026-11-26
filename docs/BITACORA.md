@@ -43,9 +43,16 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - Commit `e708178` (swap y scripts de Docker), subido a `origin/master`.
 - **Repositorio: todo pasa por revisión.** Lo que sube un docente ya no se publica solo: queda «En revisión» como lo de los alumnos (`RepositoryService.upload`). Prueba unitaria actualizada y e2e nueva.
 - `docs/AVANCE.md` al día: decisiones del 2026-11-25, reportes, validaciones, swap, 11 migraciones y 25 e2e.
+- Commit `9093bdd` (cada recurso del repositorio se revisa una sola vez), subido a `origin/master`.
+- **Descargas con el nombre original.** `/files/*` envía `Content-Disposition` con el nombre con que se subió (`filename*` en UTF-8 y `filename` sin acentos). PDF e imágenes van `inline` (la vista previa sigue funcionando); lo demás, `attachment`. Se decide con la extensión guardada, no con la del nombre. También para el administrador.
+- **Liberar espacio de periodos cerrados.** En Periodos, «Liberar espacio» muestra cuánto ocupan las entregas y el material de los cursos del periodo y los borra del disco al escribir la clave. Por lotes de 200 (poca RAM). Los registros se conservan con `fileDeletedAt`; el archivo responde 410 y la pantalla dice «Archivo borrado al cerrar el periodo». Queda en la bitácora. El repositorio no se toca (es por materia).
+- **Errores para el administrador.** Tabla `reportes_error` y página Administración › Errores. Un filtro global registra los errores 500 del backend; `error.tsx` y el nuevo `global-error.tsx` avisan las pantallas que fallan. Los iguales se agrupan por huella (origen + mensaje + ruta sin ids) y se cuentan. Docentes y alumnos tienen «Reportar un problema» en el menú de su cuenta. Los administradores reciben una notificación (las automáticas, como mucho una cada 10 minutos) y el autor del reporte otra cuando se atiende, con la nota.
+- Migración `20261126120000_archivos_borrados_reportes_error`. 12 unitarias y 5 e2e nuevas: 123 y 30 en total.
 - **Revisión del commit `a828662`:** un recurso del repositorio se revisa una sola vez (`review()` responde 409 si ya no está «En revisión», sin volver a notificar al autor). Comentario de `RepositoryService` y riesgo de `REPORTE_2026-11-25.md` al día. Prueba unitaria nueva y la e2e del docente ahora cubre aprobar, ver publicado y el 409. 111 unitarias y 25 e2e pasan.
 
 ### Importante
+- «Liberar espacio» no se puede deshacer: antes de usarlo en producción, tener los respaldos de `storage/` funcionando.
+- El aviso de errores no guarda el cuerpo de las peticiones (contraseñas), solo método, ruta, mensaje y traza.
 - El reporte calcula el riesgo curso por curso (secuencial) para no cargar todo en memoria en el servidor de 4 GB. Con muchos cursos la página tardará más; si se vuelve lenta, filtrar por periodo o carrera, o agregar los datos en SQL.
 
 ---

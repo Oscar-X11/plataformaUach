@@ -10,6 +10,7 @@ import { api, ApiError } from "@/lib/api";
 import {
   MAX_SUBMISSION_FILE_MB,
   SUBMISSION_ACCEPT,
+  FILE_DELETED_TEXT,
   fileHref,
   formatBytes,
   type SubmissionView,
@@ -87,15 +88,21 @@ export function SubmissionPanel({
           {submission.files.map((file) => (
             <li key={file.id} className="flex items-center gap-3 rounded-xl border border-uach-ink/10 px-3 py-2">
               <FileText className="h-5 w-5 shrink-0 text-uach-teal" strokeWidth={1.5} aria-hidden />
-              <a
-                href={fileHref(file.fileUrl)}
-                target="_blank"
-                rel="noopener"
-                className="min-w-0 flex-1 truncate text-sm font-medium text-uach-ink hover:text-uach-tealDark hover:underline"
-              >
-                {file.originalName}
-              </a>
-              <span className="shrink-0 text-xs tabular-nums text-uach-ink/75">{formatBytes(file.size)}</span>
+              {file.fileDeletedAt ? (
+                <span className="min-w-0 flex-1 truncate text-sm text-uach-ink/60">{file.originalName}</span>
+              ) : (
+                <a
+                  href={fileHref(file.fileUrl)}
+                  target="_blank"
+                  rel="noopener"
+                  className="min-w-0 flex-1 truncate text-sm font-medium text-uach-ink hover:text-uach-tealDark hover:underline"
+                >
+                  {file.originalName}
+                </a>
+              )}
+              <span className="shrink-0 text-xs tabular-nums text-uach-ink/75">
+                {file.fileDeletedAt ? FILE_DELETED_TEXT : formatBytes(file.size)}
+              </span>
               {editable && (
                 <button
                   type="button"

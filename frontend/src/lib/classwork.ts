@@ -10,6 +10,8 @@ export interface SubmissionFileView {
   originalName: string;
   mimeType: string;
   size: number;
+  /** Se borró del disco al liberar el espacio de un periodo cerrado. */
+  fileDeletedAt: string | null;
   createdAt: string;
 }
 
@@ -260,7 +262,9 @@ export type NotificationType =
   | "MATERIAL_CREATED"
   | "RESOURCE_REVIEWED"
   | "COURSE_ASSIGNED"
-  | "QUIZ_PUBLISHED";
+  | "QUIZ_PUBLISHED"
+  | "ERROR_REPORTED"
+  | "REPORT_RESOLVED";
 
 export interface NotificationView {
   id: string;
@@ -308,6 +312,9 @@ export interface AdminUserPage {
 }
 
 /** URL de descarga de un archivo de storage/ (pasa por permisos del backend). */
+/** Texto en lugar del enlace cuando el archivo se borró al liberar el espacio de un periodo cerrado. */
+export const FILE_DELETED_TEXT = "Archivo borrado al cerrar el periodo";
+
 export const fileHref = (fileUrl: string) => `/api/files/${fileUrl.split("/").map(encodeURIComponent).join("/")}`;
 
 export function formatBytes(bytes: number) {

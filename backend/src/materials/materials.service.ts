@@ -21,6 +21,7 @@ const MATERIAL_SELECT = {
   originalName: true,
   mimeType: true,
   size: true,
+  fileDeletedAt: true,
   createdAt: true,
   author: { select: { id: true, fullName: true } },
 } satisfies Prisma.CourseMaterialSelect;

@@ -38,6 +38,20 @@ enum NotificationType {
   RESOURCE_REVIEWED
   COURSE_ASSIGNED
   QUIZ_PUBLISHED
+  /// A los administradores: un usuario reportó un problema o el sistema registró un error nuevo.
+  ERROR_REPORTED
+  /// Al autor de un reporte: un administrador lo atendió.
+  REPORT_RESOLVED
+}
+
+/// Origen de un reporte de error.
+enum ErrorSource {
+  /// Error inesperado del backend (respuesta 500).
+  SERVER
+  /// Error de una pantalla en el navegador.
+  CLIENT
+  /// Problema que reportó un usuario con el formulario.
+  USER
 }
 
 enum ResourceType {
@@ -146,6 +160,7 @@ model User {
   studyGroups        StudyGroup[]       @relation("GroupCreators")
   groupMemberships   StudyGroupMember[]
   materials          CourseMaterial[]
+  errorReports       ErrorReport[]
   createdAt          DateTime           @default(now()) @map("creado_en")
   updatedAt          DateTime           @updatedAt @map("actualizado_en")
 
@@ -298,15 +313,17 @@ model Submission {
 
 /// Archivo adjunto a una entrega. fileUrl es la ruta relativa dentro de storage/.
 model SubmissionFile {
-  id           String     @id @default(uuid())
-  submissionId String     @map("entrega_id")
-  fileUrl      String     @unique @map("ruta_archivo")
-  originalName String     @map("nombre_original")
-  mimeType     String     @map("tipo_mime")
-  size         Int        @map("tamano_bytes")
-  sha256       String     @db.Char(64)
-  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now()) @map("creado_en")
+  id            String     @id @default(uuid())
+  submissionId  String     @map("entrega_id")
+  fileUrl       String     @unique @map("ruta_archivo")
+  originalName  String     @map("nombre_original")
+  mimeType      String     @map("tipo_mime")
+  size          Int        @map("tamano_bytes")
+  sha256        String     @db.Char(64)
+  /// El archivo se borró del disco para liberar espacio (periodo cerrado). El registro se conserva.
+  fileDeletedAt DateTime?  @map("archivo_borrado_en")
+  submission    Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now()) @map("creado_en")
 
   @@index([submissionId])
   @@map("archivos_entrega")
@@ -373,24 +390,26 @@ model CourseTopic {
 
 /// Material del curso: un archivo (storage/classroom-drive/...) o un enlace.
 model CourseMaterial {
-  id           String         @id @default(uuid())
-  courseId     String         @map("curso_id")
-  topicId      String?        @map("tema_id")
-  title        String         @map("titulo") @db.VarChar(150)
-  description  String?        @map("descripcion") @db.Text
-  kind         MaterialKind   @map("tipo")
-  fileUrl      String?        @unique @map("ruta_archivo")
-  url          String?        @db.VarChar(500)
-  originalName String?        @map("nombre_original")
-  mimeType     String?        @map("tipo_mime")
-  size         Int?           @map("tamano_bytes")
-  sha256       String?        @db.Char(64)
-  authorId     String         @map("autor_id")
-  course       Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  topic        CourseTopic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
-  author       User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  views        MaterialView[]
-  createdAt    DateTime       @default(now()) @map("creado_en")
+  id            String         @id @default(uuid())
+  courseId      String         @map("curso_id")
+  topicId       String?        @map("tema_id")
+  title         String         @map("titulo") @db.VarChar(150)
+  description   String?        @map("descripcion") @db.Text
+  kind          MaterialKind   @map("tipo")
+  fileUrl       String?        @unique @map("ruta_archivo")
+  url           String?        @db.VarChar(500)
+  originalName  String?        @map("nombre_original")
+  mimeType      String?        @map("tipo_mime")
+  size          Int?           @map("tamano_bytes")
+  sha256        String?        @db.Char(64)
+  /// El archivo se borró del disco para liberar espacio (periodo cerrado). El registro se conserva.
+  fileDeletedAt DateTime?      @map("archivo_borrado_en")
+  authorId      String         @map("autor_id")
+  course        Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topic         CourseTopic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  views         MaterialView[]
+  createdAt     DateTime       @default(now()) @map("creado_en")
 
   @@index([courseId, topicId])
   @@map("materiales_curso")
@@ -579,4 +598,30 @@ model ActivityLog {
   @@index([createdAt])
   @@index([userId, createdAt])
   @@map("bitacora_actividad")
+}
+
+/// Errores del sistema y problemas reportados por los usuarios. Solo los ve el administrador.
+/// Los errores automáticos iguales se agrupan (huella) y se cuentan; se purgan a los 90 días.
+model ErrorReport {
+  id             String      @id @default(uuid())
+  source         ErrorSource @map("origen")
+  message        String      @map("mensaje") @db.VarChar(500)
+  /// Traza del error o descripción completa del usuario.
+  detail         String?     @map("detalle") @db.Text
+  path           String?     @map("ruta") @db.VarChar(300)
+  /// sha256 de origen + mensaje + ruta. Los reportes de usuarios no se agrupan (null).
+  fingerprint    String?     @map("huella") @db.Char(64)
+  count          Int         @default(1) @map("veces")
+  userAgent      String?     @map("navegador") @db.VarChar(300)
+  /// Quien lo reportó o el último usuario que se topó con el error.
+  userId         String?     @map("usuario_id")
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  resolvedAt     DateTime?   @map("resuelto_en")
+  resolutionNote String?     @map("nota_resolucion") @db.VarChar(300)
+  createdAt      DateTime    @default(now()) @map("creado_en")
+  lastSeenAt     DateTime    @default(now()) @map("visto_en")
+
+  @@index([resolvedAt, lastSeenAt])
+  @@index([fingerprint, resolvedAt])
+  @@map("reportes_error")
 }

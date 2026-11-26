@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportClientError } from "@/lib/errors";
 
 export default function GlobalError({
   error,
@@ -11,6 +12,8 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error(error);
+    // El administrador lo ve en Administración › Errores.
+    reportClientError(error);
   }, [error]);
 
   return (
@@ -18,7 +21,8 @@ export default function GlobalError({
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-semibold text-uach-petrol">Algo salió mal</h1>
         <p className="mt-2 text-sm text-uach-muted">
-          Ocurrió un error inesperado. Inténtalo de nuevo; si persiste, contacta a soporte.
+          Ocurrió un error inesperado y ya se avisó al administrador. Inténtalo de nuevo; si sigue pasando, usa
+          «Reportar un problema» en el menú de tu cuenta y cuéntanos qué hacías.
         </p>
         {error.digest && <p className="mt-2 font-mono text-xs text-uach-soft">Ref: {error.digest}</p>}
         <button

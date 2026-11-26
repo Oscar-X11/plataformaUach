@@ -21,7 +21,7 @@ export const SUBMISSION_SELECT = {
   returnedAt: true,
   files: {
     orderBy: { createdAt: 'asc' },
-    select: { id: true, fileUrl: true, originalName: true, mimeType: true, size: true, createdAt: true },
+    select: { id: true, fileUrl: true, originalName: true, mimeType: true, size: true, fileDeletedAt: true, createdAt: true },
   },
 } satisfies Prisma.SubmissionSelect;
 

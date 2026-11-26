@@ -1,6 +1,8 @@
 import {
   Bell,
   BookUp,
+  Bug,
+  CircleCheck,
   ClipboardCheck,
   ClipboardList,
   Library,
@@ -22,6 +24,8 @@ const NOTIFICATION_ICON: Record<NotificationType, LucideIcon> = {
   RESOURCE_REVIEWED: Library,
   COURSE_ASSIGNED: School,
   QUIZ_PUBLISHED: ClipboardCheck,
+  ERROR_REPORTED: Bug,
+  REPORT_RESOLVED: CircleCheck,
 };
 
 /**

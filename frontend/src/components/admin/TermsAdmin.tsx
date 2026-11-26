@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { CalendarPlus, LoaderCircle, Lock, LockOpen, Pencil, Star, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarPlus, HardDrive, LoaderCircle, Lock, LockOpen, Pencil, Star, Trash2 } from "lucide-react";
 import { CARD } from "@/components/dashboard/tone";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
 import { formatTermDate, SCHEME_TEXT, schemeOf, TERM_SCHEMES, type AcademicTerm } from "@/lib/academic";
 import { api, ApiError } from "@/lib/api";
+import { formatBytes } from "@/lib/classwork";
 
 function TermForm({ term, onDone }: { term?: AcademicTerm; onDone: () => void }) {
   const router = useRouter();
@@ -101,9 +102,120 @@ function TermForm({ term, onDone }: { term?: AcademicTerm; onDone: () => void })
   );
 }
 
+interface TermFilesSummary {
+  code: string;
+  closed: boolean;
+  courses: number;
+  submissions: { count: number; bytes: number };
+  materials: { count: number; bytes: number };
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * Liberar el disco de un periodo cerrado: muestra cuánto ocupan sus archivos y los borra
+ * al confirmar con la clave. Entregas, calificaciones y nombres de archivo se conservan.
+ */
+function TermFilesPanel({ term, onClose }: { term: AcademicTerm; onClose: () => void }) {
+  const [summary, setSummary] = useState<TermFilesSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    api<TermFilesSummary>(`/academic/terms/${term.id}/files`)
+      .then((data) => active && setSummary(data))
+      .catch((caught) => active && setError(caught instanceof ApiError ? caught.message : "No se pudo consultar el espacio."));
+    return () => {
+      active = false;
+    };
+  }, [term.id]);
+
+  async function purge(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await api<{ files: number; bytes: number }>(`/academic/terms/${term.id}/files/purge`, {
+        method: "POST",
+        body: { confirm },
+      });
+      setDone(`Se borraron ${plural(result.files, "archivo", "archivos")} y se liberaron ${formatBytes(result.bytes)}.`);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : "No se pudieron borrar los archivos.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const files = summary ? summary.submissions.count + summary.materials.count : 0;
+  const bytes = summary ? summary.submissions.bytes + summary.materials.bytes : 0;
+
+  return (
+    <div className="w-full space-y-3 rounded-xl bg-uach-canvas p-4 text-sm text-uach-ink" aria-live="polite">
+      {error && <FormAlert message={error} />}
+      {done ? (
+        <p>{done}</p>
+      ) : !summary ? (
+        !error && (
+          <p className="flex items-center gap-2 text-uach-ink/75">
+            <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
+            Calculando el espacio que ocupa {term.code}…
+          </p>
+        )
+      ) : files === 0 ? (
+        <p>No quedan archivos de {term.code} en el disco.</p>
+      ) : (
+        <form onSubmit={purge} className="space-y-3">
+          <p>
+            Los cursos de {term.code} guardan{" "}
+            <strong className="font-semibold">{formatBytes(bytes)}</strong>:{" "}
+            {plural(summary.submissions.count, "archivo de entregas", "archivos de entregas")} (
+            {formatBytes(summary.submissions.bytes)}) y {plural(summary.materials.count, "archivo de material", "archivos de material")} (
+            {formatBytes(summary.materials.bytes)}).
+          </p>
+          <p className="text-uach-ink/75">
+            Se borran del disco y no se pueden recuperar, salvo desde un respaldo. Las entregas, calificaciones y los
+            nombres de los archivos se conservan. El repositorio no se toca.
+          </p>
+          <div>
+            <label htmlFor={`purge-${term.id}`} className="mb-1.5 block font-medium">
+              Escribe <span className="font-mono">{term.code}</span> para confirmar
+            </label>
+            <input
+              id={`purge-${term.id}`}
+              value={confirm}
+              onChange={(event) => setConfirm(event.target.value)}
+              autoComplete="off"
+              autoFocus
+              className={`${INPUT} sm:max-w-xs`}
+            />
+          </div>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} className={BTN_GHOST}>Cancelar</button>
+            <button type="submit" disabled={busy || confirm.trim() !== term.code} className={BTN_DANGER}>
+              {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
+              Borrar archivos
+            </button>
+          </div>
+        </form>
+      )}
+      {/* Sin formulario a la vista (terminó, falló la consulta o no hay nada): solo «Cerrar». */}
+      {(done || !summary ? Boolean(done || error) : files === 0) && (
+        <div className="flex justify-end">
+          <button type="button" onClick={onClose} className={BTN_GHOST}>Cerrar</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TermRow({ term, onEdit }: { term: AcademicTerm; onEdit: () => void }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [freeing, setFreeing] = useState(false);
   const courses = term._count.courses;
   const start = formatTermDate(term.startsAt);
   const end = formatTermDate(term.endsAt);
@@ -134,7 +246,7 @@ function TermRow({ term, onEdit }: { term: AcademicTerm; onEdit: () => void }) {
   }
 
   return (
-    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center">
+    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center">
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-2">
           <span className="font-semibold tabular-nums text-uach-ink">{term.code}</span>
@@ -157,6 +269,12 @@ function TermRow({ term, onEdit }: { term: AcademicTerm; onEdit: () => void }) {
           <button type="button" disabled={busy} onClick={() => update({ isCurrent: true })} className={BTN_SECONDARY}>
             <Star className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             Hacer actual
+          </button>
+        )}
+        {term.closed && courses > 0 && !freeing && (
+          <button type="button" disabled={busy} onClick={() => setFreeing(true)} className={BTN_GHOST}>
+            <HardDrive className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            Liberar espacio
           </button>
         )}
         {term.closed ? (
@@ -189,6 +307,7 @@ function TermRow({ term, onEdit }: { term: AcademicTerm; onEdit: () => void }) {
           </button>
         )}
       </div>
+      {freeing && <TermFilesPanel term={term} onClose={() => setFreeing(false)} />}
     </li>
   );
 }

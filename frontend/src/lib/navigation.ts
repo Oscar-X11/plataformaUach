@@ -2,6 +2,7 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  Bug,
   CalendarDays,
   CalendarRange,
   ClipboardCheck,
@@ -92,6 +93,7 @@ export function navigationForRole(role: UserRole): NavSection[] {
             { label: "Periodos", href: "/administracion/periodos", icon: CalendarRange },
             { label: "Reportes", href: "/administracion/reportes", icon: BarChart3 },
             { label: "Bitácora", href: "/administracion/bitacora", icon: History },
+            { label: "Errores", href: "/administracion/errores", icon: Bug },
           ],
         },
         {

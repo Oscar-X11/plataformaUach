@@ -24,9 +24,9 @@
 
 | Elemento | Estado |
 | --- | --- |
-| Base de datos MySQL | ✅ Local en Docker (puerto 3307), las 11 migraciones aplicadas (la última, `20261125120000_quitar_examen_resuelto`). Probada de punta a punta el 2026-11-25. |
+| Base de datos MySQL | ✅ Local en Docker (puerto 3307), las 12 migraciones aplicadas (la última, `20261126120000_archivos_borrados_reportes_error`). Probada de punta a punta el 2026-11-25. |
 | Backend simulado (`npm run dev:demo`) | ✅ Permite recorrer las fases 1 y 2 sin base de datos. No incluye cuestionarios ni lo de las fases 3 y 4. |
-| Pruebas del backend | ✅ 111 unitarias y 25 e2e contra una base de pruebas aparte (cuentas, sesiones, clases, tareas, rúbricas, condiciones, cuestionarios, calificaciones, progreso, reutilizar, bitácora, búsqueda, permisos del administrador, validaciones del docente y revisión del repositorio). |
+| Pruebas del backend | ✅ 123 unitarias y 30 e2e contra una base de pruebas aparte (cuentas, sesiones, clases, tareas, rúbricas, condiciones, cuestionarios, calificaciones, progreso, reutilizar, bitácora, búsqueda, permisos del administrador, validaciones del docente, revisión del repositorio, descargas con nombre original, liberar espacio de periodos y reportes de errores). |
 | Despliegue (Docker / servidor) | 🔄 Compose ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado). Swap documentada en el README; `npm run docker:build` compila las imágenes de una en una y `npm run docker:up` arranca sin recompilar. Falta instalarlo en el servidor Debian. |
 
 ---
@@ -57,6 +57,8 @@
 | 2026-11-25 | ✅ El repositorio ya no tiene el tipo «Examen resuelto». |
 | 2026-11-25 | ✅ **Todo lo que se sube al repositorio pasa por revisión** de un administrador, también lo de los docentes. |
 | 2026-11-25 | ✅ Reportes sin columna Promedio (no coincidía con la calificación real del libro). |
+| 2026-11-25 | ✅ Los archivos de un **periodo cerrado** se pueden borrar del disco desde Periodos («Liberar espacio», confirmando con la clave). Se conservan entregas, calificaciones y nombres de archivo; el repositorio no se toca. |
+| 2026-11-25 | ✅ **Errores para el administrador** dentro de la plataforma (no hay correo): fallas del servidor y de pantallas se registran solas y agrupadas; docentes y alumnos pueden «Reportar un problema». Se borran a los 90 días. |
 
 ---
 
@@ -151,6 +153,7 @@ Lo que más usan docentes y alumnos en Moodle. Todo lo que se decidió implement
 | 9 | ✅ **Acceso condicional** | Hecho: visible desde una fecha o después de completar otra tarea o cuestionario; se rechazan ciclos; lo bloqueado no aparece en «Lo que sigue», el calendario ni la búsqueda del alumno. **No incluye:** condición por calificación mínima. | Depende de #8. |
 | 10 | ~~**Videoclases**~~ | **No se implementa** (decisión del 2026-11-23). Los cursos y grupos de estudio tienen un campo libre de lugar y horario donde se puede pegar un enlace de Meet o Zoom. | — |
 | 11 | ✅ **Bitácora de actividad** | Hecho: inicios de sesión, cuentas, importaciones, clases, entregas, calificaciones, publicaciones, material, pesos y periodos. Página en administración (filtros y búsqueda) y por clase en «Seguimiento». | Se purgan solos los registros de más de 180 días. |
+| — | ✅ **Errores y reportes de problemas** | Hecho: Administración › Errores. Errores 500 del backend y pantallas que fallan (error.tsx) se registran solos, agrupados con su número de veces; «Reportar un problema» en el menú de la cuenta de docentes y alumnos. Aviso a los administradores y al autor del reporte cuando se atiende. | Como mucho un aviso automático cada 10 min; se purgan a los 90 días. |
 
 ## Fase 4 — Actividades y herramientas complementarias de Moodle 🔄
 
@@ -179,7 +182,7 @@ Las que siguen abiertas también están en [Lo que falta](#lo-que-falta).
 - ✅ Subidas escritas a disco (no a RAM) y pantallas de carga al cambiar de pestaña.
 - 🔄 Swap documentada en el README (falta aplicarla en el servidor). ⬜ Respaldos automáticos en el servidor Debian.
 - ✅ Validaciones para evitar errores del docente: tareas sin entrega en el pasado ni apertura posterior a la entrega; con el periodo cerrado no se crean actividades ni se cambian rúbricas, puntos o pesos; confirmación al cambiar pesos.
-- ✅ Pruebas automatizadas: 111 unitarias y 25 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
+- ✅ Pruebas automatizadas: 123 unitarias y 30 e2e contra una base de pruebas aparte (`npm --workspace=backend run test:e2e`).
 
 ---
 
@@ -188,7 +191,7 @@ Las que siguen abiertas también están en [Lo que falta](#lo-que-falta).
 Revisado el 2026-11-25. Orden sugerido: primero lo que impide usarla con personas reales.
 
 ### 1. Antes de usarla con personas reales
-- ⬜ **Revisión a mano** de lo nuevo de las fases 3 y 4 como docente y como alumno: rúbricas y cuestionarios (con los avisos y confirmaciones del 2026-11-25), condiciones, pesos, Seguimiento, Reutilizar clase, búsqueda y app instalable. También los permisos del administrador y la revisión del repositorio.
+- ⬜ **Revisión a mano** de lo nuevo de las fases 3 y 4 como docente y como alumno: rúbricas y cuestionarios (con los avisos y confirmaciones del 2026-11-25), condiciones, pesos, Seguimiento, Reutilizar clase, búsqueda y app instalable. También los permisos del administrador, la revisión del repositorio, las descargas con nombre original, «Liberar espacio» en Periodos y la página de Errores con «Reportar un problema».
 - ⬜ **Instalar en el servidor Debian** (4 GB): Docker Compose con Nginx (`npm run docker:build` y `npm run docker:up`), migraciones con `prisma migrate deploy`, HTTPS con `COOKIE_SECURE=true` y `CORS_ORIGINS` del dominio real.
 - ⬜ **Swap** de 4 GB en el servidor, antes de compilar: pasos en el README («Servidor Debian: swap»).
 - ⬜ **Respaldos automáticos** de la base de datos y de `storage/` a otro disco, y probar una restauración.
@@ -202,8 +205,8 @@ Revisado el 2026-11-25. Orden sugerido: primero lo que impide usarla con persona
 - ⬜ Importar los alumnos reales desde el Excel oficial y dar de alta al personal.
 
 ### 3. Mejoras técnicas pendientes
-- ⬜ Descargas con el **nombre original** del archivo (`Content-Disposition`); hoy se bajan con el nombre aleatorio.
-- ⬜ Borrar o archivar los archivos de periodos cerrados para no llenar el disco.
+- ✅ Descargas con el **nombre original** del archivo (`Content-Disposition`): PDF e imágenes se abren en el navegador; lo demás se descarga.
+- ✅ Borrar los archivos de periodos cerrados para no llenar el disco («Liberar espacio» en Periodos). Archivarlos en otro disco queda para los respaldos automáticos.
 - ⬜ Aviso a los alumnos cuando se abre una tarea con «Visible desde» futura (hoy no se avisa: no hay tareas programadas en el servidor).
 - ⬜ Optimizar Reportes con muchas clases: el riesgo se calcula clase por clase (`ProgressService.studentRows`); agregarlo en SQL si la página se vuelve lenta.
 - ⬜ Revisar las rúbricas creadas antes del 2026-11-25: si alguna tiene niveles con el mismo puntaje, habrá que corregirla al editarla.

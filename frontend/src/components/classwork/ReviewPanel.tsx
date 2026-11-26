@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { FormAlert } from "@/components/ui/form";
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
 import { api, ApiError } from "@/lib/api";
-import { fileHref, formatBytes, type RubricCriterion, type StudentSubmissionRow, type SubmissionView } from "@/lib/classwork";
+import { FILE_DELETED_TEXT, fileHref, formatBytes, type RubricCriterion, type StudentSubmissionRow, type SubmissionView } from "@/lib/classwork";
 import { formatDateTime } from "@/lib/dashboard/format";
 
 type Filter = "all" | "toReview" | "missing" | "returned";
@@ -143,16 +143,24 @@ function GradeForm({
         <ul className="space-y-1.5">
           {submission.files.map((file) => (
             <li key={file.id}>
-              <a
-                href={fileHref(file.fileUrl)}
-                target="_blank"
-                rel="noopener"
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-uach-ink hover:bg-uach-canvas"
-              >
-                <FileText className="h-4 w-4 shrink-0 text-uach-teal" strokeWidth={1.5} aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{file.originalName}</span>
-                <span className="text-xs tabular-nums text-uach-ink/75">{formatBytes(file.size)}</span>
-              </a>
+              {file.fileDeletedAt ? (
+                <p className="flex items-center gap-2 px-2 py-1.5 text-sm text-uach-ink/60">
+                  <FileText className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
+                  <span className="min-w-0 flex-1 truncate">{file.originalName}</span>
+                  <span className="text-xs">{FILE_DELETED_TEXT}</span>
+                </p>
+              ) : (
+                <a
+                  href={fileHref(file.fileUrl)}
+                  target="_blank"
+                  rel="noopener"
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-uach-ink hover:bg-uach-canvas"
+                >
+                  <FileText className="h-4 w-4 shrink-0 text-uach-teal" strokeWidth={1.5} aria-hidden />
+                  <span className="min-w-0 flex-1 truncate">{file.originalName}</span>
+                  <span className="text-xs tabular-nums text-uach-ink/75">{formatBytes(file.size)}</span>
+                </a>
+              )}
             </li>
           ))}
         </ul>

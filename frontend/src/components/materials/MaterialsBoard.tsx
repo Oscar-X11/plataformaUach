@@ -8,7 +8,7 @@ import { FormAlert } from "@/components/ui/form";
 import { PreviewButton } from "@/components/ui/PreviewButton";
 import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/components/ui/styles";
 import { api, ApiError } from "@/lib/api";
-import { SUBMISSION_ACCEPT, fileHref, formatBytes } from "@/lib/classwork";
+import { FILE_DELETED_TEXT, SUBMISSION_ACCEPT, fileHref, formatBytes } from "@/lib/classwork";
 import { formatRelative } from "@/lib/dashboard/format";
 import type { Material, MaterialsView, Topic } from "@/lib/institutional";
 import { previewFor } from "@/lib/preview";
@@ -116,9 +116,10 @@ function MaterialForm({ courseId, topics, onDone }: { courseId: string; topics: 
 function MaterialRow({ material, canManage, now }: { material: Material; canManage: boolean; now: Date }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const deleted = Boolean(material.fileDeletedAt);
   const href = material.kind === "FILE" && material.fileUrl ? fileHref(material.fileUrl) : (material.url ?? "#");
   const Icon = material.kind === "FILE" ? FileText : ExternalLink;
-  const preview = previewFor(material);
+  const preview = deleted ? null : previewFor(material);
   // Alumno: abrir el material cuenta para su progreso (keepalive: llega aunque se abra otra pestaña).
   const markViewed = () => {
     if (canManage) return;
@@ -143,20 +144,24 @@ function MaterialRow({ material, canManage, now }: { material: Material; canMana
         <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={markViewed}
-          onAuxClick={markViewed}
-          className="block truncate text-sm font-medium text-uach-ink hover:text-uach-tealDark hover:underline"
-        >
-          {material.title}
-        </a>
+        {deleted ? (
+          <p className="truncate text-sm font-medium text-uach-ink/60">{material.title}</p>
+        ) : (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={markViewed}
+            onAuxClick={markViewed}
+            className="block truncate text-sm font-medium text-uach-ink hover:text-uach-tealDark hover:underline"
+          >
+            {material.title}
+          </a>
+        )}
         {material.description && <p className="mt-0.5 line-clamp-2 text-sm text-uach-ink/75">{material.description}</p>}
         <p className="mt-0.5 text-xs text-uach-ink/75">
           {material.kind === "FILE"
-            ? `${material.originalName} · ${formatBytes(material.size ?? 0)}`
+            ? `${material.originalName} · ${deleted ? FILE_DELETED_TEXT : formatBytes(material.size ?? 0)}`
             : new URL(material.url ?? "https://x").hostname}
           {" · "}
           {formatRelative(material.createdAt, now)}

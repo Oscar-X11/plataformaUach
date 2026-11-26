@@ -35,6 +35,8 @@ export interface Material {
   originalName: string | null;
   mimeType: string | null;
   size: number | null;
+  /** Se borró del disco al liberar el espacio de un periodo cerrado. */
+  fileDeletedAt: string | null;
   createdAt: string;
   author: { id: string; fullName: string };
 }
