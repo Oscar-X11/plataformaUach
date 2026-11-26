@@ -17,7 +17,8 @@
     "prisma:migrate": "npm --workspace=backend run prisma:migrate",
     "prisma:seed": "npm --workspace=backend run prisma:seed",
     "prisma:studio": "npm --workspace=backend run prisma:studio",
-    "docker:up": "docker compose up -d --build",
+    "docker:build": "docker compose build backend && docker compose build frontend",
+    "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "prisma:deploy": "npm --workspace=backend run prisma:deploy"
   },

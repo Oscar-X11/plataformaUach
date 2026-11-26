@@ -37,6 +37,9 @@ Registro diario de lo que se hizo en el proyecto, las decisiones tomadas y lo qu
 - **Máximo 9 cuatrimestres** (el bachillerato sigue en 6 semestres) en clases, copia de clases y materias; la materia valida el máximo según el nivel de su carrera.
 - **Repositorio sin «Examen resuelto»** (migración `20261125120000_quitar_examen_resuelto`): los recursos existentes de ese tipo pasan a «Otro».
 - Reporte del día en `docs/REPORTE_2026-11-25.md`. 110 pruebas unitarias y 25 e2e.
+- Commit `594a3a1` (validaciones del docente, 9 cuatrimestres, repositorio sin examen resuelto), subido a `origin/master`.
+- **README: configuración de swap** para el servidor Debian de 4 GB (4 GB de swap, `swappiness=10`, compilar las imágenes de una en una y arrancar sin `--build`).
+- Scripts de Docker: `npm run docker:build` compila backend y luego frontend; `npm run docker:up` ya no recompila (antes `up -d --build` juntaba los dos builds).
 
 ### Importante
 - El reporte calcula el riesgo curso por curso (secuencial) para no cargar todo en memoria en el servidor de 4 GB. Con muchos cursos la página tardará más; si se vuelve lenta, filtrar por periodo o carrera, o agregar los datos en SQL.

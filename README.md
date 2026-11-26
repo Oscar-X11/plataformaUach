@@ -201,12 +201,48 @@ El backend simulado cubre las fases 1 y 2; las funciones de las fases 3 y 4 nece
 
 ```bash
 cp .env.example .env        # completa los valores
-npm run docker:up
+npm run docker:build        # compila backend y luego frontend (no a la vez)
+npm run docker:up           # arranca los servicios sin recompilar
 docker compose exec backend npx prisma migrate deploy
 docker compose exec backend npx prisma db seed
 ```
 
 La plataforma queda en `http://localhost` (puerto `NGINX_PORT`). MySQL y Redis solo escuchan en `127.0.0.1`. Compose está ajustado a un servidor de 4 GB (límites de memoria, MySQL afinado).
+
+### Servidor Debian: swap (antes de instalar)
+
+En marcha, los servicios suman como máximo unos 2.3 GB (`mem_limit` en `docker-compose.yml`). El riesgo está en **compilar las imágenes**: el build de Next.js puede usar 1.5–2 GB durante unos minutos, sin límite, y en un servidor de 4 GB sin swap el sistema lo mata por falta de memoria. Con swap, el build se vuelve más lento pero termina.
+
+Se crea una sola vez, como `root` (o con `sudo`):
+
+```bash
+# 1. Archivo de swap de 4 GB (sobra disco: el servidor tiene 256 GB)
+fallocate -l 4G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+
+# 2. Que se active en cada arranque
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+# 3. Usar swap solo como respaldo, no para el trabajo normal
+cat > /etc/sysctl.d/99-swap.conf <<'EOF'
+vm.swappiness=10
+vm.vfs_cache_pressure=50
+EOF
+sysctl --system
+```
+
+Comprobar:
+
+```bash
+swapon --show     # /swapfile  file  4G ...
+free -h           # la fila «Swap» muestra 4.0Gi
+```
+
+- Si `fallocate` falla («Operation not supported»), créalo con `dd if=/dev/zero of=/swapfile bs=1M count=4096 status=progress` y sigue desde `chmod`.
+- `npm run docker:build` compila las imágenes de una en una (primero el backend, luego el frontend) para no juntar los dos builds. `npm run docker:up` solo arranca los servicios, sin recompilar. Tras cada actualización del código: `docker:build` y luego `docker:up`.
+- Ya en marcha, revisa el consumo con `docker stats` y `free -h`. Si la swap se usa de forma constante con la plataforma funcionando (no solo al compilar), falta RAM o algún servicio necesita revisión.
 
 ## Variables de entorno
 
@@ -304,7 +340,7 @@ Plataforma_UACH/
 
 ## Siguientes pasos
 
-- **Instalar en el servidor Debian** (4 GB): swap, respaldos automáticos de la BD y de `storage/`, HTTPS con `COOKIE_SECURE=true`.
+- **Instalar en el servidor Debian** (4 GB): swap (ver [Servidor Debian: swap](#servidor-debian-swap-antes-de-instalar)), respaldos automáticos de la BD y de `storage/`, HTTPS con `COOKIE_SECURE=true`.
 - **Cargar los datos oficiales:** materias de cada carrera, periodos y la importación de alumnos.
 - **Revisión jurídica** del aviso de privacidad (hoy es un borrador).
 - El resto de pendientes, con prioridad, está en [`docs/AVANCE.md` › Lo que falta](docs/AVANCE.md#lo-que-falta).
